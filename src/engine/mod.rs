@@ -4,7 +4,7 @@ use crate::error::{Error, Result};
 use crate::storage::{SledBackend, StorageBackend};
 use crate::types::{
     Config, ConversationSession, Edge, EdgeType, Node, NodeId, PromptMetadata, PromptNode,
-    ResponseMetadata, ResponseNode, SessionId, TokenUsage,
+    ResponseMetadata, ResponseNode, SessionId, TokenUsage, ToolInvocation,
 };
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -313,6 +313,148 @@ impl MemoryGraph {
         self.backend.store_edge(&edge)?;
 
         Ok(response_id)
+    }
+
+    /// Add a tool invocation node to the graph
+    ///
+    /// This creates a tool invocation record and automatically creates an INVOKES edge
+    /// from the response to the tool invocation.
+    ///
+    /// # Arguments
+    ///
+    /// * `tool` - The tool invocation to add
+    ///
+    /// # Returns
+    ///
+    /// The node ID of the created tool invocation
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::*;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let response_id = graph.add_response(prompt_id, "Response".to_string(), TokenUsage::new(10, 20), None)?;
+    /// let params = serde_json::json!({"operation": "add", "a": 2, "b": 3});
+    /// let tool = ToolInvocation::new(response_id, "calculator".to_string(), params);
+    /// let tool_id = graph.add_tool_invocation(tool)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn add_tool_invocation(&self, tool: ToolInvocation) -> Result<NodeId> {
+        let tool_id = tool.id;
+        let response_id = tool.response_id;
+
+        // Store the tool invocation node
+        self.backend.store_node(&Node::ToolInvocation(tool))?;
+
+        // Create INVOKES edge from response to tool
+        let edge = Edge::new(response_id, tool_id, EdgeType::Invokes);
+        self.backend.store_edge(&edge)?;
+
+        Ok(tool_id)
+    }
+
+    /// Update an existing tool invocation with results
+    ///
+    /// This method updates a tool invocation's status, result, and duration after execution.
+    ///
+    /// # Arguments
+    ///
+    /// * `tool_id` - The ID of the tool invocation to update
+    /// * `success` - Whether the tool execution was successful
+    /// * `result_or_error` - Either the result (if successful) or error message (if failed)
+    /// * `duration_ms` - Execution duration in milliseconds
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::*;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let response_id = graph.add_response(prompt_id, "Response".to_string(), TokenUsage::new(10, 20), None)?;
+    /// # let params = serde_json::json!({"operation": "add", "a": 2, "b": 3});
+    /// # let tool = ToolInvocation::new(response_id, "calculator".to_string(), params);
+    /// # let tool_id = graph.add_tool_invocation(tool)?;
+    /// // Mark tool invocation as successful
+    /// let result = serde_json::json!({"result": 5});
+    /// graph.update_tool_invocation(tool_id, true, serde_json::to_string(&result)?, 150)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn update_tool_invocation(
+        &self,
+        tool_id: NodeId,
+        success: bool,
+        result_or_error: String,
+        duration_ms: u64,
+    ) -> Result<()> {
+        // Get the tool invocation node
+        let node = self.backend.get_node(&tool_id)?
+            .ok_or_else(|| Error::NodeNotFound(tool_id.to_string()))?;
+
+        if let Node::ToolInvocation(mut tool) = node {
+            if success {
+                let result: serde_json::Value = serde_json::from_str(&result_or_error)?;
+                tool.mark_success(result, duration_ms);
+            } else {
+                tool.mark_failed(result_or_error, duration_ms);
+            }
+
+            // Update the node in storage
+            self.backend.store_node(&Node::ToolInvocation(tool))?;
+            Ok(())
+        } else {
+            Err(Error::InvalidNodeType {
+                expected: "ToolInvocation".to_string(),
+                actual: format!("{:?}", node.node_type()),
+            })
+        }
+    }
+
+    /// Get all tool invocations for a specific response
+    ///
+    /// # Arguments
+    ///
+    /// * `response_id` - The response node ID
+    ///
+    /// # Returns
+    ///
+    /// A vector of tool invocation nodes
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::*;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let response_id = graph.add_response(prompt_id, "Response".to_string(), TokenUsage::new(10, 20), None)?;
+    /// let tools = graph.get_response_tools(response_id)?;
+    /// println!("Response invoked {} tools", tools.len());
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_response_tools(&self, response_id: NodeId) -> Result<Vec<ToolInvocation>> {
+        let edges = self.backend.get_outgoing_edges(&response_id)?;
+
+        let mut tools = Vec::new();
+        for edge in edges {
+            if edge.edge_type == EdgeType::Invokes {
+                if let Some(node) = self.backend.get_node(&edge.to)? {
+                    if let Node::ToolInvocation(tool) = node {
+                        tools.push(tool);
+                    }
+                }
+            }
+        }
+
+        Ok(tools)
     }
 
     /// Get a node by its ID

@@ -87,6 +87,10 @@ impl StorageBackend for SledBackend {
                 let key = Self::build_index_key(&s.id.to_bytes(), &id.to_bytes());
                 self.session_index.insert(key, &[])?;
             }
+            Node::ToolInvocation(_t) => {
+                // Tool invocations are not directly indexed by session
+                // They're accessed via response nodes through edges
+            }
         }
 
         self.db.flush()?;

@@ -14,6 +14,8 @@ pub enum NodeType {
     Response,
     /// A conversation session
     Session,
+    /// A tool invocation by an LLM
+    ToolInvocation,
 }
 
 /// Generic node wrapper that contains any node type
@@ -25,6 +27,8 @@ pub enum Node {
     Response(ResponseNode),
     /// Session node
     Session(ConversationSession),
+    /// Tool invocation node
+    ToolInvocation(ToolInvocation),
 }
 
 impl Node {
@@ -35,6 +39,7 @@ impl Node {
             Node::Prompt(p) => p.id,
             Node::Response(r) => r.id,
             Node::Session(s) => s.node_id,
+            Node::ToolInvocation(t) => t.id,
         }
     }
 
@@ -45,6 +50,7 @@ impl Node {
             Node::Prompt(_) => NodeType::Prompt,
             Node::Response(_) => NodeType::Response,
             Node::Session(_) => NodeType::Session,
+            Node::ToolInvocation(_) => NodeType::ToolInvocation,
         }
     }
 }
@@ -300,6 +306,110 @@ impl ResponseNode {
     }
 }
 
+/// A tool invocation node representing a function call by an LLM
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ToolInvocation {
+    /// Unique node identifier
+    pub id: NodeId,
+    /// Response that triggered this tool call
+    pub response_id: NodeId,
+    /// Name of the tool/function
+    pub tool_name: String,
+    /// JSON parameters passed to the tool
+    pub parameters: serde_json::Value,
+    /// Tool execution result (if completed)
+    pub result: Option<serde_json::Value>,
+    /// Error message (if failed)
+    pub error: Option<String>,
+    /// Execution duration in milliseconds
+    pub duration_ms: u64,
+    /// When the tool was invoked
+    pub timestamp: DateTime<Utc>,
+    /// Success/failure status
+    pub success: bool,
+    /// Retry count (for failed invocations)
+    pub retry_count: u32,
+    /// Additional metadata
+    pub metadata: HashMap<String, String>,
+}
+
+impl ToolInvocation {
+    /// Create a new pending tool invocation
+    #[must_use]
+    pub fn new(response_id: NodeId, tool_name: String, parameters: serde_json::Value) -> Self {
+        Self {
+            id: NodeId::new(),
+            response_id,
+            tool_name,
+            parameters,
+            result: None,
+            error: None,
+            duration_ms: 0,
+            timestamp: Utc::now(),
+            success: false,
+            retry_count: 0,
+            metadata: HashMap::new(),
+        }
+    }
+
+    /// Mark tool invocation as successful
+    pub fn mark_success(&mut self, result: serde_json::Value, duration_ms: u64) {
+        self.success = true;
+        self.result = Some(result);
+        self.error = None;
+        self.duration_ms = duration_ms;
+    }
+
+    /// Mark tool invocation as failed
+    pub fn mark_failed(&mut self, error: String, duration_ms: u64) {
+        self.success = false;
+        self.error = Some(error);
+        self.result = None;
+        self.duration_ms = duration_ms;
+    }
+
+    /// Record retry attempt
+    pub fn record_retry(&mut self) {
+        self.retry_count += 1;
+        self.timestamp = Utc::now();
+    }
+
+    /// Check if tool invocation is pending (not completed)
+    #[must_use]
+    pub fn is_pending(&self) -> bool {
+        self.result.is_none() && self.error.is_none()
+    }
+
+    /// Check if tool invocation succeeded
+    #[must_use]
+    pub const fn is_success(&self) -> bool {
+        self.success
+    }
+
+    /// Check if tool invocation failed
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        self.error.is_some()
+    }
+
+    /// Get the tool execution status as a string
+    #[must_use]
+    pub fn status(&self) -> &str {
+        if self.is_pending() {
+            "pending"
+        } else if self.success {
+            "success"
+        } else {
+            "failed"
+        }
+    }
+
+    /// Add metadata to the tool invocation
+    pub fn add_metadata(&mut self, key: String, value: String) {
+        self.metadata.insert(key, value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -349,5 +459,94 @@ mod tests {
         let session = ConversationSession::new();
         let node = Node::Session(session);
         assert_eq!(node.node_type(), NodeType::Session);
+    }
+
+    #[test]
+    fn test_tool_invocation_creation() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"operation": "add", "a": 2, "b": 3});
+        let tool = ToolInvocation::new(response_id, "calculator".to_string(), params.clone());
+
+        assert_eq!(tool.response_id, response_id);
+        assert_eq!(tool.tool_name, "calculator");
+        assert_eq!(tool.parameters, params);
+        assert!(tool.is_pending());
+        assert!(!tool.is_success());
+        assert!(!tool.is_failed());
+        assert_eq!(tool.retry_count, 0);
+    }
+
+    #[test]
+    fn test_tool_invocation_mark_success() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"operation": "add", "a": 2, "b": 3});
+        let mut tool = ToolInvocation::new(response_id, "calculator".to_string(), params);
+
+        let result = serde_json::json!({"result": 5});
+        tool.mark_success(result.clone(), 150);
+
+        assert!(tool.is_success());
+        assert!(!tool.is_pending());
+        assert!(!tool.is_failed());
+        assert_eq!(tool.result, Some(result));
+        assert_eq!(tool.duration_ms, 150);
+        assert_eq!(tool.error, None);
+        assert_eq!(tool.status(), "success");
+    }
+
+    #[test]
+    fn test_tool_invocation_mark_failed() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"operation": "divide", "a": 10, "b": 0});
+        let mut tool = ToolInvocation::new(response_id, "calculator".to_string(), params);
+
+        tool.mark_failed("Division by zero".to_string(), 50);
+
+        assert!(!tool.is_success());
+        assert!(!tool.is_pending());
+        assert!(tool.is_failed());
+        assert_eq!(tool.error, Some("Division by zero".to_string()));
+        assert_eq!(tool.duration_ms, 50);
+        assert_eq!(tool.result, None);
+        assert_eq!(tool.status(), "failed");
+    }
+
+    #[test]
+    fn test_tool_invocation_retry() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"url": "https://api.example.com"});
+        let mut tool = ToolInvocation::new(response_id, "http_request".to_string(), params);
+
+        assert_eq!(tool.retry_count, 0);
+
+        tool.record_retry();
+        assert_eq!(tool.retry_count, 1);
+
+        tool.record_retry();
+        assert_eq!(tool.retry_count, 2);
+    }
+
+    #[test]
+    fn test_tool_invocation_metadata() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"query": "test"});
+        let mut tool = ToolInvocation::new(response_id, "search".to_string(), params);
+
+        tool.add_metadata("provider".to_string(), "google".to_string());
+        tool.add_metadata("cache_hit".to_string(), "true".to_string());
+
+        assert_eq!(tool.metadata.len(), 2);
+        assert_eq!(tool.metadata.get("provider"), Some(&"google".to_string()));
+        assert_eq!(tool.metadata.get("cache_hit"), Some(&"true".to_string()));
+    }
+
+    #[test]
+    fn test_tool_invocation_node_type() {
+        let response_id = NodeId::new();
+        let params = serde_json::json!({"test": "value"});
+        let tool = ToolInvocation::new(response_id, "test_tool".to_string(), params);
+        let node = Node::ToolInvocation(tool);
+
+        assert_eq!(node.node_type(), NodeType::ToolInvocation);
     }
 }

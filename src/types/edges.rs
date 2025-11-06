@@ -16,6 +16,8 @@ pub enum EdgeType {
     HandledBy,
     /// Links a prompt to the session it belongs to (Prompt → Session)
     PartOf,
+    /// Links a response to the tools it invoked (Response → ToolInvocation)
+    Invokes,
 }
 
 /// An edge connecting two nodes in the graph
@@ -110,5 +112,21 @@ mod tests {
         props.insert("test".to_string(), "value".to_string());
         let edge = Edge::with_properties(from, to, EdgeType::HandledBy, props);
         assert_eq!(edge.properties.len(), 1);
+    }
+
+    #[test]
+    fn test_invokes_edge_creation() {
+        let response_id = NodeId::new();
+        let tool_id = NodeId::new();
+        let mut edge = Edge::new(response_id, tool_id, EdgeType::Invokes);
+
+        // Add invocation properties
+        edge.add_property("invocation_order".to_string(), "1".to_string());
+        edge.add_property("success".to_string(), "true".to_string());
+        edge.add_property("required".to_string(), "false".to_string());
+
+        assert_eq!(edge.edge_type, EdgeType::Invokes);
+        assert_eq!(edge.get_property("invocation_order"), Some(&"1".to_string()));
+        assert_eq!(edge.get_property("success"), Some(&"true".to_string()));
     }
 }

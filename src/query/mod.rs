@@ -218,6 +218,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Prompt(p) => p.timestamp,
                     Node::Response(r) => r.timestamp,
                     Node::Session(s) => s.created_at,
+                    Node::ToolInvocation(t) => t.timestamp,
                 };
                 timestamp >= start_time
             });
@@ -229,6 +230,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Prompt(p) => p.timestamp,
                     Node::Response(r) => r.timestamp,
                     Node::Session(s) => s.created_at,
+                    Node::ToolInvocation(t) => t.timestamp,
                 };
                 timestamp <= end_time
             });
@@ -240,11 +242,13 @@ impl<'a> QueryBuilder<'a> {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
+                Node::ToolInvocation(t) => t.timestamp,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
+                Node::ToolInvocation(t) => t.timestamp,
             };
             time_b.cmp(&time_a)
         });
@@ -454,6 +458,24 @@ impl<'a> GraphTraversal<'a> {
                 }
             }
             Node::Session(s) => s.id,
+            Node::ToolInvocation(t) => {
+                // Get the response to find the session
+                let response_node = self.graph.get_node(t.response_id)?;
+                if let Node::Response(r) = response_node {
+                    let prompt_node = self.graph.get_node(r.prompt_id)?;
+                    if let Node::Prompt(p) = prompt_node {
+                        p.session_id
+                    } else {
+                        return Err(Error::TraversalError(
+                            "Response does not point to a prompt".to_string(),
+                        ));
+                    }
+                } else {
+                    return Err(Error::TraversalError(
+                        "ToolInvocation does not point to a response".to_string(),
+                    ));
+                }
+            }
         };
 
         // Get all nodes in the session
@@ -468,11 +490,13 @@ impl<'a> GraphTraversal<'a> {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
+                Node::ToolInvocation(t) => t.timestamp,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
+                Node::ToolInvocation(t) => t.timestamp,
             };
             time_a.cmp(&time_b)
         });

@@ -10,5 +10,5 @@ pub use edges::{Edge, EdgeType};
 pub use ids::{EdgeId, NodeId, SessionId, TemplateId};
 pub use nodes::{
     ConversationSession, Node, NodeType, PromptMetadata, PromptNode, ResponseMetadata,
-    ResponseNode, TokenUsage,
+    ResponseNode, TokenUsage, ToolInvocation,
 };
