@@ -14,19 +14,19 @@ A professional TypeScript/JavaScript client for the LLM-Memory-Graph gRPC servic
 ## Installation
 
 ```bash
-npm install llm-memory-graph-client
+npm install @llm-dev-ops/llm-memory-graph-client
 ```
 
 Or with yarn:
 
 ```bash
-yarn add llm-memory-graph-client
+yarn add @llm-dev-ops/llm-memory-graph-client
 ```
 
 ## Quick Start
 
 ```typescript
-import { MemoryGraphClient, NodeType } from 'llm-memory-graph-client';
+import { MemoryGraphClient, NodeType } from '@llm-dev-ops/llm-memory-graph-client';
 
 // Create a client
 const client = new MemoryGraphClient({
@@ -379,7 +379,7 @@ const edge = await client.createEdge({
 Get edges connected to a node.
 
 ```typescript
-import { EdgeDirection, EdgeType } from 'llm-memory-graph-client';
+import { EdgeDirection, EdgeType } from '@llm-dev-ops/llm-memory-graph-client';
 
 const edges = await client.getEdges(
   'node-123',
@@ -452,7 +452,7 @@ const prompt = await client.instantiateTemplate({
 Stream real-time events.
 
 ```typescript
-import { EventType } from 'llm-memory-graph-client';
+import { EventType } from '@llm-dev-ops/llm-memory-graph-client';
 
 client.streamEvents({
   sessionId: 'session-123',
@@ -562,7 +562,7 @@ import {
   StreamOptions,
   EventStreamOptions,
   SessionEventStreamOptions
-} from 'llm-memory-graph-client';
+} from '@llm-dev-ops/llm-memory-graph-client';
 ```
 
 ## Error Handling

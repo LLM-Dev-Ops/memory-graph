@@ -1,5 +1,5 @@
 {
-  "name": "llm-memory-graph-client",
+  "name": "@llm-dev-ops/llm-memory-graph-client",
   "version": "0.1.0",
   "description": "TypeScript/JavaScript client for LLM-Memory-Graph gRPC service",
   "main": "dist/index.js",
