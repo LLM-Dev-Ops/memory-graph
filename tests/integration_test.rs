@@ -206,12 +206,14 @@ fn test_conversation_thread_retrieval() {
             llm_memory_graph::types::Node::Response(r) => r.timestamp,
             llm_memory_graph::types::Node::Session(s) => s.created_at,
             llm_memory_graph::types::Node::ToolInvocation(t) => t.timestamp,
+            llm_memory_graph::types::Node::Agent(a) => a.created_at,
         };
         let time_curr = match &thread[i] {
             llm_memory_graph::types::Node::Prompt(p) => p.timestamp,
             llm_memory_graph::types::Node::Response(r) => r.timestamp,
             llm_memory_graph::types::Node::Session(s) => s.created_at,
             llm_memory_graph::types::Node::ToolInvocation(t) => t.timestamp,
+            llm_memory_graph::types::Node::Agent(a) => a.created_at,
         };
         assert!(time_prev <= time_curr);
     }

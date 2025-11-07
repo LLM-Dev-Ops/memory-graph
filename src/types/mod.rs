@@ -7,8 +7,8 @@ mod nodes;
 
 pub use config::Config;
 pub use edges::{Edge, EdgeType};
-pub use ids::{EdgeId, NodeId, SessionId, TemplateId};
+pub use ids::{AgentId, EdgeId, NodeId, SessionId, TemplateId};
 pub use nodes::{
-    ConversationSession, Node, NodeType, PromptMetadata, PromptNode, ResponseMetadata,
-    ResponseNode, TokenUsage, ToolInvocation,
+    AgentConfig, AgentMetrics, AgentNode, AgentStatus, ConversationSession, Node, NodeType,
+    PromptMetadata, PromptNode, ResponseMetadata, ResponseNode, TokenUsage, ToolInvocation,
 };

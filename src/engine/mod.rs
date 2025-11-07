@@ -3,8 +3,8 @@
 use crate::error::{Error, Result};
 use crate::storage::{SledBackend, StorageBackend};
 use crate::types::{
-    Config, ConversationSession, Edge, EdgeType, Node, NodeId, PromptMetadata, PromptNode,
-    ResponseMetadata, ResponseNode, SessionId, TokenUsage, ToolInvocation,
+    AgentNode, Config, ConversationSession, Edge, EdgeType, Node, NodeId, PromptMetadata,
+    PromptNode, ResponseMetadata, ResponseNode, SessionId, TokenUsage, ToolInvocation,
 };
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -455,6 +455,196 @@ impl MemoryGraph {
         }
 
         Ok(tools)
+    }
+
+    /// Create and register an agent in the graph
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// let agent = AgentNode::new(
+    ///     "Researcher".to_string(),
+    ///     "research".to_string(),
+    ///     vec!["web_search".to_string(), "summarize".to_string()],
+    /// );
+    /// let agent_id = graph.add_agent(agent)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn add_agent(&self, agent: AgentNode) -> Result<NodeId> {
+        let node_id = agent.node_id;
+        self.backend.store_node(&Node::Agent(agent))?;
+        Ok(node_id)
+    }
+
+    /// Update an existing agent's data
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The agent doesn't exist
+    /// - Storage update fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+    /// # let node_id = graph.add_agent(agent)?;
+    /// let node = graph.get_node(node_id)?;
+    /// if let llm_memory_graph::types::Node::Agent(mut agent) = node {
+    ///     agent.update_metrics(true, 250, 150);
+    ///     graph.update_agent(agent)?;
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn update_agent(&self, agent: AgentNode) -> Result<()> {
+        self.backend.store_node(&Node::Agent(agent))?;
+        Ok(())
+    }
+
+    /// Assign an agent to handle a prompt
+    ///
+    /// Creates a HandledBy edge from the prompt to the agent.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+    /// # let agent_node_id = graph.add_agent(agent)?;
+    /// graph.assign_agent_to_prompt(prompt_id, agent_node_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn assign_agent_to_prompt(&self, prompt_id: NodeId, agent_node_id: NodeId) -> Result<()> {
+        let edge = Edge::new(prompt_id, agent_node_id, EdgeType::HandledBy);
+        self.backend.store_edge(&edge)?;
+        Ok(())
+    }
+
+    /// Create a transfer from a response to an agent
+    ///
+    /// Creates a TransfersTo edge indicating agent handoff.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode, TokenUsage};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let response_id = graph.add_response(prompt_id, "Test".to_string(), TokenUsage::new(10, 10), None)?;
+    /// # let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+    /// # let agent_node_id = graph.add_agent(agent)?;
+    /// graph.transfer_to_agent(response_id, agent_node_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn transfer_to_agent(&self, response_id: NodeId, agent_node_id: NodeId) -> Result<()> {
+        let edge = Edge::new(response_id, agent_node_id, EdgeType::TransfersTo);
+        self.backend.store_edge(&edge)?;
+        Ok(())
+    }
+
+    /// Get the agent assigned to handle a prompt
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - No agent is assigned
+    /// - Storage retrieval fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+    /// # let agent_id = graph.add_agent(agent)?;
+    /// # graph.assign_agent_to_prompt(prompt_id, agent_id)?;
+    /// let agent = graph.get_prompt_agent(prompt_id)?;
+    /// println!("Handled by: {}", agent.name);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_prompt_agent(&self, prompt_id: NodeId) -> Result<AgentNode> {
+        let edges = self.backend.get_outgoing_edges(&prompt_id)?;
+        for edge in edges {
+            if edge.edge_type == EdgeType::HandledBy {
+                if let Some(node) = self.backend.get_node(&edge.to)? {
+                    if let Node::Agent(agent) = node {
+                        return Ok(agent);
+                    }
+                }
+            }
+        }
+        Err(Error::TraversalError(
+            "No agent assigned to this prompt".to_string(),
+        ))
+    }
+
+    /// Get all agents a response was transferred to
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage retrieval fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, AgentNode, TokenUsage};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
+    /// # let response_id = graph.add_response(prompt_id, "Test".to_string(), TokenUsage::new(10, 10), None)?;
+    /// let agents = graph.get_agent_handoffs(response_id)?;
+    /// for agent in agents {
+    ///     println!("Transferred to: {}", agent.name);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_agent_handoffs(&self, response_id: NodeId) -> Result<Vec<AgentNode>> {
+        let edges = self.backend.get_outgoing_edges(&response_id)?;
+        let mut agents = Vec::new();
+        for edge in edges {
+            if edge.edge_type == EdgeType::TransfersTo {
+                if let Some(node) = self.backend.get_node(&edge.to)? {
+                    if let Node::Agent(agent) = node {
+                        agents.push(agent);
+                    }
+                }
+            }
+        }
+        Ok(agents)
     }
 
     /// Get a node by its ID

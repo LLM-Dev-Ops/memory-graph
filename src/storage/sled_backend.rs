@@ -91,6 +91,10 @@ impl StorageBackend for SledBackend {
                 // Tool invocations are not directly indexed by session
                 // They're accessed via response nodes through edges
             }
+            Node::Agent(_a) => {
+                // Agents are global entities, not tied to specific sessions
+                // They're accessed via agent ID or HandledBy/TransfersTo edges
+            }
         }
 
         self.db.flush()?;

@@ -18,6 +18,8 @@ pub enum EdgeType {
     PartOf,
     /// Links a response to the tools it invoked (Response → ToolInvocation)
     Invokes,
+    /// Links a response to the agent it handed off to (Response → Agent)
+    TransfersTo,
 }
 
 /// An edge connecting two nodes in the graph

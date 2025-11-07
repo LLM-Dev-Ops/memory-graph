@@ -219,6 +219,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Response(r) => r.timestamp,
                     Node::Session(s) => s.created_at,
                     Node::ToolInvocation(t) => t.timestamp,
+                    Node::Agent(a) => a.created_at,
                 };
                 timestamp >= start_time
             });
@@ -231,6 +232,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Response(r) => r.timestamp,
                     Node::Session(s) => s.created_at,
                     Node::ToolInvocation(t) => t.timestamp,
+                    Node::Agent(a) => a.created_at,
                 };
                 timestamp <= end_time
             });
@@ -243,12 +245,14 @@ impl<'a> QueryBuilder<'a> {
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
+                Node::Agent(a) => a.created_at,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
+                Node::Agent(a) => a.created_at,
             };
             time_b.cmp(&time_a)
         });
@@ -476,6 +480,13 @@ impl<'a> GraphTraversal<'a> {
                     ));
                 }
             }
+            Node::Agent(_a) => {
+                // Agents are global entities, find sessions they're involved in
+                // via HandledBy edges
+                return Err(Error::TraversalError(
+                    "Cannot get conversation thread for agent nodes".to_string(),
+                ));
+            }
         };
 
         // Get all nodes in the session
@@ -491,12 +502,14 @@ impl<'a> GraphTraversal<'a> {
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
+                Node::Agent(ag) => ag.created_at,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
                 Node::Response(r) => r.timestamp,
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
+                Node::Agent(ag) => ag.created_at,
             };
             time_a.cmp(&time_b)
         });

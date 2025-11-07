@@ -47,8 +47,9 @@ pub mod types;
 pub use engine::MemoryGraph;
 pub use error::{Error, Result};
 pub use types::{
-    Config, ConversationSession, EdgeType, NodeId, NodeType, PromptMetadata, PromptNode,
-    ResponseMetadata, ResponseNode, SessionId, ToolInvocation, TokenUsage,
+    AgentConfig, AgentId, AgentMetrics, AgentNode, AgentStatus, Config, ConversationSession,
+    EdgeType, NodeId, NodeType, PromptMetadata, PromptNode, ResponseMetadata, ResponseNode,
+    SessionId, ToolInvocation, TokenUsage,
 };
 
 /// Current version of the LLM-Memory-Graph library

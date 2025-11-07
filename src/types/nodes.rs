@@ -1,6 +1,6 @@
 //! Node types for the memory graph
 
-use super::{NodeId, SessionId, TemplateId};
+use super::{AgentId, NodeId, SessionId, TemplateId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -16,6 +16,8 @@ pub enum NodeType {
     Session,
     /// A tool invocation by an LLM
     ToolInvocation,
+    /// An autonomous agent
+    Agent,
 }
 
 /// Generic node wrapper that contains any node type
@@ -29,6 +31,8 @@ pub enum Node {
     Session(ConversationSession),
     /// Tool invocation node
     ToolInvocation(ToolInvocation),
+    /// Agent node
+    Agent(AgentNode),
 }
 
 impl Node {
@@ -40,6 +44,7 @@ impl Node {
             Node::Response(r) => r.id,
             Node::Session(s) => s.node_id,
             Node::ToolInvocation(t) => t.id,
+            Node::Agent(a) => a.node_id,
         }
     }
 
@@ -51,6 +56,7 @@ impl Node {
             Node::Response(_) => NodeType::Response,
             Node::Session(_) => NodeType::Session,
             Node::ToolInvocation(_) => NodeType::ToolInvocation,
+            Node::Agent(_) => NodeType::Agent,
         }
     }
 }
@@ -410,6 +416,270 @@ impl ToolInvocation {
     }
 }
 
+/// Agent status enum
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AgentStatus {
+    /// Agent is active and ready to process tasks
+    Active,
+    /// Agent is idle, waiting for work
+    Idle,
+    /// Agent is currently busy processing a task
+    Busy,
+    /// Agent is paused and not accepting new tasks
+    Paused,
+    /// Agent has been terminated
+    Terminated,
+}
+
+impl Default for AgentStatus {
+    fn default() -> Self {
+        Self::Idle
+    }
+}
+
+impl AgentStatus {
+    /// Check if agent can accept new tasks
+    #[must_use]
+    pub const fn can_accept_tasks(&self) -> bool {
+        matches!(self, Self::Active | Self::Idle)
+    }
+
+    /// Check if agent is processing a task
+    #[must_use]
+    pub const fn is_busy(&self) -> bool {
+        matches!(self, Self::Busy)
+    }
+
+    /// Check if agent is operational
+    #[must_use]
+    pub const fn is_operational(&self) -> bool {
+        !matches!(self, Self::Terminated)
+    }
+}
+
+/// Agent configuration parameters
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentConfig {
+    /// Temperature parameter for generation
+    pub temperature: f32,
+    /// Maximum tokens to generate
+    pub max_tokens: usize,
+    /// Timeout in seconds for agent operations
+    pub timeout_seconds: u64,
+    /// Maximum number of retries for failed operations
+    pub max_retries: u32,
+    /// List of tools/functions available to the agent
+    pub tools_enabled: Vec<String>,
+}
+
+impl Default for AgentConfig {
+    fn default() -> Self {
+        Self {
+            temperature: 0.7,
+            max_tokens: 2000,
+            timeout_seconds: 300,
+            max_retries: 3,
+            tools_enabled: Vec::new(),
+        }
+    }
+}
+
+/// Agent performance metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentMetrics {
+    /// Total number of prompts processed
+    pub total_prompts: u64,
+    /// Number of successfully completed tasks
+    pub successful_tasks: u64,
+    /// Number of failed tasks
+    pub failed_tasks: u64,
+    /// Average latency in milliseconds
+    pub average_latency_ms: f64,
+    /// Total tokens used across all operations
+    pub total_tokens_used: u64,
+}
+
+impl Default for AgentMetrics {
+    fn default() -> Self {
+        Self {
+            total_prompts: 0,
+            successful_tasks: 0,
+            failed_tasks: 0,
+            average_latency_ms: 0.0,
+            total_tokens_used: 0,
+        }
+    }
+}
+
+impl AgentMetrics {
+    /// Calculate success rate as a percentage
+    #[must_use]
+    pub fn success_rate(&self) -> f64 {
+        let total = self.successful_tasks + self.failed_tasks;
+        if total == 0 {
+            0.0
+        } else {
+            (self.successful_tasks as f64 / total as f64) * 100.0
+        }
+    }
+
+    /// Update average latency with new measurement
+    pub fn update_average_latency(&mut self, new_latency_ms: u64, current_count: u64) {
+        if current_count == 0 {
+            self.average_latency_ms = new_latency_ms as f64;
+        } else {
+            self.average_latency_ms = (self.average_latency_ms * current_count as f64
+                + new_latency_ms as f64)
+                / (current_count + 1) as f64;
+        }
+    }
+}
+
+/// An agent node representing an autonomous AI agent
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentNode {
+    /// Unique agent identifier
+    pub id: AgentId,
+    /// Internal node ID for graph storage
+    pub node_id: NodeId,
+    /// Human-readable agent name
+    pub name: String,
+    /// Agent role/specialization (e.g., "researcher", "coder", "reviewer")
+    pub role: String,
+    /// List of agent capabilities
+    pub capabilities: Vec<String>,
+    /// Model used by this agent
+    pub model: String,
+    /// When the agent was created
+    pub created_at: DateTime<Utc>,
+    /// Last activity timestamp
+    pub last_active: DateTime<Utc>,
+    /// Agent status (active, idle, busy, paused, terminated)
+    pub status: AgentStatus,
+    /// Configuration parameters
+    pub config: AgentConfig,
+    /// Performance metrics
+    pub metrics: AgentMetrics,
+    /// Tags for categorization
+    pub tags: Vec<String>,
+}
+
+impl AgentNode {
+    /// Create a new agent
+    #[must_use]
+    pub fn new(name: String, role: String, capabilities: Vec<String>) -> Self {
+        let now = Utc::now();
+        Self {
+            id: AgentId::new(),
+            node_id: NodeId::new(),
+            name,
+            role,
+            capabilities,
+            model: String::from("gpt-4"),
+            created_at: now,
+            last_active: now,
+            status: AgentStatus::Idle,
+            config: AgentConfig::default(),
+            metrics: AgentMetrics::default(),
+            tags: Vec::new(),
+        }
+    }
+
+    /// Create an agent with custom configuration
+    #[must_use]
+    pub fn with_config(
+        name: String,
+        role: String,
+        capabilities: Vec<String>,
+        config: AgentConfig,
+    ) -> Self {
+        let mut agent = Self::new(name, role, capabilities);
+        agent.config = config;
+        agent
+    }
+
+    /// Create an agent with a specific model
+    #[must_use]
+    pub fn with_model(
+        name: String,
+        role: String,
+        capabilities: Vec<String>,
+        model: String,
+    ) -> Self {
+        let mut agent = Self::new(name, role, capabilities);
+        agent.model = model;
+        agent
+    }
+
+    /// Update agent status
+    pub fn set_status(&mut self, status: AgentStatus) {
+        self.status = status;
+        self.last_active = Utc::now();
+    }
+
+    /// Record agent activity
+    pub fn record_activity(&mut self) {
+        self.last_active = Utc::now();
+    }
+
+    /// Update performance metrics
+    pub fn update_metrics(&mut self, success: bool, latency_ms: u64, tokens: u64) {
+        let current_count = self.metrics.total_prompts;
+        self.metrics.total_prompts += 1;
+        if success {
+            self.metrics.successful_tasks += 1;
+        } else {
+            self.metrics.failed_tasks += 1;
+        }
+        self.metrics.update_average_latency(latency_ms, current_count);
+        self.metrics.total_tokens_used += tokens;
+        self.record_activity();
+    }
+
+    /// Add a capability to the agent
+    pub fn add_capability(&mut self, capability: String) {
+        if !self.capabilities.contains(&capability) {
+            self.capabilities.push(capability);
+        }
+    }
+
+    /// Remove a capability from the agent
+    pub fn remove_capability(&mut self, capability: &str) {
+        self.capabilities.retain(|c| c != capability);
+    }
+
+    /// Check if agent has a specific capability
+    #[must_use]
+    pub fn has_capability(&self, capability: &str) -> bool {
+        self.capabilities.contains(&String::from(capability))
+    }
+
+    /// Add a tag to the agent
+    pub fn add_tag(&mut self, tag: String) {
+        if !self.tags.contains(&tag) {
+            self.tags.push(tag);
+        }
+    }
+
+    /// Get agent uptime in seconds
+    #[must_use]
+    pub fn uptime_seconds(&self) -> i64 {
+        (Utc::now() - self.created_at).num_seconds()
+    }
+
+    /// Get time since last activity in seconds
+    #[must_use]
+    pub fn idle_time_seconds(&self) -> i64 {
+        (Utc::now() - self.last_active).num_seconds()
+    }
+
+    /// Check if agent is healthy (active and operational)
+    #[must_use]
+    pub fn is_healthy(&self) -> bool {
+        self.status.is_operational() && self.idle_time_seconds() < 3600 // Not idle for more than 1 hour
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -548,5 +818,233 @@ mod tests {
         let node = Node::ToolInvocation(tool);
 
         assert_eq!(node.node_type(), NodeType::ToolInvocation);
+    }
+
+    // AgentNode tests
+
+    #[test]
+    fn test_agent_creation() {
+        let agent = AgentNode::new(
+            "Researcher".to_string(),
+            "research".to_string(),
+            vec!["web_search".to_string(), "summarize".to_string()],
+        );
+
+        assert_eq!(agent.name, "Researcher");
+        assert_eq!(agent.role, "research");
+        assert_eq!(agent.capabilities.len(), 2);
+        assert_eq!(agent.status, AgentStatus::Idle);
+        assert_eq!(agent.model, "gpt-4");
+        assert_eq!(agent.metrics.total_prompts, 0);
+    }
+
+    #[test]
+    fn test_agent_with_config() {
+        let config = AgentConfig {
+            temperature: 0.5,
+            max_tokens: 1000,
+            timeout_seconds: 60,
+            max_retries: 5,
+            tools_enabled: vec!["calculator".to_string()],
+        };
+
+        let agent = AgentNode::with_config(
+            "Calculator".to_string(),
+            "math".to_string(),
+            vec!["calculate".to_string()],
+            config.clone(),
+        );
+
+        assert_eq!(agent.config.temperature, 0.5);
+        assert_eq!(agent.config.max_tokens, 1000);
+        assert_eq!(agent.config.timeout_seconds, 60);
+        assert_eq!(agent.config.max_retries, 5);
+        assert_eq!(agent.config.tools_enabled.len(), 1);
+    }
+
+    #[test]
+    fn test_agent_with_model() {
+        let agent = AgentNode::with_model(
+            "Claude Agent".to_string(),
+            "assistant".to_string(),
+            vec![],
+            "claude-3-opus".to_string(),
+        );
+
+        assert_eq!(agent.model, "claude-3-opus");
+    }
+
+    #[test]
+    fn test_agent_status_transitions() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        assert_eq!(agent.status, AgentStatus::Idle);
+        assert!(agent.status.can_accept_tasks());
+
+        agent.set_status(AgentStatus::Busy);
+        assert_eq!(agent.status, AgentStatus::Busy);
+        assert!(agent.status.is_busy());
+        assert!(!agent.status.can_accept_tasks());
+
+        agent.set_status(AgentStatus::Active);
+        assert_eq!(agent.status, AgentStatus::Active);
+        assert!(agent.status.can_accept_tasks());
+
+        agent.set_status(AgentStatus::Paused);
+        assert!(!agent.status.can_accept_tasks());
+
+        agent.set_status(AgentStatus::Terminated);
+        assert!(!agent.status.is_operational());
+    }
+
+    #[test]
+    fn test_agent_metrics_update() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        assert_eq!(agent.metrics.total_prompts, 0);
+        assert_eq!(agent.metrics.success_rate(), 0.0);
+
+        agent.update_metrics(true, 100, 50);
+        assert_eq!(agent.metrics.total_prompts, 1);
+        assert_eq!(agent.metrics.successful_tasks, 1);
+        assert_eq!(agent.metrics.failed_tasks, 0);
+        assert_eq!(agent.metrics.average_latency_ms, 100.0);
+        assert_eq!(agent.metrics.total_tokens_used, 50);
+        assert_eq!(agent.metrics.success_rate(), 100.0);
+
+        agent.update_metrics(false, 200, 30);
+        assert_eq!(agent.metrics.total_prompts, 2);
+        assert_eq!(agent.metrics.successful_tasks, 1);
+        assert_eq!(agent.metrics.failed_tasks, 1);
+        assert_eq!(agent.metrics.total_tokens_used, 80);
+        assert_eq!(agent.metrics.success_rate(), 50.0);
+
+        // Average latency should be (100 + 200) / 2 = 150
+        assert_eq!(agent.metrics.average_latency_ms, 150.0);
+    }
+
+    #[test]
+    fn test_agent_capabilities() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        assert!(!agent.has_capability("web_search"));
+
+        agent.add_capability("web_search".to_string());
+        assert!(agent.has_capability("web_search"));
+        assert_eq!(agent.capabilities.len(), 1);
+
+        agent.add_capability("web_search".to_string()); // Duplicate
+        assert_eq!(agent.capabilities.len(), 1); // Should not add duplicate
+
+        agent.add_capability("summarize".to_string());
+        assert_eq!(agent.capabilities.len(), 2);
+
+        agent.remove_capability("web_search");
+        assert!(!agent.has_capability("web_search"));
+        assert_eq!(agent.capabilities.len(), 1);
+    }
+
+    #[test]
+    fn test_agent_tags() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        assert_eq!(agent.tags.len(), 0);
+
+        agent.add_tag("production".to_string());
+        assert_eq!(agent.tags.len(), 1);
+
+        agent.add_tag("production".to_string()); // Duplicate
+        assert_eq!(agent.tags.len(), 1); // Should not add duplicate
+
+        agent.add_tag("critical".to_string());
+        assert_eq!(agent.tags.len(), 2);
+    }
+
+    #[test]
+    fn test_agent_activity_tracking() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        let initial_active = agent.last_active;
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        agent.record_activity();
+        assert!(agent.last_active > initial_active);
+        assert_eq!(agent.idle_time_seconds(), 0);
+    }
+
+    #[test]
+    fn test_agent_uptime() {
+        let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        let uptime = agent.uptime_seconds();
+        assert!(uptime >= 0);
+        assert!(uptime < 5); // Should be very small since just created
+    }
+
+    #[test]
+    fn test_agent_health_check() {
+        let mut agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+
+        agent.set_status(AgentStatus::Active);
+        assert!(agent.is_healthy());
+
+        agent.set_status(AgentStatus::Terminated);
+        assert!(!agent.is_healthy());
+    }
+
+    #[test]
+    fn test_agent_node_type() {
+        let agent = AgentNode::new("Test".to_string(), "test".to_string(), vec![]);
+        let node = Node::Agent(agent);
+
+        assert_eq!(node.node_type(), NodeType::Agent);
+    }
+
+    #[test]
+    fn test_agent_status_helpers() {
+        assert!(AgentStatus::Active.can_accept_tasks());
+        assert!(AgentStatus::Idle.can_accept_tasks());
+        assert!(!AgentStatus::Busy.can_accept_tasks());
+        assert!(!AgentStatus::Paused.can_accept_tasks());
+        assert!(!AgentStatus::Terminated.can_accept_tasks());
+
+        assert!(!AgentStatus::Active.is_busy());
+        assert!(AgentStatus::Busy.is_busy());
+
+        assert!(AgentStatus::Active.is_operational());
+        assert!(AgentStatus::Idle.is_operational());
+        assert!(AgentStatus::Busy.is_operational());
+        assert!(AgentStatus::Paused.is_operational());
+        assert!(!AgentStatus::Terminated.is_operational());
+    }
+
+    #[test]
+    fn test_agent_metrics_success_rate() {
+        let mut metrics = AgentMetrics::default();
+
+        assert_eq!(metrics.success_rate(), 0.0);
+
+        metrics.successful_tasks = 5;
+        metrics.failed_tasks = 5;
+        assert_eq!(metrics.success_rate(), 50.0);
+
+        metrics.successful_tasks = 9;
+        metrics.failed_tasks = 1;
+        assert_eq!(metrics.success_rate(), 90.0);
+
+        metrics.successful_tasks = 0;
+        metrics.failed_tasks = 10;
+        assert_eq!(metrics.success_rate(), 0.0);
+    }
+
+    #[test]
+    fn test_agent_config_defaults() {
+        let config = AgentConfig::default();
+
+        assert_eq!(config.temperature, 0.7);
+        assert_eq!(config.max_tokens, 2000);
+        assert_eq!(config.timeout_seconds, 300);
+        assert_eq!(config.max_retries, 3);
+        assert_eq!(config.tools_enabled.len(), 0);
     }
 }
