@@ -17,7 +17,13 @@
     "prepublishOnly": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 0",
     "format": "prettier --write \"src/**/*.ts\"",
-    "lint": "eslint src --ext .ts"
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit",
+    "watch": "tsc --watch",
+    "validate": "npm run typecheck && npm run lint && npm run format:check",
+    "prepare": "npm run build"
   },
   "keywords": [
     "llm",

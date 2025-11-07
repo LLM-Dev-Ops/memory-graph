@@ -201,7 +201,10 @@ export class MemoryGraphClient {
    * @param offset - Number of sessions to skip
    * @returns Promise with sessions and total count
    */
-  async listSessions(limit: number = 100, offset: number = 0): Promise<{ sessions: Session[]; totalCount: number }> {
+  async listSessions(
+    limit: number = 100,
+    offset: number = 0
+  ): Promise<{ sessions: Session[]; totalCount: number }> {
     const listSessions = promisify(this.client.listSessions.bind(this.client));
     const response = await listSessions({ limit, offset });
 
@@ -303,7 +306,12 @@ export class MemoryGraphClient {
       id: response.id,
       type: response.type,
       createdAt: this.toDate(response.created_at),
-      data: response.prompt || response.response || response.tool_invocation || response.agent || response.template,
+      data:
+        response.prompt ||
+        response.response ||
+        response.tool_invocation ||
+        response.agent ||
+        response.template,
     };
   }
 
