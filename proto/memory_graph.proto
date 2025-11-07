@@ -1,0 +1,370 @@
+syntax = "proto3";
+
+package llm.memory.graph.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// SERVICE DEFINITION
+// ============================================================================
+
+service MemoryGraphService {
+  // Session Management
+  rpc CreateSession(CreateSessionRequest) returns (Session);
+  rpc GetSession(GetSessionRequest) returns (Session);
+  rpc DeleteSession(DeleteSessionRequest) returns (google.protobuf.Empty);
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+
+  // Node Operations
+  rpc CreateNode(CreateNodeRequest) returns (Node);
+  rpc GetNode(GetNodeRequest) returns (Node);
+  rpc UpdateNode(UpdateNodeRequest) returns (Node);
+  rpc DeleteNode(DeleteNodeRequest) returns (google.protobuf.Empty);
+  rpc BatchCreateNodes(BatchCreateNodesRequest) returns (BatchCreateNodesResponse);
+  rpc BatchGetNodes(BatchGetNodesRequest) returns (BatchGetNodesResponse);
+
+  // Edge Operations
+  rpc CreateEdge(CreateEdgeRequest) returns (Edge);
+  rpc GetEdges(GetEdgesRequest) returns (GetEdgesResponse);
+  rpc DeleteEdge(DeleteEdgeRequest) returns (google.protobuf.Empty);
+
+  // Query Operations
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc StreamQuery(QueryRequest) returns (stream Node);
+
+  // Prompt & Response Operations
+  rpc AddPrompt(AddPromptRequest) returns (PromptNode);
+  rpc AddResponse(AddResponseRequest) returns (ResponseNode);
+  rpc AddToolInvocation(AddToolInvocationRequest) returns (ToolInvocationNode);
+
+  // Template Operations
+  rpc CreateTemplate(CreateTemplateRequest) returns (TemplateNode);
+  rpc InstantiateTemplate(InstantiateTemplateRequest) returns (PromptNode);
+
+  // Streaming Operations
+  rpc StreamEvents(StreamEventsRequest) returns (stream Event);
+  rpc SubscribeToSession(SubscribeRequest) returns (stream SessionEvent);
+
+  // Health & Metrics
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
+  rpc GetMetrics(google.protobuf.Empty) returns (MetricsResponse);
+}
+
+// ============================================================================
+// DATA TYPES
+// ============================================================================
+
+message Session {
+  string id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  map<string, string> metadata = 4;
+  bool is_active = 5;
+}
+
+message Node {
+  string id = 1;
+  NodeType type = 2;
+  google.protobuf.Timestamp created_at = 3;
+  oneof node_data {
+    PromptNode prompt = 10;
+    ResponseNode response = 11;
+    ToolInvocationNode tool_invocation = 12;
+    AgentNode agent = 13;
+    TemplateNode template = 14;
+  }
+}
+
+enum NodeType {
+  NODE_TYPE_UNSPECIFIED = 0;
+  NODE_TYPE_SESSION = 1;
+  NODE_TYPE_PROMPT = 2;
+  NODE_TYPE_RESPONSE = 3;
+  NODE_TYPE_TOOL_INVOCATION = 4;
+  NODE_TYPE_AGENT = 5;
+  NODE_TYPE_TEMPLATE = 6;
+}
+
+message PromptNode {
+  string id = 1;
+  string session_id = 2;
+  string content = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  optional PromptMetadata metadata = 5;
+}
+
+message ResponseNode {
+  string id = 1;
+  string prompt_id = 2;
+  string content = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  TokenUsage token_usage = 5;
+  optional ResponseMetadata metadata = 6;
+}
+
+message ToolInvocationNode {
+  string id = 1;
+  string response_id = 2;
+  string tool_name = 3;
+  string parameters = 4;  // JSON
+  string status = 5;
+  optional string result = 6;  // JSON
+  optional string error = 7;
+  int64 duration_ms = 8;
+  int32 retry_count = 9;
+  google.protobuf.Timestamp timestamp = 10;
+  map<string, string> metadata = 11;
+}
+
+message AgentNode {
+  string id = 1;
+  string name = 2;
+  string role = 3;
+  repeated string capabilities = 4;
+  string status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  map<string, string> metadata = 7;
+}
+
+message TemplateNode {
+  string id = 1;
+  string name = 2;
+  string template_text = 3;
+  repeated VariableSpec variables = 4;
+  string version = 5;
+  int64 usage_count = 6;
+  google.protobuf.Timestamp created_at = 7;
+  map<string, string> metadata = 8;
+}
+
+message Edge {
+  string id = 1;
+  string from_node_id = 2;
+  string to_node_id = 3;
+  EdgeType type = 4;
+  google.protobuf.Timestamp created_at = 5;
+  map<string, string> properties = 6;
+}
+
+enum EdgeType {
+  EDGE_TYPE_UNSPECIFIED = 0;
+  EDGE_TYPE_BELONGS_TO = 1;
+  EDGE_TYPE_RESPONDS_TO = 2;
+  EDGE_TYPE_FOLLOWS = 3;
+  EDGE_TYPE_INVOKES = 4;
+  EDGE_TYPE_HANDLED_BY = 5;
+  EDGE_TYPE_INSTANTIATES = 6;
+  EDGE_TYPE_INHERITS = 7;
+  EDGE_TYPE_TRANSFERS_TO = 8;
+  EDGE_TYPE_REFERENCES = 9;
+}
+
+message TokenUsage {
+  int64 prompt_tokens = 1;
+  int64 completion_tokens = 2;
+  int64 total_tokens = 3;
+}
+
+message PromptMetadata {
+  string model = 1;
+  double temperature = 2;
+  optional int32 max_tokens = 3;
+  repeated string tools_available = 4;
+  map<string, string> custom = 5;
+}
+
+message ResponseMetadata {
+  string model = 1;
+  string finish_reason = 2;
+  int64 latency_ms = 3;
+  map<string, string> custom = 4;
+}
+
+message VariableSpec {
+  string name = 1;
+  string type_hint = 2;
+  bool required = 3;
+  optional string default_value = 4;
+  optional string validation_pattern = 5;
+  string description = 6;
+}
+
+// ============================================================================
+// REQUEST/RESPONSE MESSAGES
+// ============================================================================
+
+message CreateSessionRequest {
+  map<string, string> metadata = 1;
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message DeleteSessionRequest {
+  string session_id = 1;
+}
+
+message ListSessionsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListSessionsResponse {
+  repeated Session sessions = 1;
+  int64 total_count = 2;
+}
+
+message CreateNodeRequest {
+  Node node = 1;
+}
+
+message GetNodeRequest {
+  string node_id = 1;
+}
+
+message UpdateNodeRequest {
+  Node node = 1;
+}
+
+message DeleteNodeRequest {
+  string node_id = 1;
+}
+
+message BatchCreateNodesRequest {
+  repeated Node nodes = 1;
+}
+
+message BatchCreateNodesResponse {
+  repeated Node nodes = 1;
+  int32 created_count = 2;
+}
+
+message BatchGetNodesRequest {
+  repeated string node_ids = 1;
+}
+
+message BatchGetNodesResponse {
+  repeated Node nodes = 1;
+}
+
+message CreateEdgeRequest {
+  Edge edge = 1;
+}
+
+message GetEdgesRequest {
+  string node_id = 1;
+  optional EdgeDirection direction = 2;
+  optional EdgeType type = 3;
+}
+
+enum EdgeDirection {
+  EDGE_DIRECTION_UNSPECIFIED = 0;
+  EDGE_DIRECTION_OUTGOING = 1;
+  EDGE_DIRECTION_INCOMING = 2;
+  EDGE_DIRECTION_BOTH = 3;
+}
+
+message GetEdgesResponse {
+  repeated Edge edges = 1;
+}
+
+message DeleteEdgeRequest {
+  string edge_id = 1;
+}
+
+message QueryRequest {
+  optional string session_id = 1;
+  optional NodeType node_type = 2;
+  optional google.protobuf.Timestamp after = 3;
+  optional google.protobuf.Timestamp before = 4;
+  int32 limit = 5;
+  int32 offset = 6;
+  map<string, string> filters = 7;
+}
+
+message QueryResponse {
+  repeated Node nodes = 1;
+  int64 total_count = 2;
+}
+
+message AddPromptRequest {
+  string session_id = 1;
+  string content = 2;
+  optional PromptMetadata metadata = 3;
+}
+
+message AddResponseRequest {
+  string prompt_id = 1;
+  string content = 2;
+  TokenUsage token_usage = 3;
+  optional ResponseMetadata metadata = 4;
+}
+
+message AddToolInvocationRequest {
+  ToolInvocationNode tool_invocation = 1;
+}
+
+message CreateTemplateRequest {
+  TemplateNode template = 1;
+}
+
+message InstantiateTemplateRequest {
+  string template_id = 1;
+  map<string, string> variable_values = 2;
+  string session_id = 3;
+}
+
+message StreamEventsRequest {
+  optional string session_id = 1;
+  repeated EventType event_types = 2;
+}
+
+message Event {
+  string id = 1;
+  EventType type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string payload = 4;  // JSON
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_NODE_CREATED = 1;
+  EVENT_TYPE_NODE_UPDATED = 2;
+  EVENT_TYPE_NODE_DELETED = 3;
+  EVENT_TYPE_EDGE_CREATED = 4;
+  EVENT_TYPE_EDGE_DELETED = 5;
+  EVENT_TYPE_SESSION_CREATED = 6;
+  EVENT_TYPE_SESSION_CLOSED = 7;
+}
+
+message SubscribeRequest {
+  string session_id = 1;
+}
+
+message SessionEvent {
+  Event event = 1;
+  string session_id = 2;
+}
+
+message HealthResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+  string version = 2;
+  int64 uptime_seconds = 3;
+}
+
+message MetricsResponse {
+  int64 total_nodes = 1;
+  int64 total_edges = 2;
+  int64 total_sessions = 3;
+  int64 active_sessions = 4;
+  double avg_write_latency_ms = 5;
+  double avg_read_latency_ms = 6;
+  int64 requests_per_second = 7;
+}

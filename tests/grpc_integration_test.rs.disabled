@@ -1,0 +1,1438 @@
+//! Comprehensive integration tests for gRPC service implementation
+//!
+//! This test suite validates the entire gRPC service stack including:
+//! - Service setup and teardown
+//! - Full CRUD workflows
+//! - Session lifecycle management
+//! - Prompt and response operations
+//! - Node and edge operations
+//! - Query operations
+//! - Error handling and validation
+//! - Concurrent request handling
+//! - Metrics verification
+//!
+//! # Prerequisites
+//!
+//! These tests require:
+//! - protoc (protobuf-compiler) to be installed
+//! - All dependencies resolved (reqwest, tonic, etc.)
+//! - The protobuf definitions compiled successfully
+//!
+//! # Running Tests
+//!
+//! ```bash
+//! # Install protoc first
+//! sudo apt-get install protobuf-compiler  # Ubuntu/Debian
+//! # or
+//! brew install protobuf  # macOS
+//!
+//! # Run the tests
+//! cargo test --test grpc_integration_test
+//! ```
+
+use llm_memory_graph::{
+    engine::AsyncMemoryGraph,
+    grpc::{
+        proto::{
+            memory_graph_service_client::MemoryGraphServiceClient,
+            memory_graph_service_server::{MemoryGraphService, MemoryGraphServiceServer},
+            *,
+        },
+        MemoryGraphServiceImpl, ServiceConfig,
+    },
+    observatory::PrometheusMetrics,
+    types::Config,
+};
+use prometheus::Registry;
+use std::sync::Arc;
+use std::time::Duration;
+use tempfile::tempdir;
+use tokio::time::sleep;
+use tonic::transport::{Channel, Server};
+use tonic::{Request, Response, Status};
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+/// Test server setup helper
+struct TestServer {
+    /// gRPC client for making requests
+    client: MemoryGraphServiceClient<Channel>,
+    /// Server address
+    address: String,
+    /// Shutdown handle
+    shutdown_tx: tokio::sync::oneshot::Sender<()>,
+    /// Server task handle
+    server_handle: tokio::task::JoinHandle<Result<(), tonic::transport::Error>>,
+}
+
+impl TestServer {
+    /// Start a new test gRPC server with an in-memory database
+    async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        // Create temporary database
+        let dir = tempdir()?;
+        let config = Config::new(dir.path());
+        let graph = Arc::new(AsyncMemoryGraph::open(config).await?);
+
+        // Create Prometheus metrics
+        let registry = Registry::new();
+        let metrics = Arc::new(PrometheusMetrics::new(&registry)?);
+
+        // Configure service
+        let service_config = ServiceConfig {
+            host: "127.0.0.1".to_string(),
+            port: 0, // Use random available port
+            max_connections: 100,
+            request_timeout_ms: 30_000,
+            enable_reflection: true,
+            enable_health: true,
+            start_time: std::time::Instant::now(),
+        };
+
+        let service = MemoryGraphServiceImpl::new(graph, Some(metrics), service_config);
+
+        // Find available port
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+        let addr = listener.local_addr()?;
+        let address = format!("http://{}", addr);
+
+        // Create shutdown channel
+        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+
+        // Spawn server
+        let server_handle = tokio::spawn(async move {
+            Server::builder()
+                .add_service(MemoryGraphServiceServer::new(service))
+                .serve_with_incoming_shutdown(
+                    tokio_stream::wrappers::TcpListenerStream::new(listener),
+                    async {
+                        shutdown_rx.await.ok();
+                    },
+                )
+                .await
+        });
+
+        // Wait for server to be ready
+        sleep(Duration::from_millis(100)).await;
+
+        // Create client
+        let client = MemoryGraphServiceClient::connect(address.clone()).await?;
+
+        Ok(Self {
+            client,
+            address,
+            shutdown_tx,
+            server_handle,
+        })
+    }
+
+    /// Gracefully shutdown the test server
+    async fn shutdown(self) {
+        let _ = self.shutdown_tx.send(());
+        let _ = self.server_handle.await;
+    }
+}
+
+/// Generate test metadata
+fn test_metadata() -> std::collections::HashMap<String, String> {
+    let mut metadata = std::collections::HashMap::new();
+    metadata.insert("user".to_string(), "test_user".to_string());
+    metadata.insert("environment".to_string(), "test".to_string());
+    metadata
+}
+
+/// Generate test prompt metadata
+fn test_prompt_metadata() -> PromptMetadata {
+    PromptMetadata {
+        model: "gpt-4".to_string(),
+        temperature: 0.7,
+        max_tokens: Some(500),
+        tools_available: vec!["search".to_string(), "calculator".to_string()],
+        custom: std::collections::HashMap::new(),
+    }
+}
+
+/// Generate test token usage
+fn test_token_usage() -> TokenUsage {
+    TokenUsage {
+        prompt_tokens: 15,
+        completion_tokens: 25,
+        total_tokens: 40,
+    }
+}
+
+/// Generate test response metadata
+fn test_response_metadata() -> ResponseMetadata {
+    ResponseMetadata {
+        model: "gpt-4".to_string(),
+        finish_reason: "stop".to_string(),
+        latency_ms: 250,
+        custom: std::collections::HashMap::new(),
+    }
+}
+
+// ============================================================================
+// Health & Metrics Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_health_check() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(());
+    let response = client.health(request).await.expect("Health check failed");
+
+    let health = response.into_inner();
+    assert_eq!(
+        health.status,
+        health_response::ServingStatus::Serving as i32
+    );
+    assert!(!health.version.is_empty());
+    assert!(health.uptime_seconds >= 0);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_metrics() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(());
+    let response = client.get_metrics(request).await.expect("Get metrics failed");
+
+    let metrics = response.into_inner();
+    assert_eq!(metrics.total_nodes, 0);
+    assert_eq!(metrics.total_edges, 0);
+    assert_eq!(metrics.total_sessions, 0);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Session Management Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_create_session_basic() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(CreateSessionRequest {
+        metadata: std::collections::HashMap::new(),
+    });
+
+    let response = client
+        .create_session(request)
+        .await
+        .expect("Create session failed");
+
+    let session = response.into_inner();
+    assert!(!session.id.is_empty());
+    assert!(session.created_at.is_some());
+    assert!(session.updated_at.is_some());
+    assert!(session.is_active);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_create_session_with_metadata() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let metadata = test_metadata();
+    let request = Request::new(CreateSessionRequest {
+        metadata: metadata.clone(),
+    });
+
+    let response = client
+        .create_session(request)
+        .await
+        .expect("Create session failed");
+
+    let session = response.into_inner();
+    assert_eq!(session.metadata.get("user"), Some(&"test_user".to_string()));
+    assert_eq!(
+        session.metadata.get("environment"),
+        Some(&"test".to_string())
+    );
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_session() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create a session first
+    let create_request = Request::new(CreateSessionRequest {
+        metadata: test_metadata(),
+    });
+    let create_response = client
+        .create_session(create_request)
+        .await
+        .expect("Create session failed");
+    let created_session = create_response.into_inner();
+
+    // Get the session
+    let get_request = Request::new(GetSessionRequest {
+        session_id: created_session.id.clone(),
+    });
+    let get_response = client
+        .get_session(get_request)
+        .await
+        .expect("Get session failed");
+
+    let retrieved_session = get_response.into_inner();
+    assert_eq!(retrieved_session.id, created_session.id);
+    assert_eq!(retrieved_session.metadata, created_session.metadata);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_session_not_found() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(GetSessionRequest {
+        session_id: "nonexistent-session-id".to_string(),
+    });
+
+    let response = client.get_session(request).await;
+    assert!(response.is_err());
+    let status = response.unwrap_err();
+    assert_eq!(status.code(), tonic::Code::InvalidArgument);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_delete_session_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create a session
+    let create_request = Request::new(CreateSessionRequest {
+        metadata: std::collections::HashMap::new(),
+    });
+    let session = client
+        .create_session(create_request)
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Try to delete (should be unimplemented)
+    let delete_request = Request::new(DeleteSessionRequest {
+        session_id: session.id,
+    });
+
+    let response = client.delete_session(delete_request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_list_sessions_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(ListSessionsRequest {
+        limit: 10,
+        offset: 0,
+    });
+
+    let response = client.list_sessions(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Prompt & Response Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_add_prompt_basic() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompt
+    let request = Request::new(AddPromptRequest {
+        session_id: session.id,
+        content: "What is the capital of France?".to_string(),
+        metadata: None,
+    });
+
+    let response = client.add_prompt(request).await.expect("Add prompt failed");
+    let prompt = response.into_inner();
+
+    assert!(!prompt.id.is_empty());
+    assert_eq!(prompt.content, "What is the capital of France?");
+    assert!(prompt.timestamp.is_some());
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_add_prompt_with_metadata() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompt with metadata
+    let request = Request::new(AddPromptRequest {
+        session_id: session.id,
+        content: "Explain quantum computing".to_string(),
+        metadata: Some(test_prompt_metadata()),
+    });
+
+    let response = client.add_prompt(request).await.expect("Add prompt failed");
+    let prompt = response.into_inner();
+
+    assert!(!prompt.id.is_empty());
+    assert!(prompt.metadata.is_some());
+    let metadata = prompt.metadata.unwrap();
+    assert_eq!(metadata.model, "gpt-4");
+    assert_eq!(metadata.temperature, 0.7);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_add_response() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompt
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "What is 2+2?".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Add response
+    let request = Request::new(AddResponseRequest {
+        prompt_id: prompt.id,
+        content: "The answer is 4.".to_string(),
+        token_usage: Some(test_token_usage()),
+        metadata: Some(test_response_metadata()),
+    });
+
+    let response = client
+        .add_response(request)
+        .await
+        .expect("Add response failed");
+    let response_node = response.into_inner();
+
+    assert!(!response_node.id.is_empty());
+    assert_eq!(response_node.content, "The answer is 4.");
+    assert!(response_node.token_usage.is_some());
+
+    let token_usage = response_node.token_usage.unwrap();
+    assert_eq!(token_usage.prompt_tokens, 15);
+    assert_eq!(token_usage.completion_tokens, 25);
+    assert_eq!(token_usage.total_tokens, 40);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_add_response_missing_token_usage() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Try to add response without token_usage
+    let request = Request::new(AddResponseRequest {
+        prompt_id: prompt.id,
+        content: "Response".to_string(),
+        token_usage: None,
+        metadata: None,
+    });
+
+    let response = client.add_response(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::InvalidArgument);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_full_conversation_workflow() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // 1. Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: test_metadata(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // 2. Add first prompt
+    let prompt1 = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "What is machine learning?".to_string(),
+            metadata: Some(test_prompt_metadata()),
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // 3. Add first response
+    let response1 = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt1.id.clone(),
+            content: "Machine learning is a subset of AI...".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: Some(test_response_metadata()),
+        }))
+        .await
+        .expect("Add response failed")
+        .into_inner();
+
+    // 4. Add second prompt
+    let prompt2 = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "Can you give me an example?".to_string(),
+            metadata: Some(test_prompt_metadata()),
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // 5. Add second response
+    let response2 = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt2.id.clone(),
+            content: "Sure! Image recognition is an example...".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: Some(test_response_metadata()),
+        }))
+        .await
+        .expect("Add response failed")
+        .into_inner();
+
+    // Verify all components exist
+    assert!(!prompt1.id.is_empty());
+    assert!(!response1.id.is_empty());
+    assert!(!prompt2.id.is_empty());
+    assert!(!response2.id.is_empty());
+
+    // Verify metrics were updated
+    let metrics = client
+        .get_metrics(Request::new(()))
+        .await
+        .expect("Get metrics failed")
+        .into_inner();
+
+    assert!(metrics.total_nodes >= 5); // session + 2 prompts + 2 responses
+    assert!(metrics.total_sessions >= 1);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Node Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_get_node() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test prompt".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Get the node
+    let request = Request::new(GetNodeRequest {
+        node_id: prompt.id.clone(),
+    });
+
+    let response = client.get_node(request).await.expect("Get node failed");
+    let node = response.into_inner();
+
+    assert_eq!(node.id, prompt.id);
+    assert_eq!(node.r#type, NodeType::NodeTypePrompt as i32);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_node_not_found() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(GetNodeRequest {
+        node_id: "nonexistent-node-id".to_string(),
+    });
+
+    let response = client.get_node(request).await;
+    assert!(response.is_err());
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_batch_get_nodes() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Create multiple prompts
+    let prompt1 = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "Prompt 1".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    let prompt2 = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "Prompt 2".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Batch get nodes
+    let request = Request::new(BatchGetNodesRequest {
+        node_ids: vec![prompt1.id.clone(), prompt2.id.clone()],
+    });
+
+    let response = client
+        .batch_get_nodes(request)
+        .await
+        .expect("Batch get nodes failed");
+    let batch_response = response.into_inner();
+
+    assert_eq!(batch_response.nodes.len(), 2);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_create_node_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(CreateNodeRequest { node: None });
+
+    let response = client.create_node(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_update_node_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(UpdateNodeRequest { node: None });
+
+    let response = client.update_node(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_delete_node_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(DeleteNodeRequest {
+        node_id: "test".to_string(),
+    });
+
+    let response = client.delete_node(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Edge Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_get_edges_outgoing() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt with response
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    let _response = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt.id.clone(),
+            content: "Answer".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: None,
+        }))
+        .await
+        .expect("Add response failed");
+
+    // Get outgoing edges from prompt
+    let request = Request::new(GetEdgesRequest {
+        node_id: prompt.id,
+        direction: Some(EdgeDirection::EdgeDirectionOutgoing as i32),
+        r#type: None,
+    });
+
+    let response = client.get_edges(request).await.expect("Get edges failed");
+    let edges = response.into_inner();
+
+    // Should have at least one outgoing edge (to session or response)
+    assert!(!edges.edges.is_empty());
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_edges_incoming() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt with response
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    let response = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt.id.clone(),
+            content: "Answer".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: None,
+        }))
+        .await
+        .expect("Add response failed")
+        .into_inner();
+
+    // Get incoming edges to response
+    let request = Request::new(GetEdgesRequest {
+        node_id: response.id,
+        direction: Some(EdgeDirection::EdgeDirectionIncoming as i32),
+        r#type: None,
+    });
+
+    let edges_response = client.get_edges(request).await.expect("Get edges failed");
+    let edges = edges_response.into_inner();
+
+    // Response should have incoming edge from prompt
+    assert!(!edges.edges.is_empty());
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_get_edges_both_directions() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Get both incoming and outgoing edges
+    let request = Request::new(GetEdgesRequest {
+        node_id: prompt.id,
+        direction: Some(EdgeDirection::EdgeDirectionBoth as i32),
+        r#type: None,
+    });
+
+    let response = client.get_edges(request).await.expect("Get edges failed");
+    let edges = response.into_inner();
+
+    // Should have edges in both directions
+    assert!(!edges.edges.is_empty());
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_create_edge_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(CreateEdgeRequest { edge: None });
+
+    let response = client.create_edge(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_delete_edge_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(DeleteEdgeRequest {
+        edge_id: "test".to_string(),
+    });
+
+    let response = client.delete_edge(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Query Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_query_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(QueryRequest {
+        session_id: None,
+        node_type: None,
+        after: None,
+        before: None,
+        limit: 10,
+        offset: 0,
+        filters: std::collections::HashMap::new(),
+    });
+
+    let response = client.query(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_stream_query_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(QueryRequest {
+        session_id: None,
+        node_type: None,
+        after: None,
+        before: None,
+        limit: 10,
+        offset: 0,
+        filters: std::collections::HashMap::new(),
+    });
+
+    let response = client.stream_query(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Template Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_create_template_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(CreateTemplateRequest { template: None });
+
+    let response = client.create_template(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_instantiate_template_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(InstantiateTemplateRequest {
+        template_id: "test".to_string(),
+        variable_values: std::collections::HashMap::new(),
+        session_id: "test".to_string(),
+    });
+
+    let response = client.instantiate_template(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Tool Invocation Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_add_tool_invocation_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(AddToolInvocationRequest {
+        tool_invocation: None,
+    });
+
+    let response = client.add_tool_invocation(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Streaming Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_stream_events_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(StreamEventsRequest {
+        session_id: None,
+        event_types: vec![],
+    });
+
+    let response = client.stream_events(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_subscribe_to_session_unimplemented() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(SubscribeRequest {
+        session_id: "test".to_string(),
+    });
+
+    let response = client.subscribe_to_session(request).await;
+    assert!(response.is_err());
+    assert_eq!(response.unwrap_err().code(), tonic::Code::Unimplemented);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Error Handling Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_error_invalid_session_id() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(AddPromptRequest {
+        session_id: "invalid-session-id".to_string(),
+        content: "Test".to_string(),
+        metadata: None,
+    });
+
+    let response = client.add_prompt(request).await;
+    assert!(response.is_err());
+    let status = response.unwrap_err();
+    // Should be InvalidArgument or NotFound
+    assert!(
+        status.code() == tonic::Code::InvalidArgument
+            || status.code() == tonic::Code::NotFound
+    );
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_error_invalid_prompt_id() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    let request = Request::new(AddResponseRequest {
+        prompt_id: "invalid-prompt-id".to_string(),
+        content: "Test".to_string(),
+        token_usage: Some(test_token_usage()),
+        metadata: None,
+    });
+
+    let response = client.add_response(request).await;
+    assert!(response.is_err());
+    let status = response.unwrap_err();
+    assert!(
+        status.code() == tonic::Code::InvalidArgument
+            || status.code() == tonic::Code::NotFound
+    );
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Concurrent Operations Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_concurrent_session_creation() {
+    let server = TestServer::new().await.expect("Failed to start server");
+
+    // Create multiple sessions concurrently
+    let handles: Vec<_> = (0..10)
+        .map(|i| {
+            let mut client = server.client.clone();
+            tokio::spawn(async move {
+                let mut metadata = std::collections::HashMap::new();
+                metadata.insert("index".to_string(), i.to_string());
+
+                let request = Request::new(CreateSessionRequest { metadata });
+                client.create_session(request).await
+            })
+        })
+        .collect();
+
+    // Wait for all sessions to be created
+    let mut session_ids = Vec::new();
+    for handle in handles {
+        let response = handle.await.expect("Task failed").expect("Request failed");
+        session_ids.push(response.into_inner().id);
+    }
+
+    // Verify all sessions have unique IDs
+    assert_eq!(session_ids.len(), 10);
+    let unique_ids: std::collections::HashSet<_> = session_ids.iter().collect();
+    assert_eq!(unique_ids.len(), 10);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_concurrent_prompt_creation() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create a session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompts concurrently
+    let handles: Vec<_> = (0..10)
+        .map(|i| {
+            let mut client = server.client.clone();
+            let session_id = session.id.clone();
+            tokio::spawn(async move {
+                let request = Request::new(AddPromptRequest {
+                    session_id,
+                    content: format!("Concurrent prompt {}", i),
+                    metadata: None,
+                });
+                client.add_prompt(request).await
+            })
+        })
+        .collect();
+
+    // Wait for all prompts to be created
+    let mut prompt_ids = Vec::new();
+    for handle in handles {
+        let response = handle.await.expect("Task failed").expect("Request failed");
+        prompt_ids.push(response.into_inner().id);
+    }
+
+    // Verify all prompts have unique IDs
+    assert_eq!(prompt_ids.len(), 10);
+    let unique_ids: std::collections::HashSet<_> = prompt_ids.iter().collect();
+    assert_eq!(unique_ids.len(), 10);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_concurrent_read_operations() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session and prompt
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "Test prompt".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Read concurrently
+    let handles: Vec<_> = (0..20)
+        .map(|_| {
+            let mut client = server.client.clone();
+            let prompt_id = prompt.id.clone();
+            tokio::spawn(async move {
+                let request = Request::new(GetNodeRequest {
+                    node_id: prompt_id,
+                });
+                client.get_node(request).await
+            })
+        })
+        .collect();
+
+    // All reads should succeed
+    for handle in handles {
+        let response = handle.await.expect("Task failed");
+        assert!(response.is_ok());
+    }
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Data Integrity Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_prompt_response_relationship_integrity() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompt
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id.clone(),
+            content: "What is Rust?".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Add response
+    let response = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt.id.clone(),
+            content: "Rust is a systems programming language.".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: None,
+        }))
+        .await
+        .expect("Add response failed")
+        .into_inner();
+
+    // Verify relationship: response.prompt_id should equal prompt.id
+    assert_eq!(response.prompt_id, prompt.id);
+
+    // Verify session relationship: prompt.session_id should equal session.id
+    assert_eq!(prompt.session_id, session.id);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_metrics_accuracy_after_operations() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Get initial metrics
+    let initial_metrics = client
+        .get_metrics(Request::new(()))
+        .await
+        .expect("Get metrics failed")
+        .into_inner();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Add prompt
+    let prompt = client
+        .add_prompt(Request::new(AddPromptRequest {
+            session_id: session.id,
+            content: "Test".to_string(),
+            metadata: None,
+        }))
+        .await
+        .expect("Add prompt failed")
+        .into_inner();
+
+    // Add response
+    let _response = client
+        .add_response(Request::new(AddResponseRequest {
+            prompt_id: prompt.id,
+            content: "Answer".to_string(),
+            token_usage: Some(test_token_usage()),
+            metadata: None,
+        }))
+        .await
+        .expect("Add response failed");
+
+    // Get updated metrics
+    let updated_metrics = client
+        .get_metrics(Request::new(()))
+        .await
+        .expect("Get metrics failed")
+        .into_inner();
+
+    // Verify metrics increased
+    assert!(updated_metrics.total_nodes > initial_metrics.total_nodes);
+    assert!(updated_metrics.total_sessions >= initial_metrics.total_sessions + 1);
+
+    server.shutdown().await;
+}
+
+// ============================================================================
+// Performance Tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_batch_operations_performance() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Create session
+    let session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed")
+        .into_inner();
+
+    // Create 50 prompts
+    let start = std::time::Instant::now();
+    let mut prompt_ids = Vec::new();
+
+    for i in 0..50 {
+        let prompt = client
+            .add_prompt(Request::new(AddPromptRequest {
+                session_id: session.id.clone(),
+                content: format!("Prompt {}", i),
+                metadata: None,
+            }))
+            .await
+            .expect("Add prompt failed")
+            .into_inner();
+        prompt_ids.push(prompt.id);
+    }
+
+    let duration = start.elapsed();
+    println!("Created 50 prompts in {:?}", duration);
+
+    // Batch get all prompts
+    let batch_start = std::time::Instant::now();
+    let batch_response = client
+        .batch_get_nodes(Request::new(BatchGetNodesRequest {
+            node_ids: prompt_ids.clone(),
+        }))
+        .await
+        .expect("Batch get failed")
+        .into_inner();
+
+    let batch_duration = batch_start.elapsed();
+    println!("Batch retrieved {} nodes in {:?}", batch_response.nodes.len(), batch_duration);
+
+    assert_eq!(batch_response.nodes.len(), 50);
+
+    // Batch should be faster than individual gets for large numbers
+    assert!(batch_duration < duration);
+
+    server.shutdown().await;
+}
+
+#[tokio::test]
+async fn test_response_time_within_limits() {
+    let server = TestServer::new().await.expect("Failed to start server");
+    let mut client = server.client.clone();
+
+    // Health check should be very fast
+    let start = std::time::Instant::now();
+    let _response = client
+        .health(Request::new(()))
+        .await
+        .expect("Health check failed");
+    let duration = start.elapsed();
+
+    // Health check should complete in less than 100ms
+    assert!(duration < Duration::from_millis(100));
+
+    // Session creation should be reasonably fast
+    let start = std::time::Instant::now();
+    let _session = client
+        .create_session(Request::new(CreateSessionRequest {
+            metadata: std::collections::HashMap::new(),
+        }))
+        .await
+        .expect("Create session failed");
+    let duration = start.elapsed();
+
+    // Session creation should complete in less than 500ms
+    assert!(duration < Duration::from_millis(500));
+
+    server.shutdown().await;
+}

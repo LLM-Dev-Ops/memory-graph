@@ -1,0 +1,23 @@
+# Grafana Dashboards Configuration
+# Provisioning file for automatic dashboard loading
+
+apiVersion: 1
+
+providers:
+  # ============================================================================
+  # LLM Memory Graph Dashboards
+  # ============================================================================
+  - name: 'LLM Memory Graph'
+    orgId: 1
+    folder: 'LLM Systems'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
+
+  # Dashboard files located at:
+  # - /var/lib/grafana/dashboards/memory-graph-overview.json
+  # Additional dashboards can be added to the grafana/ directory

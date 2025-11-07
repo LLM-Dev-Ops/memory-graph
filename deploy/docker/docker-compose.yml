@@ -1,0 +1,181 @@
+version: '3.8'
+
+# LLM-Memory-Graph Complete Production Stack
+# Includes: gRPC Server, Prometheus, and Grafana
+
+services:
+  # ============================================================================
+  # LLM Memory Graph gRPC Service
+  # ============================================================================
+  memory-graph:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: llm-memory-graph
+    hostname: memory-graph
+    restart: unless-stopped
+
+    ports:
+      - "${GRPC_PORT:-50051}:50051"    # gRPC service
+      - "${METRICS_PORT:-9090}:9090"   # Prometheus metrics
+
+    volumes:
+      - memory-graph-data:/data
+      - ./plugins:/plugins:ro
+
+    environment:
+      # Core configuration
+      - DB_PATH=/data
+      - GRPC_HOST=0.0.0.0
+      - GRPC_PORT=50051
+      - METRICS_PORT=9090
+
+      # Logging
+      - RUST_LOG=${RUST_LOG:-info}
+      - RUST_BACKTRACE=${RUST_BACKTRACE:-1}
+
+      # Plugin system
+      - PLUGIN_DIRS=/plugins
+
+      # LLM-Registry integration (optional)
+      - REGISTRY_URL=${REGISTRY_URL:-http://llm-registry:8080}
+      - REGISTRY_API_KEY=${REGISTRY_API_KEY:-}
+
+      # Data-Vault integration (optional)
+      - VAULT_URL=${VAULT_URL:-http://data-vault:9000}
+      - VAULT_API_KEY=${VAULT_API_KEY:-}
+
+    networks:
+      - llm-network
+
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=:50051"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ============================================================================
+  # Prometheus - Metrics Collection
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: llm-memory-graph-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+
+    ports:
+      - "${PROMETHEUS_PORT:-9091}:9090"
+
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-30d}'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+    networks:
+      - llm-network
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    depends_on:
+      memory-graph:
+        condition: service_healthy
+
+  # ============================================================================
+  # Grafana - Visualization & Dashboards
+  # ============================================================================
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: llm-memory-graph-grafana
+    hostname: grafana
+    restart: unless-stopped
+
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ../../grafana:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+    environment:
+      # Admin credentials
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+
+      # Security settings
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+
+      # Server settings
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+
+      # Dashboard settings
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/memory-graph-overview.json
+
+      # Performance
+      - GF_DATABASE_WAL=true
+
+    networks:
+      - llm-network
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+# ============================================================================
+# Volumes - Persistent Data Storage
+# ============================================================================
+volumes:
+  memory-graph-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:-./data}
+
+  prometheus-data:
+    driver: local
+
+  grafana-data:
+    driver: local
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  llm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

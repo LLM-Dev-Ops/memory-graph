@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: llm-memory-graph
+  labels:
+    name: llm-memory-graph
+    environment: production
+    managed-by: kubernetes
+  annotations:
+    description: "LLM-Memory-Graph gRPC service namespace"

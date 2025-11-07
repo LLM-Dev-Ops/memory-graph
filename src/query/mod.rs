@@ -1,5 +1,9 @@
 //! Query interface for graph traversal and filtering
 
+pub mod async_query;
+
+pub use async_query::AsyncQueryBuilder;
+
 use crate::error::{Error, Result};
 use crate::types::{EdgeType, Node, NodeId, NodeType, SessionId};
 use chrono::{DateTime, Utc};
@@ -220,6 +224,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Session(s) => s.created_at,
                     Node::ToolInvocation(t) => t.timestamp,
                     Node::Agent(a) => a.created_at,
+                    Node::Template(t) => t.created_at,
                 };
                 timestamp >= start_time
             });
@@ -233,6 +238,7 @@ impl<'a> QueryBuilder<'a> {
                     Node::Session(s) => s.created_at,
                     Node::ToolInvocation(t) => t.timestamp,
                     Node::Agent(a) => a.created_at,
+                    Node::Template(t) => t.created_at,
                 };
                 timestamp <= end_time
             });
@@ -246,6 +252,7 @@ impl<'a> QueryBuilder<'a> {
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
                 Node::Agent(a) => a.created_at,
+                Node::Template(t) => t.created_at,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
@@ -253,6 +260,7 @@ impl<'a> QueryBuilder<'a> {
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
                 Node::Agent(a) => a.created_at,
+                Node::Template(t) => t.created_at,
             };
             time_b.cmp(&time_a)
         });
@@ -487,6 +495,12 @@ impl<'a> GraphTraversal<'a> {
                     "Cannot get conversation thread for agent nodes".to_string(),
                 ));
             }
+            Node::Template(_t) => {
+                // Templates are global entities, not part of conversations
+                return Err(Error::TraversalError(
+                    "Cannot get conversation thread for template nodes".to_string(),
+                ));
+            }
         };
 
         // Get all nodes in the session
@@ -503,6 +517,7 @@ impl<'a> GraphTraversal<'a> {
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
                 Node::Agent(ag) => ag.created_at,
+                Node::Template(t) => t.created_at,
             };
             let time_b = match b {
                 Node::Prompt(p) => p.timestamp,
@@ -510,6 +525,7 @@ impl<'a> GraphTraversal<'a> {
                 Node::Session(s) => s.created_at,
                 Node::ToolInvocation(t) => t.timestamp,
                 Node::Agent(ag) => ag.created_at,
+                Node::Template(t) => t.created_at,
             };
             time_a.cmp(&time_b)
         });

@@ -4,6 +4,7 @@ use super::{AgentId, NodeId, SessionId, TemplateId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 /// Enum representing different node types in the graph
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,6 +19,8 @@ pub enum NodeType {
     ToolInvocation,
     /// An autonomous agent
     Agent,
+    /// A versioned prompt template
+    Template,
 }
 
 /// Generic node wrapper that contains any node type
@@ -33,6 +36,8 @@ pub enum Node {
     ToolInvocation(ToolInvocation),
     /// Agent node
     Agent(AgentNode),
+    /// Template node
+    Template(PromptTemplate),
 }
 
 impl Node {
@@ -45,6 +50,7 @@ impl Node {
             Node::Session(s) => s.node_id,
             Node::ToolInvocation(t) => t.id,
             Node::Agent(a) => a.node_id,
+            Node::Template(t) => t.node_id,
         }
     }
 
@@ -57,6 +63,7 @@ impl Node {
             Node::Session(_) => NodeType::Session,
             Node::ToolInvocation(_) => NodeType::ToolInvocation,
             Node::Agent(_) => NodeType::Agent,
+            Node::Template(_) => NodeType::Template,
         }
     }
 }
@@ -680,6 +687,319 @@ impl AgentNode {
     }
 }
 
+/// Semantic version for template versioning
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct Version {
+    /// Major version (breaking changes)
+    pub major: u16,
+    /// Minor version (new features, backwards compatible)
+    pub minor: u16,
+    /// Patch version (bug fixes)
+    pub patch: u16,
+}
+
+impl Version {
+    /// Create a new version
+    #[must_use]
+    pub const fn new(major: u16, minor: u16, patch: u16) -> Self {
+        Self {
+            major,
+            minor,
+            patch,
+        }
+    }
+
+    /// Bump major version (resets minor and patch to 0)
+    pub fn bump_major(&mut self) {
+        self.major += 1;
+        self.minor = 0;
+        self.patch = 0;
+    }
+
+    /// Bump minor version (resets patch to 0)
+    pub fn bump_minor(&mut self) {
+        self.minor += 1;
+        self.patch = 0;
+    }
+
+    /// Bump patch version
+    pub fn bump_patch(&mut self) {
+        self.patch += 1;
+    }
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Self::new(1, 0, 0)
+    }
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+impl std::str::FromStr for Version {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('.').collect();
+        if parts.len() != 3 {
+            return Err(format!("Invalid version format: {}", s));
+        }
+
+        let major = parts[0]
+            .parse::<u16>()
+            .map_err(|_| format!("Invalid major version: {}", parts[0]))?;
+        let minor = parts[1]
+            .parse::<u16>()
+            .map_err(|_| format!("Invalid minor version: {}", parts[1]))?;
+        let patch = parts[2]
+            .parse::<u16>()
+            .map_err(|_| format!("Invalid patch version: {}", parts[2]))?;
+
+        Ok(Self::new(major, minor, patch))
+    }
+}
+
+/// Version bump level
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VersionLevel {
+    /// Major version bump (breaking changes)
+    Major,
+    /// Minor version bump (new features)
+    Minor,
+    /// Patch version bump (bug fixes)
+    Patch,
+}
+
+/// Variable specification for template variables
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VariableSpec {
+    /// Variable name (e.g., "user_query")
+    pub name: String,
+    /// Type hint (e.g., "string", "number", "array")
+    pub type_hint: String,
+    /// Whether the variable is required
+    pub required: bool,
+    /// Default value if not provided
+    pub default: Option<String>,
+    /// Validation regex pattern
+    pub validation_pattern: Option<String>,
+    /// Human-readable description
+    pub description: String,
+}
+
+impl VariableSpec {
+    /// Create a new variable specification
+    #[must_use]
+    pub fn new(name: String, type_hint: String, required: bool, description: String) -> Self {
+        Self {
+            name,
+            type_hint,
+            required,
+            default: None,
+            validation_pattern: None,
+            description,
+        }
+    }
+
+    /// Create a variable spec with a default value
+    #[must_use]
+    pub fn with_default(mut self, default: String) -> Self {
+        self.default = Some(default);
+        self
+    }
+
+    /// Create a variable spec with validation pattern
+    #[must_use]
+    pub fn with_validation(mut self, pattern: String) -> Self {
+        self.validation_pattern = Some(pattern);
+        self
+    }
+
+    /// Validate a value against this spec
+    pub fn validate(&self, value: &Option<String>) -> Result<(), String> {
+        // Check if required
+        if self.required && value.is_none() {
+            return Err(format!("Required variable '{}' is missing", self.name));
+        }
+
+        // If value is present, validate pattern
+        if let Some(val) = value {
+            if let Some(ref pattern) = self.validation_pattern {
+                let re = regex::Regex::new(pattern)
+                    .map_err(|e| format!("Invalid regex pattern: {}", e))?;
+                if !re.is_match(val) {
+                    return Err(format!(
+                        "Variable '{}' value '{}' does not match pattern '{}'",
+                        self.name, val, pattern
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+/// A prompt template node for reusable prompts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PromptTemplate {
+    /// Unique template identifier
+    pub id: TemplateId,
+    /// Internal node ID for graph storage
+    pub node_id: NodeId,
+    /// Semantic version
+    pub version: Version,
+    /// Human-readable template name
+    pub name: String,
+    /// Template description
+    pub description: String,
+    /// Template content with {{variables}}
+    pub template: String,
+    /// Variable specifications
+    pub variables: Vec<VariableSpec>,
+    /// Parent template ID (for inheritance)
+    pub parent_id: Option<TemplateId>,
+    /// When the template was created
+    pub created_at: DateTime<Utc>,
+    /// Last modification timestamp
+    pub updated_at: DateTime<Utc>,
+    /// Template author
+    pub author: String,
+    /// Usage count
+    pub usage_count: u64,
+    /// Tags for categorization
+    pub tags: Vec<String>,
+    /// Additional metadata
+    pub metadata: HashMap<String, String>,
+}
+
+impl PromptTemplate {
+    /// Create a new template
+    #[must_use]
+    pub fn new(name: String, template: String, variables: Vec<VariableSpec>) -> Self {
+        let now = Utc::now();
+        Self {
+            id: TemplateId::new(),
+            node_id: NodeId::new(),
+            version: Version::default(),
+            name,
+            description: String::new(),
+            template,
+            variables,
+            parent_id: None,
+            created_at: now,
+            updated_at: now,
+            author: String::from("unknown"),
+            usage_count: 0,
+            tags: Vec::new(),
+            metadata: HashMap::new(),
+        }
+    }
+
+    /// Create template from parent (inheritance)
+    #[must_use]
+    pub fn from_parent(
+        parent_id: TemplateId,
+        name: String,
+        template: String,
+        variables: Vec<VariableSpec>,
+    ) -> Self {
+        let mut tmpl = Self::new(name, template, variables);
+        tmpl.parent_id = Some(parent_id);
+        tmpl
+    }
+
+    /// Set template description
+    #[must_use]
+    pub fn with_description(mut self, description: String) -> Self {
+        self.description = description;
+        self
+    }
+
+    /// Set template author
+    #[must_use]
+    pub fn with_author(mut self, author: String) -> Self {
+        self.author = author;
+        self
+    }
+
+    /// Instantiate template with variable values
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Required variables are missing
+    /// - Variable validation fails
+    pub fn instantiate(&self, values: &HashMap<String, String>) -> Result<String, String> {
+        // Validate all variables
+        self.validate(values)?;
+
+        // Build final variable map with defaults
+        let mut final_values = HashMap::new();
+        for var in &self.variables {
+            if let Some(value) = values.get(&var.name) {
+                final_values.insert(var.name.clone(), value.clone());
+            } else if let Some(ref default) = var.default {
+                final_values.insert(var.name.clone(), default.clone());
+            }
+        }
+
+        // Replace variables in template
+        let mut result = self.template.clone();
+        for (key, value) in final_values {
+            let placeholder = format!("{{{{{}}}}}", key);
+            result = result.replace(&placeholder, &value);
+        }
+
+        Ok(result)
+    }
+
+    /// Validate variable values
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if validation fails
+    pub fn validate(&self, values: &HashMap<String, String>) -> Result<(), String> {
+        for var in &self.variables {
+            let value = values.get(&var.name).cloned();
+            var.validate(&value)?;
+        }
+        Ok(())
+    }
+
+    /// Increment usage counter
+    pub fn record_usage(&mut self) {
+        self.usage_count += 1;
+        self.updated_at = Utc::now();
+    }
+
+    /// Bump version
+    pub fn bump_version(&mut self, level: VersionLevel) {
+        match level {
+            VersionLevel::Major => self.version.bump_major(),
+            VersionLevel::Minor => self.version.bump_minor(),
+            VersionLevel::Patch => self.version.bump_patch(),
+        }
+        self.updated_at = Utc::now();
+    }
+
+    /// Add a tag to the template
+    pub fn add_tag(&mut self, tag: String) {
+        if !self.tags.contains(&tag) {
+            self.tags.push(tag);
+        }
+    }
+
+    /// Add metadata to the template
+    pub fn add_metadata(&mut self, key: String, value: String) {
+        self.metadata.insert(key, value);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1046,5 +1366,368 @@ mod tests {
         assert_eq!(config.timeout_seconds, 300);
         assert_eq!(config.max_retries, 3);
         assert_eq!(config.tools_enabled.len(), 0);
+    }
+
+    // ===== Template Tests =====
+
+    #[test]
+    fn test_version_creation() {
+        let version = Version::new(1, 2, 3);
+        assert_eq!(version.major, 1);
+        assert_eq!(version.minor, 2);
+        assert_eq!(version.patch, 3);
+    }
+
+    #[test]
+    fn test_version_display() {
+        let version = Version::new(2, 5, 10);
+        assert_eq!(version.to_string(), "2.5.10");
+    }
+
+    #[test]
+    fn test_version_from_str() {
+        let version: Version = "1.2.3".parse().unwrap();
+        assert_eq!(version, Version::new(1, 2, 3));
+
+        let version: Version = "10.0.5".parse().unwrap();
+        assert_eq!(version, Version::new(10, 0, 5));
+
+        assert!("invalid".parse::<Version>().is_err());
+        assert!("1.2".parse::<Version>().is_err());
+        assert!("1.2.3.4".parse::<Version>().is_err());
+    }
+
+    #[test]
+    fn test_version_comparison() {
+        let v1 = Version::new(1, 0, 0);
+        let v2 = Version::new(1, 0, 1);
+        let v3 = Version::new(1, 1, 0);
+        let v4 = Version::new(2, 0, 0);
+
+        assert!(v1 < v2);
+        assert!(v2 < v3);
+        assert!(v3 < v4);
+        assert_eq!(v1, Version::new(1, 0, 0));
+    }
+
+    #[test]
+    fn test_version_bumping() {
+        let mut version = Version::new(1, 2, 3);
+
+        version.bump_patch();
+        assert_eq!(version, Version::new(1, 2, 4));
+
+        version.bump_minor();
+        assert_eq!(version, Version::new(1, 3, 0));
+
+        version.bump_major();
+        assert_eq!(version, Version::new(2, 0, 0));
+    }
+
+    #[test]
+    fn test_variable_spec_creation() {
+        let var = VariableSpec::new(
+            "user_input".to_string(),
+            "String".to_string(),
+            true,
+            "User's input text".to_string(),
+        );
+
+        assert_eq!(var.name, "user_input");
+        assert_eq!(var.type_hint, "String");
+        assert!(var.required);
+        assert_eq!(var.description, "User's input text");
+        assert!(var.default.is_none());
+        assert!(var.validation_pattern.is_none());
+    }
+
+    #[test]
+    fn test_variable_spec_with_default() {
+        let var = VariableSpec::new(
+            "count".to_string(),
+            "Number".to_string(),
+            false,
+            "Item count".to_string(),
+        )
+        .with_default("10".to_string());
+
+        assert_eq!(var.default, Some("10".to_string()));
+    }
+
+    #[test]
+    fn test_variable_spec_validation() {
+        let var = VariableSpec::new(
+            "email".to_string(),
+            "String".to_string(),
+            true,
+            "Email address".to_string(),
+        )
+        .with_validation(r"^[\w\.-]+@[\w\.-]+\.\w+$".to_string());
+
+        // Valid email
+        let result = var.validate(&Some("test@example.com".to_string()));
+        assert!(result.is_ok());
+
+        // Invalid email
+        let result = var.validate(&Some("invalid-email".to_string()));
+        assert!(result.is_err());
+
+        // Missing required value
+        let result = var.validate(&None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_variable_spec_optional_validation() {
+        let var = VariableSpec::new(
+            "optional".to_string(),
+            "String".to_string(),
+            false,
+            "Optional field".to_string(),
+        );
+
+        // Missing optional value is OK
+        let result = var.validate(&None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_prompt_template_creation() {
+        let variables = vec![VariableSpec::new(
+            "name".to_string(),
+            "String".to_string(),
+            true,
+            "User's name".to_string(),
+        )];
+
+        let template = PromptTemplate::new(
+            "Greeting Template".to_string(),
+            "Hello, {{name}}!".to_string(),
+            variables,
+        );
+
+        assert_eq!(template.name, "Greeting Template");
+        assert_eq!(template.template, "Hello, {{name}}!");
+        assert_eq!(template.variables.len(), 1);
+        assert_eq!(template.version, Version::new(1, 0, 0));
+        assert_eq!(template.usage_count, 0);
+    }
+
+    #[test]
+    fn test_prompt_template_with_description() {
+        let template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        )
+        .with_description("A test template".to_string());
+
+        assert_eq!(template.description, "A test template");
+    }
+
+    #[test]
+    fn test_prompt_template_with_author() {
+        let template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        )
+        .with_author("John Doe".to_string());
+
+        assert_eq!(template.author, "John Doe");
+    }
+
+    #[test]
+    fn test_prompt_template_instantiation() {
+        let variables = vec![
+            VariableSpec::new(
+                "name".to_string(),
+                "String".to_string(),
+                true,
+                "Name".to_string(),
+            ),
+            VariableSpec::new(
+                "action".to_string(),
+                "String".to_string(),
+                true,
+                "Action".to_string(),
+            ),
+        ];
+
+        let template = PromptTemplate::new(
+            "Action Template".to_string(),
+            "{{name}} is {{action}}".to_string(),
+            variables,
+        );
+
+        let mut values = HashMap::new();
+        values.insert("name".to_string(), "Alice".to_string());
+        values.insert("action".to_string(), "coding".to_string());
+
+        let result = template.instantiate(&values).unwrap();
+        assert_eq!(result, "Alice is coding");
+    }
+
+    #[test]
+    fn test_prompt_template_instantiation_with_defaults() {
+        let variables = vec![
+            VariableSpec::new(
+                "name".to_string(),
+                "String".to_string(),
+                true,
+                "Name".to_string(),
+            ),
+            VariableSpec::new(
+                "greeting".to_string(),
+                "String".to_string(),
+                false,
+                "Greeting".to_string(),
+            )
+            .with_default("Hello".to_string()),
+        ];
+
+        let template = PromptTemplate::new(
+            "Greeting".to_string(),
+            "{{greeting}}, {{name}}!".to_string(),
+            variables,
+        );
+
+        let mut values = HashMap::new();
+        values.insert("name".to_string(), "Bob".to_string());
+
+        let result = template.instantiate(&values).unwrap();
+        assert_eq!(result, "Hello, Bob!");
+    }
+
+    #[test]
+    fn test_prompt_template_validation_missing_required() {
+        let variables = vec![VariableSpec::new(
+            "required_field".to_string(),
+            "String".to_string(),
+            true,
+            "Required".to_string(),
+        )];
+
+        let template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{required_field}}".to_string(),
+            variables,
+        );
+
+        let values = HashMap::new();
+        let result = template.validate(&values);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_prompt_template_validation_pattern() {
+        let variables = vec![VariableSpec::new(
+            "number".to_string(),
+            "String".to_string(),
+            true,
+            "Number".to_string(),
+        )
+        .with_validation(r"^\d+$".to_string())];
+
+        let template = PromptTemplate::new(
+            "Test".to_string(),
+            "Count: {{number}}".to_string(),
+            variables,
+        );
+
+        let mut values = HashMap::new();
+        values.insert("number".to_string(), "123".to_string());
+        assert!(template.validate(&values).is_ok());
+
+        let mut values = HashMap::new();
+        values.insert("number".to_string(), "abc".to_string());
+        assert!(template.validate(&values).is_err());
+    }
+
+    #[test]
+    fn test_prompt_template_usage_tracking() {
+        let mut template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        );
+
+        assert_eq!(template.usage_count, 0);
+
+        template.record_usage();
+        assert_eq!(template.usage_count, 1);
+
+        template.record_usage();
+        assert_eq!(template.usage_count, 2);
+    }
+
+    #[test]
+    fn test_prompt_template_version_bumping() {
+        let mut template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        );
+
+        assert_eq!(template.version, Version::new(1, 0, 0));
+
+        template.bump_version(VersionLevel::Patch);
+        assert_eq!(template.version, Version::new(1, 0, 1));
+
+        template.bump_version(VersionLevel::Minor);
+        assert_eq!(template.version, Version::new(1, 1, 0));
+
+        template.bump_version(VersionLevel::Major);
+        assert_eq!(template.version, Version::new(2, 0, 0));
+    }
+
+    #[test]
+    fn test_prompt_template_from_parent() {
+        let parent_id = TemplateId::new();
+        let template = PromptTemplate::from_parent(
+            parent_id,
+            "Child Template".to_string(),
+            "Extended: {{content}}".to_string(),
+            vec![],
+        );
+
+        assert_eq!(template.parent_id, Some(parent_id));
+        assert_eq!(template.name, "Child Template");
+    }
+
+    #[test]
+    fn test_prompt_template_tags() {
+        let mut template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        );
+
+        assert_eq!(template.tags.len(), 0);
+
+        template.add_tag("production".to_string());
+        template.add_tag("verified".to_string());
+
+        assert_eq!(template.tags.len(), 2);
+        assert!(template.tags.contains(&"production".to_string()));
+        assert!(template.tags.contains(&"verified".to_string()));
+    }
+
+    #[test]
+    fn test_prompt_template_metadata() {
+        let mut template = PromptTemplate::new(
+            "Test".to_string(),
+            "{{content}}".to_string(),
+            vec![],
+        );
+
+        assert_eq!(template.metadata.len(), 0);
+
+        template.add_metadata("category".to_string(), "greeting".to_string());
+        template.add_metadata("priority".to_string(), "high".to_string());
+
+        assert_eq!(template.metadata.len(), 2);
+        assert_eq!(template.metadata.get("category"), Some(&"greeting".to_string()));
+        assert_eq!(template.metadata.get("priority"), Some(&"high".to_string()));
     }
 }

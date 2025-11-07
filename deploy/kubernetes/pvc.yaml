@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memory-graph-data
+  namespace: llm-memory-graph
+  labels:
+    app: memory-graph
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: standard
+  # For production, consider using a faster storage class:
+  # storageClassName: ssd
+  # storageClassName: premium-rwo
+
+---
+# Optional: Separate PVC for plugins
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memory-graph-plugins
+  namespace: llm-memory-graph
+  labels:
+    app: memory-graph
+    component: plugins
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Note: For multi-replica deployments with shared data, consider:
+# 1. ReadWriteMany (RWX) access mode with NFS/EFS/Azure Files
+# 2. StatefulSet with per-pod PVCs
+# 3. External distributed storage (Ceph, GlusterFS)
+#
+# Example RWX configuration:
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: memory-graph-shared-data
+#   namespace: llm-memory-graph
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 100Gi
+#   storageClassName: nfs-storage

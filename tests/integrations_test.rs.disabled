@@ -1,0 +1,205 @@
+//! Integration tests for LLM-Registry and Data-Vault clients
+
+use llm_memory_graph::integrations::{
+    registry::{
+        ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration,
+        SessionStatus, UsageReport,
+    },
+    vault::{
+        ArchiveEntry, ArchivalScheduler, ComplianceLevel, RetentionPolicy, SchedulerConfig,
+        VaultClient, VaultConfig,
+    },
+};
+
+/// Test registry client creation
+#[test]
+fn test_registry_client_creation() {
+    let config = RegistryConfig::new("http://localhost:8080").with_api_key("test-key");
+    let client = RegistryClient::new(config);
+    assert!(client.is_ok());
+}
+
+/// Test vault client creation
+#[test]
+fn test_vault_client_creation() {
+    let config = VaultConfig::new("http://localhost:9000", "test-key");
+    let client = VaultClient::new(config);
+    assert!(client.is_ok());
+}
+
+/// Test session registration builder
+#[test]
+fn test_session_registration_builder() {
+    let registration = SessionRegistration::new("session-123", "gpt-4")
+        .with_tag("production")
+        .with_metadata("user_id", serde_json::json!("user-456"));
+
+    assert_eq!(registration.session_id, "session-123");
+    assert_eq!(registration.model_id, "gpt-4");
+    assert_eq!(registration.tags.len(), 1);
+    assert_eq!(registration.tags[0], "production");
+    assert!(registration.metadata.contains_key("user_id"));
+}
+
+/// Test usage report builder
+#[test]
+fn test_usage_report_builder() {
+    let report = UsageReport::new("session-123", 100, 200)
+        .with_model_id("gpt-4")
+        .with_latency_ms(1500);
+
+    assert_eq!(report.session_id, "session-123");
+    assert_eq!(report.model_id, "gpt-4");
+    assert_eq!(report.prompt_tokens, 100);
+    assert_eq!(report.completion_tokens, 200);
+    assert_eq!(report.total_tokens, 300);
+    assert_eq!(report.latency_ms, Some(1500));
+}
+
+/// Test archive entry builder
+#[test]
+fn test_archive_entry_builder() {
+    let data = serde_json::json!({
+        "session_id": "session-123",
+        "prompts": ["prompt1", "prompt2"]
+    });
+
+    let entry = ArchiveEntry::new("session-123", data.clone(), 365)
+        .with_tag("production")
+        .with_metadata("environment", serde_json::json!("prod"));
+
+    assert_eq!(entry.session_id, "session-123");
+    assert_eq!(entry.retention_days, 365);
+    assert_eq!(entry.tags.len(), 1);
+    assert_eq!(entry.tags[0], "production");
+    assert!(entry.metadata.contains_key("environment"));
+    assert_eq!(entry.data, data);
+}
+
+/// Test retention policy builder
+#[test]
+fn test_retention_policy_builder() {
+    let policy = RetentionPolicy::new("HIPAA Policy", 2555, ComplianceLevel::Hipaa)
+        .with_auto_delete(true)
+        .with_description("7-year retention for HIPAA compliance")
+        .with_tag("healthcare");
+
+    assert_eq!(policy.name, "HIPAA Policy");
+    assert_eq!(policy.retention_days, 2555);
+    assert_eq!(policy.compliance_level, ComplianceLevel::Hipaa);
+    assert!(policy.auto_delete);
+    assert!(!policy.description.is_empty());
+    assert_eq!(policy.tags.len(), 1);
+}
+
+/// Test scheduler configuration
+#[test]
+fn test_scheduler_config() {
+    let config = SchedulerConfig::new()
+        .with_interval_hours(12)
+        .with_archive_after_days(60)
+        .with_retention_days(730)
+        .with_batch_size(50)
+        .with_compliance_level(ComplianceLevel::Gdpr);
+
+    assert_eq!(config.interval_hours, 12);
+    assert_eq!(config.archive_after_days, 60);
+    assert_eq!(config.retention_days, 730);
+    assert_eq!(config.batch_size, 50);
+    assert_eq!(config.default_compliance_level, ComplianceLevel::Gdpr);
+}
+
+/// Test compliance level serialization
+#[test]
+fn test_compliance_level_serialization() {
+    let level = ComplianceLevel::Hipaa;
+    let json = serde_json::to_string(&level).unwrap();
+    assert_eq!(json, "\"hipaa\"");
+
+    let deserialized: ComplianceLevel = serde_json::from_str(&json).unwrap();
+    assert_eq!(deserialized, ComplianceLevel::Hipaa);
+}
+
+/// Test session status serialization
+#[test]
+fn test_session_status_serialization() {
+    let status = SessionStatus::Active;
+    let json = serde_json::to_string(&status).unwrap();
+    assert_eq!(json, "\"active\"");
+
+    let deserialized: SessionStatus = serde_json::from_str(&json).unwrap();
+    assert_eq!(deserialized, SessionStatus::Active);
+}
+
+/// Test model parameters default
+#[test]
+fn test_model_parameters_default() {
+    let params = ModelParameters::default();
+    assert_eq!(params.temperature, 1.0);
+    assert!(params.max_tokens.is_none());
+    assert!(params.top_p.is_none());
+    assert!(params.frequency_penalty.is_none());
+    assert!(params.presence_penalty.is_none());
+    assert!(params.stop_sequences.is_empty());
+}
+
+/// Test registry config builder
+#[test]
+fn test_registry_config_builder() {
+    let config = RegistryConfig::new("http://registry.example.com")
+        .with_api_key("test-api-key")
+        .with_timeout(60)
+        .with_retry_count(5)
+        .with_logging(false);
+
+    assert_eq!(config.base_url, "http://registry.example.com");
+    assert_eq!(config.api_key, Some("test-api-key".to_string()));
+    assert_eq!(config.timeout_secs, 60);
+    assert_eq!(config.retry_count, 5);
+    assert!(!config.enable_logging);
+}
+
+/// Test vault config builder
+#[test]
+fn test_vault_config_builder() {
+    let config = VaultConfig::new("http://vault.example.com", "vault-api-key")
+        .with_encryption(false)
+        .with_compression(true)
+        .with_timeout(120)
+        .with_batch_size(200);
+
+    assert_eq!(config.base_url, "http://vault.example.com");
+    assert_eq!(config.api_key, "vault-api-key");
+    assert!(!config.encryption_enabled);
+    assert!(config.compression_enabled);
+    assert_eq!(config.timeout_secs, 120);
+    assert_eq!(config.batch_size, 200);
+}
+
+// Note: The following tests would require a running registry/vault service
+// and are better suited for end-to-end integration tests
+
+#[cfg(feature = "integration-tests")]
+mod live_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_registry_health_check() {
+        let config = RegistryConfig::default();
+        let client = RegistryClient::new(config).unwrap();
+
+        // This would fail without a running registry service
+        // let is_healthy = client.health_check().await;
+        // assert!(is_healthy.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_vault_health_check() {
+        let config = VaultConfig::new("http://localhost:9000", "test-key");
+        let client = VaultClient::new(config).unwrap();
+
+        // This would fail without a running vault service
+        // let is_healthy = client.health_check().await;
+        // assert!(is_healthy.is_ok());
+    }
+}

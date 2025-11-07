@@ -1,0 +1,240 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: memory-graph
+  namespace: llm-memory-graph
+  labels:
+    app: memory-graph
+    prometheus: kube-prometheus
+    component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: memory-graph
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+
+    # Optional: TLS configuration
+    # tlsConfig:
+    #   caFile: /etc/prometheus/secrets/ca.crt
+    #   certFile: /etc/prometheus/secrets/tls.crt
+    #   keyFile: /etc/prometheus/secrets/tls.key
+    #   insecureSkipVerify: false
+
+    # Metric relabeling
+    metricRelabelings:
+    # Keep only memory-graph specific metrics
+    - sourceLabels: [__name__]
+      regex: 'memory_graph_.*'
+      action: keep
+
+    # Add cluster label
+    - targetLabel: cluster
+      replacement: production
+
+    # Add environment label
+    - targetLabel: environment
+      replacement: production
+
+    # Relabeling
+    relabelings:
+    # Add pod name label
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod
+      action: replace
+
+    # Add namespace label
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace
+      action: replace
+
+    # Add node name label
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+      action: replace
+
+    # Add container name label
+    - sourceLabels: [__meta_kubernetes_pod_container_name]
+      targetLabel: container
+      action: replace
+
+---
+# PrometheusRule for alerting
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: memory-graph-alerts
+  namespace: llm-memory-graph
+  labels:
+    app: memory-graph
+    prometheus: kube-prometheus
+    component: alerting
+spec:
+  groups:
+  - name: memory-graph.rules
+    interval: 30s
+    rules:
+
+    # High error rate alert
+    - alert: MemoryGraphHighErrorRate
+      expr: |
+        (
+          sum(rate(memory_graph_grpc_requests_total{status!="OK"}[5m]))
+          /
+          sum(rate(memory_graph_grpc_requests_total[5m]))
+        ) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+        component: grpc-service
+      annotations:
+        summary: "High error rate detected"
+        description: "Memory Graph service has error rate above 5% (current: {{ $value | humanizePercentage }})"
+
+    # High latency alert
+    - alert: MemoryGraphHighLatency
+      expr: |
+        histogram_quantile(0.95,
+          sum(rate(memory_graph_grpc_request_duration_seconds_bucket[5m])) by (le, method)
+        ) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: grpc-service
+      annotations:
+        summary: "High request latency detected"
+        description: "Memory Graph p95 latency is above 100ms (current: {{ $value | humanizeDuration }})"
+
+    # Service down alert
+    - alert: MemoryGraphServiceDown
+      expr: |
+        up{job="memory-graph"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        component: grpc-service
+      annotations:
+        summary: "Memory Graph service is down"
+        description: "Memory Graph service has been down for more than 2 minutes"
+
+    # High memory usage alert
+    - alert: MemoryGraphHighMemoryUsage
+      expr: |
+        (
+          container_memory_working_set_bytes{pod=~"memory-graph-.*"}
+          /
+          container_spec_memory_limit_bytes{pod=~"memory-graph-.*"}
+        ) > 0.9
+      for: 10m
+      labels:
+        severity: warning
+        component: resources
+      annotations:
+        summary: "High memory usage detected"
+        description: "Memory Graph pod {{ $labels.pod }} is using more than 90% of memory limit"
+
+    # High CPU usage alert
+    - alert: MemoryGraphHighCPUUsage
+      expr: |
+        (
+          rate(container_cpu_usage_seconds_total{pod=~"memory-graph-.*"}[5m])
+          /
+          container_spec_cpu_quota{pod=~"memory-graph-.*"} * 100000
+        ) > 0.9
+      for: 10m
+      labels:
+        severity: warning
+        component: resources
+      annotations:
+        summary: "High CPU usage detected"
+        description: "Memory Graph pod {{ $labels.pod }} is using more than 90% of CPU limit"
+
+    # Pod restart alert
+    - alert: MemoryGraphPodRestarting
+      expr: |
+        rate(kube_pod_container_status_restarts_total{pod=~"memory-graph-.*"}[15m]) > 0
+      for: 5m
+      labels:
+        severity: warning
+        component: stability
+      annotations:
+        summary: "Pod is restarting frequently"
+        description: "Memory Graph pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+
+    # Storage usage alert
+    - alert: MemoryGraphHighStorageUsage
+      expr: |
+        (
+          kubelet_volume_stats_used_bytes{persistentvolumeclaim="memory-graph-data"}
+          /
+          kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="memory-graph-data"}
+        ) > 0.8
+      for: 10m
+      labels:
+        severity: warning
+        component: storage
+      annotations:
+        summary: "High storage usage detected"
+        description: "Memory Graph PVC is using more than 80% of capacity"
+
+    # Plugin errors alert
+    - alert: MemoryGraphPluginErrors
+      expr: |
+        rate(memory_graph_plugin_errors_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: plugins
+      annotations:
+        summary: "Plugin errors detected"
+        description: "Memory Graph plugin {{ $labels.plugin }} is experiencing errors"
+
+    # Integration failures alert
+    - alert: MemoryGraphIntegrationFailure
+      expr: |
+        rate(memory_graph_vault_errors_total[5m]) > 0.5
+        or
+        rate(memory_graph_registry_calls_total{status!~"2.."}[5m])
+        /
+        rate(memory_graph_registry_calls_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+        component: integrations
+      annotations:
+        summary: "Integration failures detected"
+        description: "Memory Graph is experiencing issues with external integrations"
+
+    # Low replica count alert
+    - alert: MemoryGraphLowReplicaCount
+      expr: |
+        kube_deployment_status_replicas_available{deployment="memory-graph"} < 2
+      for: 5m
+      labels:
+        severity: critical
+        component: availability
+      annotations:
+        summary: "Low replica count"
+        description: "Memory Graph has fewer than 2 replicas available (current: {{ $value }})"
+
+---
+# Optional: PodMonitor for more granular pod-level metrics
+# apiVersion: monitoring.coreos.com/v1
+# kind: PodMonitor
+# metadata:
+#   name: memory-graph
+#   namespace: llm-memory-graph
+#   labels:
+#     app: memory-graph
+# spec:
+#   selector:
+#     matchLabels:
+#       app: memory-graph
+#   podMetricsEndpoints:
+#   - port: metrics
+#     path: /metrics
+#     interval: 30s

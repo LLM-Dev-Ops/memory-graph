@@ -1,10 +1,15 @@
 //! Core engine for the memory graph
 
+mod async_memory_graph;
+
+pub use async_memory_graph::AsyncMemoryGraph;
+
 use crate::error::{Error, Result};
 use crate::storage::{SledBackend, StorageBackend};
 use crate::types::{
     AgentNode, Config, ConversationSession, Edge, EdgeType, Node, NodeId, PromptMetadata,
-    PromptNode, ResponseMetadata, ResponseNode, SessionId, TokenUsage, ToolInvocation,
+    PromptNode, PromptTemplate, ResponseMetadata, ResponseNode, SessionId, TemplateId,
+    TokenUsage, ToolInvocation,
 };
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -332,7 +337,7 @@ impl MemoryGraph {
     ///
     /// ```no_run
     /// # use llm_memory_graph::*;
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<()> {
     /// # let graph = MemoryGraph::open(Config::default())?;
     /// # let session = graph.create_session()?;
     /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
@@ -372,7 +377,7 @@ impl MemoryGraph {
     ///
     /// ```no_run
     /// # use llm_memory_graph::*;
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<()> {
     /// # let graph = MemoryGraph::open(Config::default())?;
     /// # let session = graph.create_session()?;
     /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
@@ -430,7 +435,7 @@ impl MemoryGraph {
     ///
     /// ```no_run
     /// # use llm_memory_graph::*;
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn main() -> Result<()> {
     /// # let graph = MemoryGraph::open(Config::default())?;
     /// # let session = graph.create_session()?;
     /// # let prompt_id = graph.add_prompt(session.id, "Test".to_string(), None)?;
@@ -804,6 +809,224 @@ impl MemoryGraph {
     /// ```
     pub fn stats(&self) -> Result<crate::storage::StorageStats> {
         self.backend.stats()
+    }
+
+    // ===== Template Management Methods =====
+
+    /// Create and store a new prompt template
+    ///
+    /// Templates are versioned prompt structures that can be instantiated with variables.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate, VariableSpec};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// let variables = vec![
+    ///     VariableSpec::new(
+    ///         "user_input".to_string(),
+    ///         "String".to_string(),
+    ///         true,
+    ///         "User's question".to_string(),
+    ///     ),
+    /// ];
+    /// let template = PromptTemplate::new(
+    ///     "Question Answering".to_string(),
+    ///     "Answer this question: {{user_input}}".to_string(),
+    ///     variables,
+    /// );
+    /// let template_id = graph.create_template(template)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn create_template(&self, template: PromptTemplate) -> Result<TemplateId> {
+        let template_id = template.id;
+        self.backend.store_node(&Node::Template(template))?;
+        Ok(template_id)
+    }
+
+    /// Get a template by its ID
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The template doesn't exist
+    /// - Storage retrieval fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate, VariableSpec};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let template = PromptTemplate::new("Test".to_string(), "{{x}}".to_string(), vec![]);
+    /// # let template_id = graph.create_template(template)?;
+    /// let template = graph.get_template(template_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_template(&self, _template_id: TemplateId) -> Result<PromptTemplate> {
+        // Templates store template_id as their primary ID, but we need the node_id
+        // We'll need to search for it - for now, let's try a direct approach
+        // In practice, we might want to add a template index to the storage backend
+
+        // For now, search all nodes (this is inefficient - TODO: add template index)
+        let stats = self.backend.stats()?;
+        for _ in 0..stats.node_count {
+            // This is a placeholder - we need a way to iterate all nodes
+            // or maintain a template index
+        }
+
+        Err(Error::NodeNotFound(format!(
+            "Template lookup by TemplateId not yet fully implemented - use get_template_by_node_id instead"
+        )))
+    }
+
+    /// Get a template by its node ID
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The node doesn't exist or is not a template
+    /// - Storage retrieval fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let template = PromptTemplate::new("Test".to_string(), "{{x}}".to_string(), vec![]);
+    /// # let node_id = template.node_id;
+    /// # graph.create_template(template)?;
+    /// let template = graph.get_template_by_node_id(node_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_template_by_node_id(&self, node_id: NodeId) -> Result<PromptTemplate> {
+        let node = self.backend.get_node(&node_id)?
+            .ok_or_else(|| Error::NodeNotFound(format!("Node {} not found", node_id)))?;
+
+        match node {
+            Node::Template(template) => Ok(template),
+            _ => Err(Error::ValidationError(
+                format!("Node {} is not a template", node_id)
+            )),
+        }
+    }
+
+    /// Update an existing template
+    ///
+    /// This will store the updated template data. Note that the template's
+    /// version should be bumped appropriately before calling this method.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage update fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate, VersionLevel};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let template = PromptTemplate::new("Test".to_string(), "{{x}}".to_string(), vec![]);
+    /// # let node_id = template.node_id;
+    /// # graph.create_template(template)?;
+    /// let mut template = graph.get_template_by_node_id(node_id)?;
+    /// template.record_usage();
+    /// template.bump_version(VersionLevel::Patch);
+    /// graph.update_template(template)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn update_template(&self, template: PromptTemplate) -> Result<()> {
+        self.backend.store_node(&Node::Template(template))?;
+        Ok(())
+    }
+
+    /// Link a prompt to the template it was instantiated from
+    ///
+    /// Creates an Instantiates edge from the prompt to the template.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate, VariableSpec};
+    /// # use std::collections::HashMap;
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let session = graph.create_session()?;
+    /// # let template = PromptTemplate::new("Test".to_string(), "Hello {{name}}".to_string(), vec![]);
+    /// # let template_node_id = template.node_id;
+    /// # graph.create_template(template.clone())?;
+    /// let mut values = HashMap::new();
+    /// values.insert("name".to_string(), "World".to_string());
+    /// let prompt_text = template.instantiate(&values)?;
+    /// let prompt_id = graph.add_prompt(session.id, prompt_text, None)?;
+    /// graph.link_prompt_to_template(prompt_id, template_node_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn link_prompt_to_template(&self, prompt_id: NodeId, template_node_id: NodeId) -> Result<()> {
+        let edge = Edge::new(prompt_id, template_node_id, EdgeType::Instantiates);
+        self.backend.store_edge(&edge)?;
+        Ok(())
+    }
+
+    /// Create a new template that inherits from a parent template
+    ///
+    /// This creates the new template and automatically establishes an Inherits edge.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if storage fails.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use llm_memory_graph::{MemoryGraph, Config, PromptTemplate, VariableSpec};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let graph = MemoryGraph::open(Config::default())?;
+    /// # let parent = PromptTemplate::new("Parent".to_string(), "Base: {{x}}".to_string(), vec![]);
+    /// # let parent_id = parent.id;
+    /// # let parent_node_id = parent.node_id;
+    /// # graph.create_template(parent)?;
+    /// let child = PromptTemplate::from_parent(
+    ///     parent_id,
+    ///     "Child Template".to_string(),
+    ///     "Extended: {{x}} with {{y}}".to_string(),
+    ///     vec![],
+    /// );
+    /// let child_id = graph.create_template_from_parent(child, parent_node_id)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn create_template_from_parent(
+        &self,
+        template: PromptTemplate,
+        parent_node_id: NodeId,
+    ) -> Result<TemplateId> {
+        let template_id = template.id;
+        let template_node_id = template.node_id;
+
+        // Store the new template
+        self.backend.store_node(&Node::Template(template))?;
+
+        // Create Inherits edge from child to parent
+        let edge = Edge::new(template_node_id, parent_node_id, EdgeType::Inherits);
+        self.backend.store_edge(&edge)?;
+
+        Ok(template_id)
     }
 }
 

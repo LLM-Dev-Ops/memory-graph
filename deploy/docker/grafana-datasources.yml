@@ -1,0 +1,80 @@
+# Grafana Datasources Configuration
+# Provisioning file for automatic datasource setup
+
+apiVersion: 1
+
+# List of datasources to insert/update depending on what's available in the database
+datasources:
+  # ============================================================================
+  # Prometheus Datasource for LLM Memory Graph Metrics
+  # ============================================================================
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+
+    # Mark as default datasource
+    isDefault: true
+
+    # Version to use (1 for Prometheus)
+    version: 1
+
+    # Enable for alerting
+    editable: false
+
+    # JSON data for datasource configuration
+    jsonData:
+      # Set query timeout
+      timeInterval: '15s'
+
+      # Enable Prometheus query editor
+      queryTimeout: '60s'
+
+      # HTTP method for queries (GET or POST)
+      httpMethod: 'POST'
+
+      # Enable exemplars for better trace correlation
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+
+      # Cache level (default, low, medium, high)
+      cacheLevel: 'High'
+
+      # Disable metrics lookup (faster loading)
+      disableMetricsLookup: false
+
+      # Custom query parameters (optional)
+      # customQueryParameters: 'query_log_file=/dev/null'
+
+    # Secure JSON data (for authentication - if needed)
+    # secureJsonData:
+    #   httpHeaderValue1: 'Bearer YOUR_TOKEN_HERE'
+
+  # ============================================================================
+  # Optional: Additional Datasources
+  # ============================================================================
+
+  # Example: Loki for log aggregation (if available)
+  # - name: Loki
+  #   type: loki
+  #   access: proxy
+  #   url: http://loki:3100
+  #   isDefault: false
+  #   version: 1
+  #   editable: false
+  #   jsonData:
+  #     maxLines: 1000
+
+  # Example: Jaeger for distributed tracing (if available)
+  # - name: Jaeger
+  #   type: jaeger
+  #   access: proxy
+  #   url: http://jaeger:16686
+  #   isDefault: false
+  #   version: 1
+  #   editable: false
+  #   uid: jaeger
+
+# Delete datasources that are not defined in the provisioning files
+deleteDatasources: []

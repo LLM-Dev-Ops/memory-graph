@@ -1,0 +1,78 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Kustomization for LLM-Memory-Graph Kubernetes deployment
+# Usage: kubectl apply -k deploy/kubernetes/
+
+namespace: llm-memory-graph
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/name: llm-memory-graph
+  app.kubernetes.io/component: grpc-service
+  app.kubernetes.io/managed-by: kustomize
+
+# Common annotations applied to all resources
+commonAnnotations:
+  description: "LLM-Memory-Graph gRPC service"
+  documentation: "https://github.com/globalbusinessadvisors/llm-memory-graph"
+
+# Resources to include
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+  - servicemonitor.yaml
+
+# Images to use (can override for different environments)
+images:
+  - name: ghcr.io/globalbusinessadvisors/llm-memory-graph
+    newTag: latest
+
+# ConfigMap generator (alternative to configmap.yaml)
+# configMapGenerator:
+#   - name: memory-graph-config
+#     literals:
+#       - GRPC_HOST=0.0.0.0
+#       - GRPC_PORT=50051
+#       - METRICS_PORT=9090
+#       - RUST_LOG=info
+
+# Secret generator (alternative to secret.yaml)
+# secretGenerator:
+#   - name: memory-graph-secrets
+#     literals:
+#       - REGISTRY_API_KEY=replace-with-actual-registry-api-key
+#       - VAULT_API_KEY=replace-with-actual-vault-api-key
+
+# Patches for customization
+# patches:
+#   - path: patches/increase-replicas.yaml
+#     target:
+#       kind: Deployment
+#       name: memory-graph
+
+# Example overlay structure for different environments:
+# base/
+#   kustomization.yaml (this file)
+#   namespace.yaml
+#   deployment.yaml
+#   ...
+# overlays/
+#   dev/
+#     kustomization.yaml
+#     patches/
+#       dev-resources.yaml
+#   staging/
+#     kustomization.yaml
+#     patches/
+#       staging-resources.yaml
+#   production/
+#     kustomization.yaml
+#     patches/
+#       prod-resources.yaml
+#       prod-replicas.yaml

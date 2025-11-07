@@ -39,17 +39,24 @@
 
 pub mod engine;
 pub mod error;
+// pub mod grpc; // TODO: Complete gRPC implementation
+// pub mod integrations; // TODO: Fix type mismatches in retry logic
+pub mod migration;
+pub mod observatory;
+pub mod plugin;
 pub mod query;
 pub mod storage;
 pub mod types;
 
 // Re-export main types
-pub use engine::MemoryGraph;
+pub use engine::{AsyncMemoryGraph, MemoryGraph};
 pub use error::{Error, Result};
 pub use types::{
-    AgentConfig, AgentId, AgentMetrics, AgentNode, AgentStatus, Config, ConversationSession,
-    EdgeType, NodeId, NodeType, PromptMetadata, PromptNode, ResponseMetadata, ResponseNode,
-    SessionId, ToolInvocation, TokenUsage,
+    AgentConfig, AgentId, AgentMetrics, AgentNode, AgentStatus, Config, ContextType,
+    ConversationSession, EdgeType, InheritsProperties, InstantiatesProperties, InvokesProperties,
+    NodeId, NodeType, Priority, PromptMetadata, PromptNode, PromptTemplate, ReferencesProperties,
+    ResponseMetadata, ResponseNode, SessionId, TemplateId, ToolInvocation, TokenUsage,
+    TransfersToProperties, VariableSpec, Version, VersionLevel,
 };
 
 /// Current version of the LLM-Memory-Graph library

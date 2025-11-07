@@ -1,0 +1,92 @@
+# Prometheus Configuration for LLM-Memory-Graph
+# Production-ready monitoring setup
+
+global:
+  # How frequently to scrape targets by default
+  scrape_interval: 15s
+
+  # How long until a scrape request times out
+  scrape_timeout: 10s
+
+  # How frequently to evaluate rules
+  evaluation_interval: 15s
+
+  # Attach these labels to any time series or alerts
+  external_labels:
+    cluster: 'llm-memory-graph'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "alerts/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # ============================================================================
+  # LLM Memory Graph Service
+  # ============================================================================
+  - job_name: 'memory-graph'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    metrics_path: '/metrics'
+
+    static_configs:
+      - targets: ['memory-graph:9090']
+        labels:
+          service: 'memory-graph-grpc'
+          component: 'backend'
+
+  # ============================================================================
+  # Prometheus Self-Monitoring
+  # ============================================================================
+  - job_name: 'prometheus'
+    scrape_interval: 30s
+
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          component: 'monitoring'
+
+  # ============================================================================
+  # Grafana Monitoring (optional)
+  # ============================================================================
+  - job_name: 'grafana'
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          service: 'grafana'
+          component: 'visualization'
+
+# Storage configuration
+storage:
+  tsdb:
+    # Data retention period
+    retention.time: 30d
+
+    # Maximum storage size (optional)
+    # retention.size: 10GB
+
+# Remote write configuration (optional - for long-term storage)
+# remote_write:
+#   - url: "http://cortex:9009/api/v1/push"
+#     queue_config:
+#       capacity: 10000
+#       max_shards: 200
+#       min_shards: 1
+#       max_samples_per_send: 5000
+#       batch_send_deadline: 5s
+
+# Remote read configuration (optional)
+# remote_read:
+#   - url: "http://cortex:9009/api/v1/read"

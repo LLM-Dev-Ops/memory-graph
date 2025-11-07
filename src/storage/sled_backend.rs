@@ -95,6 +95,10 @@ impl StorageBackend for SledBackend {
                 // Agents are global entities, not tied to specific sessions
                 // They're accessed via agent ID or HandledBy/TransfersTo edges
             }
+            Node::Template(_t) => {
+                // Templates are global entities, not tied to specific sessions
+                // They're accessed via template ID or Instantiates/Inherits edges
+            }
         }
 
         self.db.flush()?;
