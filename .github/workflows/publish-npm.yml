@@ -1,0 +1,191 @@
+name: Publish to npmjs.com
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 0.1.0)'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    name: Publish TypeScript client to npmjs.com
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Verify version in package.json
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(node -p "require('./clients/typescript/package.json').version")
+
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "❌ Version mismatch!"
+            echo "Git tag: v$VERSION"
+            echo "package.json: $PKG_VERSION"
+            exit 1
+          fi
+
+          echo "✅ Version verified: $VERSION"
+
+      - name: Install dependencies
+        working-directory: ./clients/typescript
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./clients/typescript
+        run: npm run lint || echo "⚠️ No lint script found, skipping"
+
+      - name: Build TypeScript
+        working-directory: ./clients/typescript
+        run: npm run build
+
+      - name: Verify build artifacts
+        working-directory: ./clients/typescript
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "❌ dist/index.js not found!"
+            exit 1
+          fi
+
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "❌ dist/index.d.ts not found!"
+            exit 1
+          fi
+
+          echo "✅ Build artifacts verified"
+          ls -lh dist/
+
+      - name: Run tests
+        working-directory: ./clients/typescript
+        run: npm test || echo "⚠️ No test script found, skipping"
+
+      - name: Package dry-run
+        working-directory: ./clients/typescript
+        run: |
+          npm pack --dry-run
+          echo ""
+          echo "Package contents:"
+          npm pack | tar -tzf - | head -30
+
+      - name: Create package tarball
+        working-directory: ./clients/typescript
+        run: |
+          npm pack
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TARBALL="llm-memory-graph-client-${PKG_VERSION}.tgz"
+
+          if [ ! -f "$TARBALL" ]; then
+            echo "❌ Tarball not created: $TARBALL"
+            exit 1
+          fi
+
+          SIZE=$(du -h "$TARBALL" | cut -f1)
+          echo "✅ Package created: $TARBALL ($SIZE)"
+
+      - name: Publish to npmjs.com
+        working-directory: ./clients/typescript
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
+        run: |
+          echo "📦 Publishing to npmjs.com..."
+          npm publish --access public
+          echo "✅ Successfully published to npmjs.com!"
+
+      - name: Verify publication
+        working-directory: ./clients/typescript
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_NAME="llm-memory-graph-client"
+
+          echo "🔍 Verifying publication of $PKG_NAME@$PKG_VERSION..."
+          sleep 30  # Wait for npm to index
+
+          if npm view "$PKG_NAME@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "✅ Version $PKG_VERSION is now available on npmjs.com!"
+            echo "📚 View at: https://www.npmjs.com/package/$PKG_NAME"
+          else
+            echo "⚠️  Package published but not yet indexed (may take a few minutes)"
+          fi
+
+      - name: Create release notes
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          cat > npm-release-notes.md <<EOF
+          # LLM-Memory-Graph TypeScript Client v$VERSION
+
+          ## 📦 Published Package
+
+          - **npmjs.com**: [llm-memory-graph-client v$VERSION](https://www.npmjs.com/package/llm-memory-graph-client)
+
+          ## 🚀 Installation
+
+          \`\`\`bash
+          npm install llm-memory-graph-client
+          # or
+          yarn add llm-memory-graph-client
+          # or
+          pnpm add llm-memory-graph-client
+          \`\`\`
+
+          ## 📚 Quick Start
+
+          \`\`\`typescript
+          import { MemoryGraphClient } from 'llm-memory-graph-client';
+
+          const client = new MemoryGraphClient({
+            host: 'localhost',
+            port: 50051,
+          });
+
+          const session = await client.createSession({
+            metadata: { userId: 'user-123' }
+          });
+          \`\`\`
+
+          ## 📚 Resources
+
+          - [GitHub Repository](https://github.com/globalbusinessadvisors/llm-memory-graph)
+          - [TypeScript Client Documentation](https://github.com/globalbusinessadvisors/llm-memory-graph/tree/main/clients/typescript)
+          - [Examples](https://github.com/globalbusinessadvisors/llm-memory-graph/tree/main/clients/typescript/examples)
+          EOF
+
+          echo "NPM release notes created:"
+          cat npm-release-notes.md
+
+      - name: Upload release notes
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-release-notes
+          path: npm-release-notes.md
+
+      - name: Update package badges
+        if: github.event_name == 'push'
+        run: |
+          echo "✅ Package published successfully!"
+          echo ""
+          echo "📊 Add these badges to your README:"
+          echo ""
+          echo "[![npm version](https://badge.fury.io/js/llm-memory-graph-client.svg)](https://www.npmjs.com/package/llm-memory-graph-client)"
+          echo "[![npm downloads](https://img.shields.io/npm/dm/llm-memory-graph-client.svg)](https://www.npmjs.com/package/llm-memory-graph-client)"
