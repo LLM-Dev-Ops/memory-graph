@@ -487,7 +487,7 @@ mod tests {
         let mut manager = PluginManager::new();
         let plugin = Arc::new(MockPlugin::new("test_plugin"));
 
-        assert!(manager.register(plugin).await.is_ok());
+        assert!(manager.register(plugin).is_ok());
         assert!(manager.plugins.contains_key("test_plugin"));
     }
 
@@ -496,7 +496,7 @@ mod tests {
         let mut manager = PluginManager::new();
         let plugin = Arc::new(MockPlugin::new("test_plugin"));
 
-        manager.register(plugin).await.unwrap();
+        manager.register(plugin).unwrap();
         assert_eq!(
             manager.get_state("test_plugin"),
             Some(PluginState::Registered)
@@ -526,8 +526,8 @@ mod tests {
         let plugin1 = Arc::new(MockPlugin::new("plugin1"));
         let plugin2 = Arc::new(MockPlugin::new("plugin2"));
 
-        manager.register(plugin1).await.unwrap();
-        manager.register(plugin2).await.unwrap();
+        manager.register(plugin1).unwrap();
+        manager.register(plugin2).unwrap();
 
         manager.initialize("plugin1").await.unwrap();
         manager.initialize("plugin2").await.unwrap();
