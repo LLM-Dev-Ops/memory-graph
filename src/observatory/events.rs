@@ -135,12 +135,11 @@ impl MemoryGraphEvent {
         match self {
             Self::NodeCreated { node_id, .. } => format!("node:{}", node_id),
             Self::EdgeCreated { edge_id, .. } => format!("edge:{}", edge_id),
-            Self::PromptSubmitted { session_id, .. } => format!("session:{}", session_id),
+            Self::PromptSubmitted { session_id, .. } | Self::AgentHandoff { session_id, .. } => format!("session:{}", session_id),
             Self::ResponseGenerated { prompt_id, .. } => {
                 format!("prompt:{}", prompt_id)
             }
             Self::ToolInvoked { tool_id, .. } => format!("tool:{}", tool_id),
-            Self::AgentHandoff { session_id, .. } => format!("session:{}", session_id),
             Self::TemplateInstantiated { template_id, .. } => format!("template:{}", template_id),
             Self::QueryExecuted { query_type, .. } => format!("query:{}", query_type),
         }

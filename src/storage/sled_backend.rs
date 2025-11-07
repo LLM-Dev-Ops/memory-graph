@@ -72,12 +72,10 @@ impl StorageBackend for SledBackend {
             Node::Response(r) => {
                 // Find the prompt to get session_id
                 if let Some(prompt_bytes) = self.nodes.get(r.prompt_id.to_bytes())? {
-                    if let Ok(prompt_node) = self.serializer.deserialize_node(&prompt_bytes) {
-                        if let Node::Prompt(p) = prompt_node {
-                            let key =
-                                Self::build_index_key(&p.session_id.to_bytes(), &id.to_bytes());
-                            self.session_index.insert(key, &[])?;
-                        }
+                    if let Ok(Node::Prompt(p)) = self.serializer.deserialize_node(&prompt_bytes) {
+                        let key =
+                            Self::build_index_key(&p.session_id.to_bytes(), &id.to_bytes());
+                        self.session_index.insert(key, &[])?;
                     }
                 }
             }

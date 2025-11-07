@@ -116,7 +116,7 @@ impl StorageCache {
     }
 
     /// Clear all caches
-    pub async fn clear(&self) {
+    pub fn clear(&self) {
         self.node_cache.invalidate_all();
         self.edge_cache.invalidate_all();
     }

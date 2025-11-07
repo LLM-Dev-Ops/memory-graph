@@ -98,7 +98,7 @@ impl PluginManager {
     /// Returns an error if:
     /// - The plugin is already registered
     /// - The plugin's API version is incompatible
-    pub async fn register(&mut self, plugin: Arc<dyn Plugin>) -> Result<(), PluginError> {
+    pub fn register(&mut self, plugin: Arc<dyn Plugin>) -> Result<(), PluginError> {
         let metadata = plugin.metadata();
         let name = metadata.name.clone();
 
@@ -143,7 +143,7 @@ impl PluginManager {
     /// Returns an error if:
     /// - The plugin is not found
     /// - The plugin is still enabled
-    pub async fn unregister(&mut self, name: &str) -> Result<(), PluginError> {
+    pub fn unregister(&mut self, name: &str) -> Result<(), PluginError> {
         let wrapper = self
             .plugins
             .get(name)
@@ -421,7 +421,7 @@ impl PluginManager {
     ///
     /// This is a placeholder for future dynamic plugin loading functionality.
     /// Currently, plugins must be compiled into the application.
-    pub async fn load_from_directory(
+    pub fn load_from_directory(
         &mut self,
         _path: impl AsRef<Path>,
     ) -> Result<(), PluginError> {

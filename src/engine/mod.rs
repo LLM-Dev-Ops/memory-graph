@@ -443,10 +443,8 @@ impl MemoryGraph {
         let mut tools = Vec::new();
         for edge in edges {
             if edge.edge_type == EdgeType::Invokes {
-                if let Some(node) = self.backend.get_node(&edge.to)? {
-                    if let Node::ToolInvocation(tool) = node {
-                        tools.push(tool);
-                    }
+                if let Some(Node::ToolInvocation(tool)) = self.backend.get_node(&edge.to)? {
+                    tools.push(tool);
                 }
             }
         }
@@ -595,10 +593,8 @@ impl MemoryGraph {
         let edges = self.backend.get_outgoing_edges(&prompt_id)?;
         for edge in edges {
             if edge.edge_type == EdgeType::HandledBy {
-                if let Some(node) = self.backend.get_node(&edge.to)? {
-                    if let Node::Agent(agent) = node {
-                        return Ok(agent);
-                    }
+                if let Some(Node::Agent(agent)) = self.backend.get_node(&edge.to)? {
+                    return Ok(agent);
                 }
             }
         }
@@ -634,10 +630,8 @@ impl MemoryGraph {
         let mut agents = Vec::new();
         for edge in edges {
             if edge.edge_type == EdgeType::TransfersTo {
-                if let Some(node) = self.backend.get_node(&edge.to)? {
-                    if let Node::Agent(agent) = node {
-                        agents.push(agent);
-                    }
+                if let Some(Node::Agent(agent)) = self.backend.get_node(&edge.to)? {
+                    agents.push(agent);
                 }
             }
         }
@@ -874,9 +868,9 @@ impl MemoryGraph {
             // or maintain a template index
         }
 
-        Err(Error::NodeNotFound(format!(
-            "Template lookup by TemplateId not yet fully implemented - use get_template_by_node_id instead"
-        )))
+        Err(Error::NodeNotFound(
+            "Template lookup by TemplateId not yet fully implemented - use get_template_by_node_id instead".to_string()
+        ))
     }
 
     /// Get a template by its node ID

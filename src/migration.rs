@@ -252,7 +252,7 @@ impl MigrationHelper {
         // Step 4: Verify compatibility
         match Self::verify_compatibility(config).await {
             Ok(compat) if compat.compatible => {
-                report.steps_completed.push("APIs compatible".to_string())
+                report.steps_completed.push("APIs compatible".to_string());
             }
             Ok(_) => {
                 report.errors.push("APIs not compatible".to_string());

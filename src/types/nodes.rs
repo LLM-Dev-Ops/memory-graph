@@ -424,11 +424,12 @@ impl ToolInvocation {
 }
 
 /// Agent status enum
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum AgentStatus {
     /// Agent is active and ready to process tasks
     Active,
     /// Agent is idle, waiting for work
+    #[default]
     Idle,
     /// Agent is currently busy processing a task
     Busy,
@@ -436,12 +437,6 @@ pub enum AgentStatus {
     Paused,
     /// Agent has been terminated
     Terminated,
-}
-
-impl Default for AgentStatus {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 impl AgentStatus {

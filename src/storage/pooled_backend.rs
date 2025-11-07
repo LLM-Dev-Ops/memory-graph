@@ -290,11 +290,8 @@ impl PooledAsyncBackend {
     pub async fn open(path: &std::path::Path, config: PoolConfig) -> Result<Self> {
         let backend = AsyncSledBackend::open(path).await?;
         let semaphore = Arc::new(Semaphore::new(config.max_concurrent));
-        let metrics = if config.enable_metrics {
-            Arc::new(PoolMetrics::new())
-        } else {
-            Arc::new(PoolMetrics::new()) // Always create metrics for now
-        };
+        // Always create metrics regardless of config for now
+        let metrics = Arc::new(PoolMetrics::new());
 
         Ok(Self {
             backend: Arc::new(backend),

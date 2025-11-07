@@ -19,6 +19,9 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
 
+/// Type alias for batch conversation data: (SessionId, prompt_content), optional (response_content, TokenUsage)
+type ConversationBatchItem = ((SessionId, String), Option<(String, TokenUsage)>);
+
 /// Async interface for interacting with the memory graph
 ///
 /// `AsyncMemoryGraph` provides a fully async, thread-safe API for managing conversation
@@ -160,7 +163,7 @@ impl AsyncMemoryGraph {
     }
 
     /// Publish an event to Observatory (non-blocking)
-    async fn publish_event(&self, event: MemoryGraphEvent) {
+    fn publish_event(&self, event: MemoryGraphEvent) {
         if let Some(obs) = &self.observatory {
             let obs = Arc::clone(obs);
             tokio::spawn(async move {
@@ -223,8 +226,7 @@ impl AsyncMemoryGraph {
             session_id: Some(session.id),
             timestamp: Utc::now(),
             metadata: session.metadata.clone(),
-        })
-        .await;
+        });
 
         Ok(session)
     }
@@ -372,8 +374,7 @@ impl AsyncMemoryGraph {
             content_length: content.len(),
             model: metadata.unwrap_or_default().model,
             timestamp: Utc::now(),
-        })
-        .await;
+        });
 
         Ok(prompt_id)
     }
@@ -475,16 +476,15 @@ impl AsyncMemoryGraph {
         }
 
         // Publish event
-        let latency_ms = latency_us / 1000;
+        let response_latency_ms = latency_us / 1000;
         self.publish_event(MemoryGraphEvent::ResponseGenerated {
             response_id,
             prompt_id,
             content_length: content.len(),
             tokens_used: token_usage,
-            latency_ms,
+            latency_ms: response_latency_ms,
             timestamp: Utc::now(),
-        })
-        .await;
+        });
 
         Ok(response_id)
     }
@@ -624,10 +624,8 @@ impl AsyncMemoryGraph {
 
     /// Get a template by its node ID asynchronously
     pub async fn get_template_by_node_id(&self, node_id: NodeId) -> Result<PromptTemplate> {
-        if let Some(node) = self.backend.get_node(&node_id).await? {
-            if let Node::Template(template) = node {
-                return Ok(template);
-            }
+        if let Some(Node::Template(template)) = self.backend.get_node(&node_id).await? {
+            return Ok(template);
         }
 
         Err(Error::NodeNotFound(node_id.to_string()))
@@ -997,7 +995,7 @@ impl AsyncMemoryGraph {
     /// ```
     pub async fn add_conversations_batch(
         &self,
-        conversations: Vec<((SessionId, String), Option<(String, TokenUsage)>)>,
+        conversations: Vec<ConversationBatchItem>,
     ) -> Result<Vec<(NodeId, Option<NodeId>)>> {
         let futures: Vec<_> = conversations
             .into_iter()

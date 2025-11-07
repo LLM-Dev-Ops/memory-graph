@@ -386,7 +386,7 @@ impl ReferencesProperties {
     /// Create new reference properties
     pub fn new(context_type: ContextType, relevance_score: f32, chunk_id: Option<String>) -> Self {
         // Clamp relevance score between 0.0 and 1.0
-        let relevance_score = relevance_score.max(0.0).min(1.0);
+        let relevance_score = relevance_score.clamp(0.0, 1.0);
 
         Self {
             context_type,
@@ -420,8 +420,7 @@ impl ReferencesProperties {
             .get("relevance_score")
             .and_then(|s| s.parse::<f32>().ok())
             .unwrap_or(0.0_f32)
-            .max(0.0)
-            .min(1.0);
+            .clamp(0.0, 1.0);
 
         let chunk_id = props.get("chunk_id").cloned();
 

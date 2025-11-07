@@ -248,9 +248,8 @@ impl HookExecutor {
 
                     if self.fail_fast {
                         return Err(e);
-                    } else {
-                        errors.push((plugin_name.clone(), e));
                     }
+                    errors.push((plugin_name.clone(), e));
                 }
             }
         }
