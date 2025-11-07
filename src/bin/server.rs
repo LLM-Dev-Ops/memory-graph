@@ -56,10 +56,12 @@ struct ServerConfig {
     /// LLM-Registry URL
     registry_url: Option<String>,
     /// LLM-Registry API key
+    #[allow(dead_code)]
     registry_api_key: Option<String>,
     /// Data-Vault URL
     vault_url: Option<String>,
     /// Data-Vault API key
+    #[allow(dead_code)]
     vault_api_key: Option<String>,
     /// Server start time for uptime calculation
     start_time: Instant,
