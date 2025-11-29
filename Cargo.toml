@@ -4,7 +4,7 @@ members = [
     "crates/llm-memory-graph-types",
     "crates/llm-memory-graph-integrations",
     "crates/llm-memory-graph-cli",
-    # "crates/llm-memory-graph-client", # TODO: Fix proto compilation issues
+    "crates/llm-memory-graph-client",
 ]
 resolver = "2"
 

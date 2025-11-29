@@ -2,7 +2,35 @@
  * LLM Memory Graph Client
  *
  * A TypeScript/JavaScript client for the LLM-Memory-Graph gRPC service.
- * Provides a high-level API for interacting with the memory graph.
+ * Provides a high-level API for interacting with the memory graph with
+ * production-ready features including:
+ * - Comprehensive error handling
+ * - Automatic retry with exponential backoff
+ * - Input validation
+ * - Connection health monitoring
+ * - Graceful shutdown
+ *
+ * @example
+ * ```typescript
+ * // Basic usage
+ * const client = new MemoryGraphClient({
+ *   address: 'localhost:50051',
+ *   useTls: false,
+ *   retryPolicy: {
+ *     maxRetries: 3,
+ *     initialBackoff: 100,
+ *     maxBackoff: 5000
+ *   }
+ * });
+ *
+ * // Create a session with automatic retry
+ * const session = await client.createSession({
+ *   metadata: { user: 'john' }
+ * });
+ *
+ * // Always close the client when done
+ * await client.close();
+ * ```
  */
 
 import * as grpc from '@grpc/grpc-js';
@@ -34,26 +62,75 @@ import {
   HealthResponse,
   MetricsResponse,
 } from './types';
+import { mapGrpcError, ConnectionError, TimeoutError } from './errors';
+import { withRetry, RetryPolicy, DEFAULT_RETRY_POLICY } from './retry';
+import {
+  validateSessionId,
+  validateNodeId,
+  validateAddPromptRequest,
+  validateAddResponseRequest,
+  validateQueryOptions,
+  validateNodeIdArray,
+  validateLimit,
+  validateOffset,
+} from './validators';
 
 const PROTO_PATH = path.join(__dirname, '../../proto/memory_graph.proto');
 
 /**
  * Main client class for LLM Memory Graph
+ *
+ * Provides a production-ready gRPC client with:
+ * - Automatic connection management
+ * - Retry logic with exponential backoff
+ * - Comprehensive error handling
+ * - Input validation
+ * - Health monitoring
  */
 export class MemoryGraphClient {
   private client: any;
   private config: ClientConfig;
   private connected: boolean = false;
+  private retryPolicy: RetryPolicy;
+  private healthCheckInterval?: NodeJS.Timeout;
+  private reconnectTimeout?: NodeJS.Timeout;
+  private closing = false;
 
   /**
    * Create a new MemoryGraphClient
    *
    * @param config - Client configuration
+   * @throws {ValidationError} If configuration is invalid
+   * @throws {ConnectionError} If initial connection fails
+   *
    * @example
    * ```typescript
+   * // Basic configuration
    * const client = new MemoryGraphClient({
    *   address: 'localhost:50051',
    *   useTls: false
+   * });
+   *
+   * // Advanced configuration with retry policy
+   * const client = new MemoryGraphClient({
+   *   address: 'localhost:50051',
+   *   useTls: true,
+   *   tlsOptions: {
+   *     rootCerts: fs.readFileSync('ca.pem'),
+   *     privateKey: fs.readFileSync('key.pem'),
+   *     certChain: fs.readFileSync('cert.pem')
+   *   },
+   *   timeout: 30000,
+   *   retryPolicy: {
+   *     maxRetries: 5,
+   *     initialBackoff: 200,
+   *     maxBackoff: 10000,
+   *     backoffMultiplier: 2,
+   *     useJitter: true,
+   *     onRetry: (error, attempt, delay) => {
+   *       console.log(`Retry attempt ${attempt} after ${delay}ms`);
+   *     }
+   *   }
    * });
    * ```
    */
@@ -64,30 +141,47 @@ export class MemoryGraphClient {
       timeout: 30000,
       ...config,
     };
+
+    // Initialize retry policy
+    this.retryPolicy = {
+      ...DEFAULT_RETRY_POLICY,
+      ...this.config.retryPolicy,
+    };
+
     this.initializeClient();
   }
 
   /**
    * Initialize the gRPC client
+   *
+   * @throws {ConnectionError} If client initialization fails
    */
   private initializeClient(): void {
-    const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-      keepCase: true,
-      longs: String,
-      enums: String,
-      defaults: true,
-      oneofs: true,
-      includeDirs: [path.join(__dirname, '../../proto')],
-    });
+    try {
+      const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+        includeDirs: [path.join(__dirname, '../../proto')],
+      });
 
-    const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
-    const memoryGraphProto = protoDescriptor.llm.memory.graph.v1;
+      const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
+      const memoryGraphProto = protoDescriptor.llm.memory.graph.v1;
 
-    const credentials = this.createCredentials();
-    const address = this.getAddress();
+      const credentials = this.createCredentials();
+      const address = this.getAddress();
 
-    this.client = new memoryGraphProto.MemoryGraphService(address, credentials);
-    this.connected = true;
+      this.client = new memoryGraphProto.MemoryGraphService(address, credentials);
+      this.connected = true;
+    } catch (error) {
+      throw new ConnectionError(
+        'Failed to initialize gRPC client',
+        { address: this.config.address },
+        error as Error
+      );
+    }
   }
 
   /**
@@ -133,6 +227,127 @@ export class MemoryGraphClient {
     };
   }
 
+  /**
+   * Execute a gRPC call with error handling and retry logic
+   *
+   * @param fn - Function to execute
+   * @param retryable - Whether to retry on failure (default: true)
+   * @returns Promise with the result
+   * @throws {MemoryGraphError} Mapped gRPC error
+   *
+   * @internal
+   */
+  private async executeWithRetry<T>(fn: () => Promise<T>, retryable = true): Promise<T> {
+    if (!this.connected) {
+      throw new ConnectionError('Client is not connected');
+    }
+
+    if (this.closing) {
+      throw new ConnectionError('Client is closing');
+    }
+
+    try {
+      if (retryable && this.retryPolicy.maxRetries && this.retryPolicy.maxRetries > 0) {
+        return await withRetry(fn, this.retryPolicy);
+      } else {
+        return await fn();
+      }
+    } catch (error) {
+      throw mapGrpcError(error);
+    }
+  }
+
+  /**
+   * Start periodic health checks
+   *
+   * @param intervalMs - Interval between health checks in milliseconds
+   *
+   * @example
+   * ```typescript
+   * client.startHealthChecks(30000); // Check every 30 seconds
+   * ```
+   */
+  startHealthChecks(intervalMs = 30000): void {
+    if (this.healthCheckInterval) {
+      return; // Already running
+    }
+
+    this.healthCheckInterval = setInterval(async () => {
+      try {
+        await this.health();
+      } catch (error) {
+        // Connection lost, attempt to reconnect
+        this.connected = false;
+        this.attemptReconnect();
+      }
+    }, intervalMs);
+  }
+
+  /**
+   * Stop periodic health checks
+   */
+  stopHealthChecks(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+    }
+  }
+
+  /**
+   * Attempt to reconnect to the server
+   *
+   * @internal
+   */
+  private attemptReconnect(): void {
+    if (this.reconnectTimeout || this.closing) {
+      return;
+    }
+
+    this.reconnectTimeout = setTimeout(() => {
+      try {
+        this.initializeClient();
+        this.reconnectTimeout = undefined;
+      } catch (error) {
+        this.reconnectTimeout = undefined;
+        // Try again after delay
+        this.attemptReconnect();
+      }
+    }, 5000); // Retry after 5 seconds
+  }
+
+  /**
+   * Wait for the client to be ready
+   *
+   * @param timeoutMs - Timeout in milliseconds (default: 30000)
+   * @returns Promise that resolves when client is ready
+   * @throws {TimeoutError} If timeout is reached
+   *
+   * @example
+   * ```typescript
+   * await client.waitForReady(5000);
+   * console.log('Client is ready!');
+   * ```
+   */
+  async waitForReady(timeoutMs = 30000): Promise<void> {
+    const startTime = Date.now();
+
+    while (!this.connected) {
+      if (Date.now() - startTime > timeoutMs) {
+        throw new TimeoutError(`Client failed to connect within ${timeoutMs}ms`, {
+          timeout: timeoutMs,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    // Verify connection with health check
+    try {
+      await this.health();
+    } catch (error) {
+      throw new ConnectionError('Health check failed', undefined, error as Error);
+    }
+  }
+
   // ============================================================================
   // Session Management
   // ============================================================================
@@ -142,6 +357,9 @@ export class MemoryGraphClient {
    *
    * @param options - Session creation options
    * @returns Promise with the created session
+   * @throws {ValidationError} If options are invalid
+   * @throws {MemoryGraphError} If creation fails
+   *
    * @example
    * ```typescript
    * const session = await client.createSession({
@@ -151,18 +369,20 @@ export class MemoryGraphClient {
    * ```
    */
   async createSession(options: CreateSessionOptions = {}): Promise<Session> {
-    const createSession = promisify(this.client.createSession.bind(this.client));
-    const response = await createSession({
-      metadata: options.metadata || {},
-    });
+    return this.executeWithRetry(async () => {
+      const createSession = promisify(this.client.createSession.bind(this.client));
+      const response = await createSession({
+        metadata: options.metadata || {},
+      });
 
-    return {
-      id: response.id,
-      createdAt: this.toDate(response.created_at),
-      updatedAt: this.toDate(response.updated_at),
-      metadata: response.metadata || {},
-      isActive: response.is_active,
-    };
+      return {
+        id: response.id,
+        createdAt: this.toDate(response.created_at),
+        updatedAt: this.toDate(response.updated_at),
+        metadata: response.metadata || {},
+        isActive: response.is_active,
+      };
+    });
   }
 
   /**
@@ -170,54 +390,75 @@ export class MemoryGraphClient {
    *
    * @param sessionId - The session ID
    * @returns Promise with the session
+   * @throws {ValidationError} If sessionId is invalid
+   * @throws {NotFoundError} If session is not found
+   * @throws {MemoryGraphError} If retrieval fails
    */
   async getSession(sessionId: string): Promise<Session> {
-    const getSession = promisify(this.client.getSession.bind(this.client));
-    const response = await getSession({ session_id: sessionId });
+    validateSessionId(sessionId);
 
-    return {
-      id: response.id,
-      createdAt: this.toDate(response.created_at),
-      updatedAt: this.toDate(response.updated_at),
-      metadata: response.metadata || {},
-      isActive: response.is_active,
-    };
+    return this.executeWithRetry(async () => {
+      const getSession = promisify(this.client.getSession.bind(this.client));
+      const response = await getSession({ session_id: sessionId });
+
+      return {
+        id: response.id,
+        createdAt: this.toDate(response.created_at),
+        updatedAt: this.toDate(response.updated_at),
+        metadata: response.metadata || {},
+        isActive: response.is_active,
+      };
+    });
   }
 
   /**
    * Delete a session
    *
    * @param sessionId - The session ID to delete
+   * @throws {ValidationError} If sessionId is invalid
+   * @throws {NotFoundError} If session is not found
+   * @throws {MemoryGraphError} If deletion fails
    */
   async deleteSession(sessionId: string): Promise<void> {
-    const deleteSession = promisify(this.client.deleteSession.bind(this.client));
-    await deleteSession({ session_id: sessionId });
+    validateSessionId(sessionId);
+
+    return this.executeWithRetry(async () => {
+      const deleteSession = promisify(this.client.deleteSession.bind(this.client));
+      await deleteSession({ session_id: sessionId });
+    }, false); // Don't retry deletes
   }
 
   /**
    * List sessions
    *
-   * @param limit - Maximum number of sessions to return
-   * @param offset - Number of sessions to skip
+   * @param limit - Maximum number of sessions to return (default: 100, max: 10000)
+   * @param offset - Number of sessions to skip (default: 0)
    * @returns Promise with sessions and total count
+   * @throws {ValidationError} If parameters are invalid
+   * @throws {MemoryGraphError} If listing fails
    */
   async listSessions(
     limit: number = 100,
     offset: number = 0
   ): Promise<{ sessions: Session[]; totalCount: number }> {
-    const listSessions = promisify(this.client.listSessions.bind(this.client));
-    const response = await listSessions({ limit, offset });
+    validateLimit(limit);
+    validateOffset(offset);
 
-    return {
-      sessions: (response.sessions || []).map((s: any) => ({
-        id: s.id,
-        createdAt: this.toDate(s.created_at),
-        updatedAt: this.toDate(s.updated_at),
-        metadata: s.metadata || {},
-        isActive: s.is_active,
-      })),
-      totalCount: parseInt(response.total_count || '0'),
-    };
+    return this.executeWithRetry(async () => {
+      const listSessions = promisify(this.client.listSessions.bind(this.client));
+      const response = await listSessions({ limit, offset });
+
+      return {
+        sessions: (response.sessions || []).map((s: any) => ({
+          id: s.id,
+          createdAt: this.toDate(s.created_at),
+          updatedAt: this.toDate(s.updated_at),
+          metadata: s.metadata || {},
+          isActive: s.is_active,
+        })),
+        totalCount: parseInt(response.total_count || '0'),
+      };
+    });
   }
 
   // ============================================================================
@@ -241,11 +482,18 @@ export class MemoryGraphClient {
    *
    * @param nodeId - The node ID
    * @returns Promise with the node
+   * @throws {ValidationError} If nodeId is invalid
+   * @throws {NotFoundError} If node is not found
+   * @throws {MemoryGraphError} If retrieval fails
    */
   async getNode(nodeId: string): Promise<Node> {
-    const getNode = promisify(this.client.getNode.bind(this.client));
-    const response = await getNode({ node_id: nodeId });
-    return this.parseNode(response);
+    validateNodeId(nodeId);
+
+    return this.executeWithRetry(async () => {
+      const getNode = promisify(this.client.getNode.bind(this.client));
+      const response = await getNode({ node_id: nodeId });
+      return this.parseNode(response);
+    });
   }
 
   /**
@@ -291,11 +539,17 @@ export class MemoryGraphClient {
    *
    * @param nodeIds - Array of node IDs
    * @returns Promise with array of nodes
+   * @throws {ValidationError} If nodeIds array is invalid
+   * @throws {MemoryGraphError} If retrieval fails
    */
   async batchGetNodes(nodeIds: string[]): Promise<Node[]> {
-    const batchGetNodes = promisify(this.client.batchGetNodes.bind(this.client));
-    const response = await batchGetNodes({ node_ids: nodeIds });
-    return (response.nodes || []).map((n: any) => this.parseNode(n));
+    validateNodeIdArray(nodeIds);
+
+    return this.executeWithRetry(async () => {
+      const batchGetNodes = promisify(this.client.batchGetNodes.bind(this.client));
+      const response = await batchGetNodes({ node_ids: nodeIds });
+      return (response.nodes || []).map((n: any) => this.parseNode(n));
+    });
   }
 
   /**
@@ -383,6 +637,9 @@ export class MemoryGraphClient {
    *
    * @param options - Query options
    * @returns Promise with query results
+   * @throws {ValidationError} If options are invalid
+   * @throws {MemoryGraphError} If query fails
+   *
    * @example
    * ```typescript
    * const results = await client.query({
@@ -394,24 +651,28 @@ export class MemoryGraphClient {
    * ```
    */
   async query(options: QueryOptions = {}): Promise<QueryResult> {
-    const query = promisify(this.client.query.bind(this.client));
-    const request: any = {
-      limit: options.limit || 100,
-      offset: options.offset || 0,
-    };
+    validateQueryOptions(options);
 
-    if (options.sessionId) request.session_id = options.sessionId;
-    if (options.nodeType !== undefined) request.node_type = options.nodeType;
-    if (options.after) request.after = this.toTimestamp(options.after);
-    if (options.before) request.before = this.toTimestamp(options.before);
-    if (options.filters) request.filters = options.filters;
+    return this.executeWithRetry(async () => {
+      const query = promisify(this.client.query.bind(this.client));
+      const request: any = {
+        limit: options.limit || 100,
+        offset: options.offset || 0,
+      };
 
-    const response = await query(request);
+      if (options.sessionId) request.session_id = options.sessionId;
+      if (options.nodeType !== undefined) request.node_type = options.nodeType;
+      if (options.after) request.after = this.toTimestamp(options.after);
+      if (options.before) request.before = this.toTimestamp(options.before);
+      if (options.filters) request.filters = options.filters;
 
-    return {
-      nodes: (response.nodes || []).map((n: any) => this.parseNode(n)),
-      totalCount: parseInt(response.total_count || '0'),
-    };
+      const response = await query(request);
+
+      return {
+        nodes: (response.nodes || []).map((n: any) => this.parseNode(n)),
+        totalCount: parseInt(response.total_count || '0'),
+      };
+    });
   }
 
   /**
@@ -465,6 +726,10 @@ export class MemoryGraphClient {
    *
    * @param request - Add prompt request
    * @returns Promise with the created prompt node
+   * @throws {ValidationError} If request is invalid
+   * @throws {NotFoundError} If session is not found
+   * @throws {MemoryGraphError} If creation fails
+   *
    * @example
    * ```typescript
    * const prompt = await client.addPrompt({
@@ -480,9 +745,13 @@ export class MemoryGraphClient {
    * ```
    */
   async addPrompt(request: AddPromptRequest): Promise<PromptNode> {
-    const addPrompt = promisify(this.client.addPrompt.bind(this.client));
-    const response = await addPrompt(request);
-    return response as PromptNode;
+    validateAddPromptRequest(request);
+
+    return this.executeWithRetry(async () => {
+      const addPrompt = promisify(this.client.addPrompt.bind(this.client));
+      const response = await addPrompt(request);
+      return response as PromptNode;
+    });
   }
 
   /**
@@ -490,6 +759,10 @@ export class MemoryGraphClient {
    *
    * @param request - Add response request
    * @returns Promise with the created response node
+   * @throws {ValidationError} If request is invalid
+   * @throws {NotFoundError} If prompt is not found
+   * @throws {MemoryGraphError} If creation fails
+   *
    * @example
    * ```typescript
    * const response = await client.addResponse({
@@ -510,9 +783,13 @@ export class MemoryGraphClient {
    * ```
    */
   async addResponse(request: AddResponseRequest): Promise<ResponseNode> {
-    const addResponse = promisify(this.client.addResponse.bind(this.client));
-    const response = await addResponse(request);
-    return response as ResponseNode;
+    validateAddResponseRequest(request);
+
+    return this.executeWithRetry(async () => {
+      const addResponse = promisify(this.client.addResponse.bind(this.client));
+      const response = await addResponse(request);
+      return response as ResponseNode;
+    });
   }
 
   /**
@@ -657,19 +934,130 @@ export class MemoryGraphClient {
   }
 
   /**
-   * Close the client connection
+   * Close the client connection gracefully
+   *
+   * Stops health checks, clears timeouts, and closes the gRPC connection.
+   * This is the recommended way to shut down the client.
+   *
+   * @param timeoutMs - Maximum time to wait for graceful shutdown (default: 5000ms)
+   * @returns Promise that resolves when client is closed
+   *
+   * @example
+   * ```typescript
+   * await client.close();
+   * console.log('Client closed successfully');
+   * ```
    */
-  close(): void {
+  async close(timeoutMs = 5000): Promise<void> {
+    if (!this.connected && !this.closing) {
+      return; // Already closed
+    }
+
+    this.closing = true;
+
+    // Stop health checks
+    this.stopHealthChecks();
+
+    // Clear reconnect timeout
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+
+    // Close the gRPC client
+    if (this.client) {
+      // Wait for client to close gracefully or timeout
+      const closePromise = new Promise<void>((resolve) => {
+        this.client.close();
+        resolve();
+      });
+
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(resolve, timeoutMs);
+      });
+
+      await Promise.race([closePromise, timeoutPromise]);
+
+      this.connected = false;
+      this.client = null;
+    }
+
+    this.closing = false;
+  }
+
+  /**
+   * Close the client connection synchronously (deprecated)
+   *
+   * @deprecated Use async close() method instead
+   */
+  closeSync(): void {
+    this.stopHealthChecks();
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+
     if (this.client) {
       this.client.close();
       this.connected = false;
+      this.client = null;
     }
   }
 
   /**
    * Check if client is connected
+   *
+   * @returns True if client is connected and ready
    */
   isConnected(): boolean {
-    return this.connected;
+    return this.connected && !this.closing;
+  }
+
+  /**
+   * Check if client is closing
+   *
+   * @returns True if client is in the process of closing
+   */
+  isClosing(): boolean {
+    return this.closing;
+  }
+
+  /**
+   * Get client configuration
+   *
+   * @returns Current client configuration (read-only copy)
+   */
+  getConfig(): Readonly<ClientConfig> {
+    return { ...this.config };
+  }
+
+  /**
+   * Get retry policy
+   *
+   * @returns Current retry policy (read-only copy)
+   */
+  getRetryPolicy(): Readonly<RetryPolicy> {
+    return { ...this.retryPolicy };
+  }
+
+  /**
+   * Update retry policy
+   *
+   * @param policy - New retry policy settings to merge
+   *
+   * @example
+   * ```typescript
+   * client.updateRetryPolicy({
+   *   maxRetries: 5,
+   *   initialBackoff: 200
+   * });
+   * ```
+   */
+  updateRetryPolicy(policy: Partial<RetryPolicy>): void {
+    this.retryPolicy = {
+      ...this.retryPolicy,
+      ...policy,
+    };
   }
 }

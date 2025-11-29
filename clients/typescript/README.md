@@ -4,12 +4,25 @@ A professional TypeScript/JavaScript client for the LLM-Memory-Graph gRPC servic
 
 ## Features
 
+### Core Features
 - **Full Type Safety**: Complete TypeScript type definitions for all operations
 - **Promise-based API**: Modern async/await interface for all RPC calls
 - **Streaming Support**: Built-in support for streaming queries and event subscriptions
 - **Connection Management**: Automatic connection handling with TLS support
-- **Error Handling**: Comprehensive error handling with meaningful error messages
 - **Zero Dependencies**: Minimal dependencies using standard gRPC libraries
+
+### Production-Ready Features (NEW!)
+- **Comprehensive Error Handling**: Rich error hierarchy with gRPC status code mapping
+- **Automatic Retry Logic**: Exponential backoff with configurable retry policies
+- **Input Validation**: Automatic validation of all method inputs with detailed error messages
+- **Circuit Breaker**: Prevent cascading failures with built-in circuit breaker
+- **Health Monitoring**: Periodic health checks with auto-reconnection
+- **Graceful Shutdown**: Clean connection closure with timeout handling
+- **Batch Processing**: Efficient batch operations with rate limiting
+- **Type Guards**: Runtime type checking for nodes and edges
+- **Utility Functions**: 40+ helper functions for common operations
+
+See [PRODUCTION-FEATURES.md](./PRODUCTION-FEATURES.md) for detailed documentation.
 
 ## Installation
 

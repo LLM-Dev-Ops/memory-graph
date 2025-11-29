@@ -1,0 +1,46 @@
+warning: method `print` is never used
+  --> crates/llm-memory-graph-cli/src/output/mod.rs:47:12
+   |
+45 | impl OutputFormat {
+   | ----------------- method in this implementation
+46 |     /// Print a value using this format
+47 |     pub fn print<T: Serialize>(&self, value: &T) -> Result<()> {
+   |            ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `to_string` is never used
+   --> crates/llm-memory-graph-cli/src/output/mod.rs:172:12
+    |
+142 | impl TableBuilder {
+    | ----------------- method in this implementation
+...
+172 |     pub fn to_string(self) -> String {
+    |            ^^^^^^^^^
+
+warning: `llm-memory-graph-cli` (bin "llm-memory-graph") generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running `target/debug/llm-memory-graph --help`
+Command-line management tools for LLM Memory Graph
+
+Usage: llm-memory-graph [OPTIONS] <COMMAND>
+
+Commands:
+  stats     Show database statistics
+  session   Session management commands
+  node      Node operations
+  query     Advanced query with filters
+  export    Export operations
+  import    Import operations
+  template  Template management
+  agent     Agent management
+  server    Server management
+  flush     Flush database to disk
+  verify    Verify database integrity
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -d, --db-path <DB_PATH>  Path to the database directory [default: ./data]
+  -f, --format <FORMAT>    Output format (text, json, yaml, table) [default: text]
+  -h, --help               Print help
+  -V, --version            Print version

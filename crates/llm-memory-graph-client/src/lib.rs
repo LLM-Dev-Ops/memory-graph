@@ -15,20 +15,19 @@
 //!
 //! ```no_run
 //! use llm_memory_graph_client::MemoryGraphClient;
-//! use llm_memory_graph_types::{PromptNode, PromptMetadata};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let client = MemoryGraphClient::connect("http://localhost:50051").await?;
 //!
 //!     // Create a session
-//!     let session = client.create_session(Default::default()).await?;
+//!     let session_id = client.create_session(Default::default()).await?;
 //!
 //!     // Add a prompt
 //!     let prompt = client.add_prompt(
-//!         session.id.clone(),
+//!         session_id,
 //!         "What is the capital of France?".to_string(),
-//!         PromptMetadata::default()
+//!         None
 //!     ).await?;
 //!
 //!     Ok(())

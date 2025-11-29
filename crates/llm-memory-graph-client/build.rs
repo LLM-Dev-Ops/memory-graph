@@ -9,11 +9,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // tonic_build will automatically put the output in OUT_DIR
     // which is accessible via tonic::include_proto!
     tonic_build::configure()
-        .build_server(true) // Generate server code
-        .build_client(true) // Generate client code for testing
+        .build_server(false)  // Client-only - no server code needed
+        .build_client(true)   // Generate client stubs
         .compile(
-            &["proto/memory_graph.proto"], // Proto files to compile
-            &["proto"],                    // Include directories
+            &["proto/memory_graph.proto"],
+            &["proto"],
         )?;
 
     // Re-run build script if proto files change

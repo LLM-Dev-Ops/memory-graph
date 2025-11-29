@@ -1,20 +1,27 @@
 //! Command-line interface for LLM Memory Graph management
 //!
-//! This tool provides commands for managing and querying the memory graph database:
+//! This tool provides comprehensive commands for managing and querying the memory graph database:
 //! - Database inspection and statistics
-//! - Node queries
-//! - Data export
-//! - Performance diagnostics
+//! - Session and node queries
+//! - Advanced filtering and search
+//! - Data export/import
+//! - Template management
+//! - Agent lifecycle management
+//! - Server management
+//! - Multiple output formats (text, JSON, YAML, table)
+
+mod commands;
+mod output;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use colored::Colorize;
 use llm_memory_graph::{engine::AsyncMemoryGraph, Config};
-use llm_memory_graph_types::{NodeId, SessionId};
 use std::path::PathBuf;
-use uuid::Uuid;
 
-/// LLM Memory Graph CLI - Database management and query tool
+use commands::CommandContext;
+use output::OutputFormat;
+
+/// LLM Memory Graph CLI - Enterprise-grade database management and query tool
 #[derive(Parser)]
 #[command(name = "llm-memory-graph")]
 #[command(author, version, about, long_about = None)]
@@ -23,30 +30,12 @@ struct Cli {
     #[arg(short, long, default_value = "./data")]
     db_path: PathBuf,
 
-    /// Output format (text, json)
-    #[arg(short, long, default_value = "text")]
+    /// Output format (text, json, yaml, table)
+    #[arg(short = 'f', long, default_value = "text")]
     format: OutputFormat,
 
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Debug, Clone)]
-enum OutputFormat {
-    Text,
-    Json,
-}
-
-impl std::str::FromStr for OutputFormat {
-    type Err = String;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "text" => Ok(OutputFormat::Text),
-            "json" => Ok(OutputFormat::Json),
-            _ => Err(format!("Invalid format: {}. Use 'text' or 'json'", s)),
-        }
-    }
 }
 
 #[derive(Subcommand)]
@@ -54,33 +43,250 @@ enum Commands {
     /// Show database statistics
     Stats,
 
-    /// Get session details
-    Session {
-        /// Session ID (UUID format)
-        session_id: String,
-    },
+    /// Session management commands
+    #[command(subcommand)]
+    Session(SessionCommands),
 
-    /// Get node details
-    Node {
-        /// Node ID (UUID format)
-        node_id: String,
-    },
+    /// Node operations
+    #[command(subcommand)]
+    Node(NodeCommands),
 
-    /// Export session data
-    Export {
-        /// Session ID (UUID format)
-        session_id: String,
-
-        /// Output file path
+    /// Advanced query with filters
+    Query {
+        /// Filter by session ID (UUID format)
         #[arg(short, long)]
-        output: PathBuf,
+        session: Option<String>,
+
+        /// Filter by node type (prompt, response, agent, template, tool)
+        #[arg(short = 't', long)]
+        node_type: Option<String>,
+
+        /// Filter by creation time (after this timestamp, RFC3339 format)
+        #[arg(short, long)]
+        after: Option<String>,
+
+        /// Filter by creation time (before this timestamp, RFC3339 format)
+        #[arg(short, long)]
+        before: Option<String>,
+
+        /// Limit number of results
+        #[arg(short, long)]
+        limit: Option<usize>,
     },
+
+    /// Export operations
+    #[command(subcommand)]
+    Export(ExportCommands),
+
+    /// Import operations
+    Import {
+        /// Input file path
+        #[arg(short, long)]
+        input: PathBuf,
+
+        /// Import format (json, msgpack)
+        #[arg(long, default_value = "json")]
+        import_format: commands::import::ImportFormat,
+
+        /// Dry run - validate without importing
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Template management
+    #[command(subcommand)]
+    Template(TemplateCommands),
+
+    /// Agent management
+    #[command(subcommand)]
+    Agent(AgentCommands),
+
+    /// Server management
+    #[command(subcommand)]
+    Server(ServerCommands),
 
     /// Flush database to disk
     Flush,
 
     /// Verify database integrity
     Verify,
+}
+
+#[derive(Subcommand)]
+enum SessionCommands {
+    /// Get session details
+    Get {
+        /// Session ID (UUID format)
+        session_id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum NodeCommands {
+    /// Get node details
+    Get {
+        /// Node ID (UUID format)
+        node_id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ExportCommands {
+    /// Export a session
+    Session {
+        /// Session ID (UUID format)
+        session_id: String,
+
+        /// Output file path
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Export format (json, msgpack)
+        #[arg(long, default_value = "json")]
+        export_format: commands::export::ExportFormat,
+    },
+
+    /// Export entire database
+    Database {
+        /// Output file path
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// Export format (json, msgpack)
+        #[arg(long, default_value = "json")]
+        export_format: commands::export::ExportFormat,
+    },
+}
+
+#[derive(Subcommand)]
+enum TemplateCommands {
+    /// Create a new template
+    Create {
+        /// Template name
+        #[arg(short, long)]
+        name: String,
+
+        /// Template content
+        #[arg(short, long)]
+        content: String,
+
+        /// Template description
+        #[arg(short, long)]
+        description: Option<String>,
+
+        /// Template category
+        #[arg(long)]
+        category: Option<String>,
+    },
+
+    /// Get template details
+    Get {
+        /// Template ID (UUID format)
+        template_id: String,
+    },
+
+    /// List all templates
+    List {
+        /// Filter by category
+        #[arg(short, long)]
+        category: Option<String>,
+    },
+
+    /// Instantiate a template with variables
+    Instantiate {
+        /// Template ID (UUID format)
+        template_id: String,
+
+        /// Variables in key=value format
+        #[arg(short = 'v', long)]
+        variables: Vec<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum AgentCommands {
+    /// Create a new agent
+    Create {
+        /// Agent name
+        #[arg(short, long)]
+        name: String,
+
+        /// Agent description
+        #[arg(short, long)]
+        description: Option<String>,
+
+        /// Model identifier (e.g., gpt-4, claude-3-opus)
+        #[arg(short, long)]
+        model: Option<String>,
+    },
+
+    /// Get agent details
+    Get {
+        /// Agent ID (UUID format)
+        agent_id: String,
+    },
+
+    /// List all agents
+    List,
+
+    /// Update an agent
+    Update {
+        /// Agent ID (UUID format)
+        agent_id: String,
+
+        /// New name
+        #[arg(short, long)]
+        name: Option<String>,
+
+        /// New description
+        #[arg(short, long)]
+        description: Option<String>,
+
+        /// New model
+        #[arg(short, long)]
+        model: Option<String>,
+
+        /// New temperature
+        #[arg(short, long)]
+        temperature: Option<f32>,
+    },
+
+    /// Assign agent to a prompt
+    Assign {
+        /// Agent ID (UUID format)
+        agent_id: String,
+
+        /// Prompt ID (UUID format)
+        prompt_id: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum ServerCommands {
+    /// Start the gRPC server
+    Start {
+        /// Server host
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+
+        /// Server port
+        #[arg(long, default_value = "50051")]
+        port: u16,
+    },
+
+    /// Check server health
+    Health {
+        /// Server URL
+        #[arg(long, default_value = "http://127.0.0.1:50051")]
+        url: String,
+    },
+
+    /// Get server metrics
+    Metrics {
+        /// Server URL
+        #[arg(long, default_value = "http://127.0.0.1:50051")]
+        url: String,
+    },
 }
 
 #[tokio::main]
@@ -91,171 +297,148 @@ async fn main() -> Result<()> {
     let config = Config::new(cli.db_path.to_str().unwrap());
     let graph = AsyncMemoryGraph::open(config).await?;
 
+    // Create command context
+    let ctx = CommandContext::new(&graph, &cli.format);
+
     match cli.command {
-        Commands::Stats => handle_stats(&graph, &cli.format).await?,
-        Commands::Session { session_id } => {
-            handle_session(&graph, &cli.format, &session_id).await?
-        }
-        Commands::Node { node_id } => handle_node(&graph, &cli.format, &node_id).await?,
-        Commands::Export {
-            session_id,
-            output,
-        } => handle_export(&graph, &session_id, &output).await?,
-        Commands::Flush => handle_flush(&graph).await?,
-        Commands::Verify => handle_verify(&graph).await?,
-    }
+        Commands::Stats => commands::stats::handle_stats(&ctx).await?,
 
-    Ok(())
-}
-
-async fn handle_stats(graph: &AsyncMemoryGraph, format: &OutputFormat) -> Result<()> {
-    let stats = graph.stats().await?;
-
-    match format {
-        OutputFormat::Json => {
-            let stats_json = serde_json::json!({
-                "node_count": stats.node_count,
-                "edge_count": stats.edge_count,
-                "session_count": stats.session_count,
-            });
-            println!("{}", serde_json::to_string_pretty(&stats_json)?);
-        }
-        OutputFormat::Text => {
-            println!("{}", "Database Statistics".bold().green());
-            println!("{}", "===================".green());
-            println!("{:20} {}", "Total Nodes:", stats.node_count.to_string().cyan());
-            println!("{:20} {}", "Total Edges:", stats.edge_count.to_string().cyan());
-            println!(
-                "{:20} {}",
-                "Total Sessions:",
-                stats.session_count.to_string().cyan()
-            );
-        }
-    }
-
-    Ok(())
-}
-
-async fn handle_session(
-    graph: &AsyncMemoryGraph,
-    format: &OutputFormat,
-    session_id_str: &str,
-) -> Result<()> {
-    let uuid = Uuid::parse_str(session_id_str)?;
-    let session_id = SessionId::from(uuid);
-    let session = graph.get_session(session_id).await?;
-
-    // Get nodes in the session
-    let nodes = graph.get_session_nodes(&session_id).await?;
-
-    match format {
-        OutputFormat::Json => {
-            let mut session_with_nodes = serde_json::to_value(&session)?;
-            session_with_nodes["node_count"] = serde_json::Value::Number(nodes.len().into());
-            println!("{}", serde_json::to_string_pretty(&session_with_nodes)?);
-        }
-        OutputFormat::Text => {
-            println!("{}", format!("Session: {}", session.id).bold().green());
-            println!("{}", "====================".green());
-            println!(
-                "{:15} {}",
-                "Created:",
-                session.created_at.format("%Y-%m-%d %H:%M:%S")
-            );
-            println!(
-                "{:15} {}",
-                "Updated:",
-                session.updated_at.format("%Y-%m-%d %H:%M:%S")
-            );
-            println!("{:15} {}", "Nodes:", nodes.len());
-            println!("\n{}", "Metadata:".bold());
-            for (key, value) in &session.metadata {
-                println!("  {:13} {}", format!("{}:", key), value);
-            }
-            println!("\n{}", "Tags:".bold());
-            for tag in &session.tags {
-                println!("  - {}", tag);
-            }
-        }
-    }
-
-    Ok(())
-}
-
-async fn handle_node(
-    graph: &AsyncMemoryGraph,
-    format: &OutputFormat,
-    node_id_str: &str,
-) -> Result<()> {
-    let uuid = Uuid::parse_str(node_id_str)?;
-    let node_id = NodeId::from(uuid);
-    let node_opt = graph.get_node(&node_id).await?;
-
-    match node_opt {
-        Some(node) => match format {
-            OutputFormat::Json => {
-                println!("{}", serde_json::to_string_pretty(&node)?);
-            }
-            OutputFormat::Text => {
-                println!("{}", format!("Node: {}", node_id).bold().green());
-                println!("{}", "====================".green());
-                println!("{:15} {:?}", "Type:", node.node_type());
-                println!("\n{}", "Details:".bold());
-                println!("{}", serde_json::to_string_pretty(&node)?);
+        Commands::Session(session_cmd) => match session_cmd {
+            SessionCommands::Get { session_id } => {
+                commands::session::handle_session_get(&ctx, &session_id).await?
             }
         },
-        None => {
-            eprintln!("{} Node not found: {}", "Error:".red().bold(), node_id);
-            std::process::exit(1);
+
+        Commands::Node(node_cmd) => match node_cmd {
+            NodeCommands::Get { node_id } => {
+                commands::session::handle_node_get(&ctx, &node_id).await?
+            }
+        },
+
+        Commands::Query {
+            session,
+            node_type,
+            after,
+            before,
+            limit,
+        } => {
+            let filters = commands::query::QueryFilters {
+                session_id: session,
+                node_type,
+                after,
+                before,
+                limit,
+            };
+            commands::query::handle_query(&ctx, filters).await?;
         }
+
+        Commands::Export(export_cmd) => match export_cmd {
+            ExportCommands::Session {
+                session_id,
+                output,
+                export_format,
+            } => {
+                commands::export::handle_export_session(&ctx, &session_id, &output, export_format)
+                    .await?
+            }
+            ExportCommands::Database {
+                output,
+                export_format,
+            } => commands::export::handle_export_database(&ctx, &output, export_format).await?,
+        },
+
+        Commands::Import {
+            input,
+            import_format,
+            dry_run,
+        } => commands::import::handle_import(&ctx, &input, import_format, dry_run).await?,
+
+        Commands::Template(template_cmd) => match template_cmd {
+            TemplateCommands::Create {
+                name,
+                content,
+                description,
+                category,
+            } => {
+                commands::template::handle_template_create(&ctx, name, content, description, category)
+                    .await?
+            }
+            TemplateCommands::Get { template_id } => {
+                commands::template::handle_template_get(&ctx, &template_id).await?
+            }
+            TemplateCommands::List { category } => {
+                commands::template::handle_template_list(&ctx, category).await?
+            }
+            TemplateCommands::Instantiate {
+                template_id,
+                variables,
+            } => {
+                // Parse variables from key=value format
+                let parsed_vars: Vec<(String, String)> = variables
+                    .iter()
+                    .filter_map(|v| {
+                        let parts: Vec<&str> = v.splitn(2, '=').collect();
+                        if parts.len() == 2 {
+                            Some((parts[0].to_string(), parts[1].to_string()))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+
+                commands::template::handle_template_instantiate(&ctx, &template_id, parsed_vars)
+                    .await?
+            }
+        },
+
+        Commands::Agent(agent_cmd) => match agent_cmd {
+            AgentCommands::Create {
+                name,
+                description,
+                model,
+            } => commands::agent::handle_agent_create(&ctx, name, description, model).await?,
+            AgentCommands::Get { agent_id } => {
+                commands::agent::handle_agent_get(&ctx, &agent_id).await?
+            }
+            AgentCommands::List => commands::agent::handle_agent_list(&ctx).await?,
+            AgentCommands::Update {
+                agent_id,
+                name,
+                description,
+                model,
+                temperature,
+            } => {
+                commands::agent::handle_agent_update(
+                    &ctx,
+                    &agent_id,
+                    name,
+                    description,
+                    model,
+                    temperature,
+                )
+                .await?
+            }
+            AgentCommands::Assign {
+                agent_id,
+                prompt_id,
+            } => commands::agent::handle_agent_assign(&ctx, &agent_id, &prompt_id).await?,
+        },
+
+        Commands::Server(server_cmd) => match server_cmd {
+            ServerCommands::Start { host, port } => {
+                commands::server::handle_server_start(&ctx, host, port).await?
+            }
+            ServerCommands::Health { url } => {
+                commands::server::handle_server_health(&ctx, url).await?
+            }
+            ServerCommands::Metrics { url } => {
+                commands::server::handle_server_metrics(&ctx, url).await?
+            }
+        },
+
+        Commands::Flush => commands::session::handle_flush(&ctx).await?,
+        Commands::Verify => commands::session::handle_verify(&ctx).await?,
     }
-
-    Ok(())
-}
-
-async fn handle_export(
-    graph: &AsyncMemoryGraph,
-    session_id_str: &str,
-    output: &PathBuf,
-) -> Result<()> {
-    let uuid = Uuid::parse_str(session_id_str)?;
-    let session_id = SessionId::from(uuid);
-    let session = graph.get_session(session_id).await?;
-
-    // Export session as JSON
-    let json = serde_json::to_string_pretty(&session)?;
-    std::fs::write(output, json)?;
-
-    println!(
-        "{} Session exported to: {}",
-        "✓".green().bold(),
-        output.display().to_string().cyan()
-    );
-
-    Ok(())
-}
-
-async fn handle_flush(graph: &AsyncMemoryGraph) -> Result<()> {
-    println!("{}", "Flushing database to disk...".yellow());
-    graph.flush().await?;
-    println!("{} Database flushed successfully", "✓".green().bold());
-    Ok(())
-}
-
-async fn handle_verify(graph: &AsyncMemoryGraph) -> Result<()> {
-    println!("{}", "Verifying database integrity...".yellow());
-
-    let stats = graph.stats().await?;
-
-    println!("{} Verified {} nodes", "✓".green().bold(), stats.node_count);
-    println!("{} Verified {} edges", "✓".green().bold(), stats.edge_count);
-    println!(
-        "{} Verified {} sessions",
-        "✓".green().bold(),
-        stats.session_count
-    );
-
-    println!("\n{} Database verification complete", "✓".green().bold());
 
     Ok(())
 }

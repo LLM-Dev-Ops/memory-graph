@@ -45,6 +45,8 @@ chrono = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 tokio = { workspace = true }
+mockito = "1.2"
+tokio-test = "0.4"
 
 [build-dependencies]
 tonic-build = { workspace = true }

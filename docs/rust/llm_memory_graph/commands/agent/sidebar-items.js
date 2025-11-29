@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["handle_agent_assign","handle_agent_create","handle_agent_get","handle_agent_list","handle_agent_update"]};

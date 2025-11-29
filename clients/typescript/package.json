@@ -15,7 +15,11 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 0",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "lint": "eslint src --ext .ts",
@@ -23,7 +27,10 @@
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch",
     "validate": "npm run typecheck && npm run lint && npm run format:check",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
+    "docs:clean": "rm -rf ../../docs/typescript"
   },
   "keywords": [
     "llm",
@@ -50,11 +57,16 @@
     "@grpc/proto-loader": "^0.7.10"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.10.6",
     "@typescript-eslint/eslint-plugin": "^6.18.0",
     "@typescript-eslint/parser": "^6.18.0",
     "eslint": "^8.56.0",
+    "jest": "^30.2.0",
     "prettier": "^3.1.1",
+    "ts-jest": "^29.4.5",
+    "typedoc": "^0.28.15",
     "typescript": "^5.3.3"
   },
   "engines": {

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ModelMetadata","RegistryClient","RegistryConfig","RegistryStats"],"trait":["Registry"]};

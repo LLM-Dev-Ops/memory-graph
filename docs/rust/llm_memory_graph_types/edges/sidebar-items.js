@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ContextType","EdgeType","Priority"],"struct":["Edge","InheritsProperties","InstantiatesProperties","InvokesProperties","ReferencesProperties","TransfersToProperties"]};

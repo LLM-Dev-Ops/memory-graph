@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["handle_template_create","handle_template_get","handle_template_instantiate","handle_template_list"]};

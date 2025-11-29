@@ -4,7 +4,8 @@ use crate::error::{ClientError, Result};
 use std::collections::HashMap;
 use tonic::transport::Channel;
 
-// Include generated proto code
+/// Generated protobuf definitions for the Memory Graph service
+#[allow(missing_docs)]
 pub mod proto {
     tonic::include_proto!("llm.memory.graph.v1");
 }
@@ -141,5 +142,26 @@ mod tests {
     fn test_client_construction() {
         // Verify types compile
         let _client: Option<MemoryGraphClient> = None;
+    }
+
+    #[test]
+    fn test_client_clone() {
+        // Verify client is clonable
+        let client: Option<MemoryGraphClient> = None;
+        let _cloned = client.clone();
+    }
+
+    #[tokio::test]
+    async fn test_connect_invalid_address() {
+        // Test connection to invalid address
+        let result = MemoryGraphClient::connect("invalid://address").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_connect_unreachable() {
+        // Test connection to unreachable address
+        let result = MemoryGraphClient::connect("http://localhost:99999").await;
+        assert!(result.is_err());
     }
 }
