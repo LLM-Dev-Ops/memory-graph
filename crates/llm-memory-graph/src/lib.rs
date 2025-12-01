@@ -53,6 +53,7 @@
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::explicit_iter_loop)]
 
+pub mod benchmarks;
 pub mod engine;
 // pub mod grpc; // TODO: Complete gRPC implementation
 // pub mod integrations; // TODO: Fix type mismatches in retry logic

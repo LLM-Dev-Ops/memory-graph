@@ -104,5 +104,9 @@ tonic-build = { workspace = true }
 name = "server"
 path = "src/bin/server.rs"
 
+[[bin]]
+name = "bench_runner"
+path = "src/bin/bench_runner.rs"
+
 [features]
 default = []

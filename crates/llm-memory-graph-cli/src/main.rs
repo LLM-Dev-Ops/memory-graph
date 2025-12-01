@@ -8,6 +8,7 @@
 //! - Template management
 //! - Agent lifecycle management
 //! - Server management
+//! - Benchmark execution and reporting
 //! - Multiple output formats (text, JSON, YAML, table)
 
 mod commands;
@@ -104,6 +105,10 @@ enum Commands {
     /// Server management
     #[command(subcommand)]
     Server(ServerCommands),
+
+    /// Benchmark operations
+    #[command(subcommand)]
+    Benchmark(BenchmarkCommands),
 
     /// Flush database to disk
     Flush,
@@ -289,6 +294,12 @@ enum ServerCommands {
     },
 }
 
+#[derive(Subcommand)]
+enum BenchmarkCommands {
+    /// Run all benchmarks and generate reports
+    Run,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -434,6 +445,10 @@ async fn main() -> Result<()> {
             ServerCommands::Metrics { url } => {
                 commands::server::handle_server_metrics(&ctx, url).await?
             }
+        },
+
+        Commands::Benchmark(benchmark_cmd) => match benchmark_cmd {
+            BenchmarkCommands::Run => commands::benchmark::handle_benchmark_run(&ctx).await?,
         },
 
         Commands::Flush => commands::session::handle_flush(&ctx).await?,

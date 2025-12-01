@@ -4,6 +4,7 @@
 //! Each command is organized into its own submodule for better maintainability.
 
 pub mod agent;
+pub mod benchmark;
 pub mod export;
 pub mod import;
 pub mod query;
