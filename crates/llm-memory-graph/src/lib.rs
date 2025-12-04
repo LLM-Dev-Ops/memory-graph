@@ -56,7 +56,7 @@
 pub mod benchmarks;
 pub mod engine;
 // pub mod grpc; // TODO: Complete gRPC implementation
-// pub mod integrations; // TODO: Fix type mismatches in retry logic
+pub mod integrations;
 pub mod migration;
 pub mod observatory;
 pub mod plugin;

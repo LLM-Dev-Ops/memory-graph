@@ -96,6 +96,40 @@ rand = "0.8"
 # Build dependencies
 tonic-build = "0.11"
 
+# ============================================================================
+# UPSTREAM DEPENDENCIES - LLM DevOps Ecosystem
+# ============================================================================
+# NOTE: These are MANDATORY compile-time dependencies added for Phase 2B
+# integration with the LLM DevOps ecosystem. DO NOT remove or modify without
+# coordination with upstream teams.
+#
+# Upstream Repository Sources:
+# 1. LLM-Schema-Registry: https://github.com/LLM-Dev-Ops/schema-registry
+# 2. LLM-Config-Manager: https://github.com/LLM-Dev-Ops/config-manager
+# 3. LLM-Data-Vault: https://github.com/LLM-Dev-Ops/data-vault
+# 4. LLM-Observatory: https://github.com/LLM-Dev-Ops/observatory
+#
+# Integration Strategy: Compile-time dependencies ensure schema compatibility,
+# configuration validation, secure storage integration, and observability
+# telemetry without modifying existing graph logic or lineage code.
+# ============================================================================
+
+# Schema Registry - Centralized schema management and validation
+llm-schema-registry = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
+llm-schema-registry-client = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
+
+# Config Manager - Enterprise configuration management with encryption
+llm-config-manager = { git = "https://github.com/LLM-Dev-Ops/config-manager", branch = "main" }
+llm-config-manager-client = { git = "https://github.com/LLM-Dev-Ops/config-manager", branch = "main" }
+
+# Data Vault - Secure storage and anonymization for sensitive data
+llm-data-vault = { git = "https://github.com/LLM-Dev-Ops/data-vault", branch = "main" }
+llm-data-vault-client = { git = "https://github.com/LLM-Dev-Ops/data-vault", branch = "main" }
+
+# Observatory - Real-time observability and telemetry platform
+llm-observatory = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
+llm-observatory-client = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
+
 [profile.release]
 opt-level = 3
 lto = true

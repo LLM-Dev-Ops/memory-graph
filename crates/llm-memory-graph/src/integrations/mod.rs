@@ -3,14 +3,28 @@
 //! This module provides integration clients for external LLM DevOps ecosystem services:
 //! - **LLM-Registry**: Model metadata, version tracking, and usage statistics
 //! - **Data-Vault**: Secure archival, retention policies, and compliance
+//! - **Schema-Registry**: Centralized schema management, validation, and versioning
+//! - **Config-Manager**: Centralized configuration management with remote fetch and local override
 
+pub mod config_manager;
 pub mod registry;
+pub mod schema_registry;
 pub mod vault;
 
 // Re-export main types
+pub use config_manager::{
+    CascadingConfigProvider, ConfigAdapter, ConfigManagerClient, ConfigManagerConfig,
+    ConfigProvider, GraphLimitsInfo, LocalConfigProvider, MemoryGraphConfig, PruningInfo,
+    RemoteConfigProvider, RetentionInfo,
+};
 pub use registry::{
     ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration,
     UsageStats,
+};
+pub use schema_registry::{
+    CachingValidator, CompatibilityLevel, GracefulValidator, NoOpValidator, SchemaFormat,
+    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError,
+    ValidationResult,
 };
 pub use vault::{
     ArchivalScheduler, ArchiveEntry, ComplianceLevel, RetentionPolicy, SchedulerConfig,
@@ -81,7 +95,7 @@ impl From<reqwest::Error> for IntegrationError {
 
 impl From<serde_json::Error> for IntegrationError {
     fn from(err: serde_json::Error) -> Self {
-        IntegrationError::SerializationError(err.to_string())
+        IntegrationError::Serialization(err.to_string())
     }
 }
 
