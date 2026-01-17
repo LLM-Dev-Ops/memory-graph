@@ -1,4 +1,4 @@
-# llm-memory-graph
+# LLM-memory-graph
 
 [![Crates.io](https://img.shields.io/crates/v/llm-memory-graph.svg)](https://crates.io/crates/llm-memory-graph)
 [![Documentation](https://docs.rs/llm-memory-graph/badge.svg)](https://docs.rs/llm-memory-graph)
