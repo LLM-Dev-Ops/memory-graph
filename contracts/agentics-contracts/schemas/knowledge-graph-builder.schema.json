@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/knowledge-graph-builder/v1",
+  "title": "Knowledge Graph Builder Schema",
+  "description": "Schema definitions for the Knowledge Graph Builder Agent that constructs knowledge graphs from memory data",
+
+  "$defs": {
+    "KnowledgeNodeType": {
+      "type": "string",
+      "enum": ["concept", "entity", "relationship", "pattern"],
+      "description": "Type of knowledge node"
+    },
+
+    "KnowledgeEdgeType": {
+      "type": "string",
+      "enum": ["relates_to", "derived_from", "co_occurs_with", "exemplifies", "contains", "precedes"],
+      "description": "Type of relationship between knowledge nodes"
+    },
+
+    "KnowledgeNode": {
+      "type": "object",
+      "description": "A node in the knowledge graph representing extracted knowledge",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the knowledge node"
+        },
+        "type": {
+          "$ref": "#/$defs/KnowledgeNodeType"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable label for the node"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional properties associated with the node"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for this knowledge extraction"
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "References to source memory nodes"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when the node was created"
+        }
+      },
+      "required": ["id", "type", "label", "properties", "confidence", "source_refs", "created_at"]
+    },
+
+    "KnowledgeEdge": {
+      "type": "object",
+      "description": "An edge in the knowledge graph representing relationships between nodes",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the edge"
+        },
+        "from_node": {
+          "type": "string",
+          "format": "uuid",
+          "description": "ID of the source node"
+        },
+        "to_node": {
+          "type": "string",
+          "format": "uuid",
+          "description": "ID of the target node"
+        },
+        "type": {
+          "$ref": "#/$defs/KnowledgeEdgeType"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Weight of the relationship"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional properties associated with the edge"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for this relationship"
+        }
+      },
+      "required": ["id", "from_node", "to_node", "type", "weight", "properties", "confidence"]
+    },
+
+    "KnowledgePattern": {
+      "type": "object",
+      "description": "A detected pattern in the knowledge graph",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the pattern"
+        },
+        "pattern_type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Type/category of the pattern"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the pattern"
+        },
+        "frequency": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of times this pattern was observed"
+        },
+        "node_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "IDs of nodes participating in this pattern"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for this pattern detection"
+        }
+      },
+      "required": ["id", "pattern_type", "description", "frequency", "node_ids", "confidence"]
+    },
+
+    "KnowledgeGraphMetrics": {
+      "type": "object",
+      "description": "Metrics about the knowledge graph construction",
+      "properties": {
+        "total_nodes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of nodes in the graph"
+        },
+        "total_edges": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of edges in the graph"
+        },
+        "node_type_distribution": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Distribution of nodes by type"
+        },
+        "edge_type_distribution": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "description": "Distribution of edges by type"
+        },
+        "average_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Average confidence score across all nodes and edges"
+        },
+        "patterns_detected": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of patterns detected"
+        },
+        "analysis_duration_ms": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Duration of the analysis in milliseconds"
+        }
+      },
+      "required": [
+        "total_nodes",
+        "total_edges",
+        "node_type_distribution",
+        "edge_type_distribution",
+        "average_confidence",
+        "patterns_detected",
+        "analysis_duration_ms"
+      ]
+    },
+
+    "TimeRangeFilter": {
+      "type": "object",
+      "description": "Time range filter for queries",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Start of the time range (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "End of the time range (inclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+
+    "KnowledgeGraphQueryFilter": {
+      "type": "object",
+      "description": "Query filter options for knowledge graph construction",
+      "properties": {
+        "node_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Filter to specific node types"
+        },
+        "time_range": {
+          "$ref": "#/$defs/TimeRangeFilter"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum confidence threshold for inclusion"
+        }
+      }
+    },
+
+    "KnowledgeExtractionConfig": {
+      "type": "object",
+      "description": "Configuration for knowledge extraction",
+      "properties": {
+        "extract_concepts": {
+          "type": "boolean",
+          "description": "Whether to extract abstract concepts"
+        },
+        "extract_entities": {
+          "type": "boolean",
+          "description": "Whether to extract named entities"
+        },
+        "detect_patterns": {
+          "type": "boolean",
+          "description": "Whether to detect patterns in the data"
+        },
+        "min_pattern_frequency": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2,
+          "description": "Minimum frequency for pattern detection"
+        },
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Maximum depth for graph traversal"
+        }
+      },
+      "required": ["extract_concepts", "extract_entities", "detect_patterns"]
+    },
+
+    "KnowledgeGraphLineage": {
+      "type": "object",
+      "description": "Lineage information for knowledge graph output",
+      "properties": {
+        "source_sessions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Session IDs that contributed to this graph"
+        },
+        "source_node_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of source memory nodes processed"
+        },
+        "processing_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp when processing completed"
+        }
+      },
+      "required": ["source_sessions", "source_node_count", "processing_timestamp"]
+    },
+
+    "KnowledgeGraphBuilderInput": {
+      "type": "object",
+      "description": "Input schema for the Knowledge Graph Builder Agent",
+      "properties": {
+        "session_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Session IDs to process for knowledge extraction"
+        },
+        "query_filter": {
+          "$ref": "#/$defs/KnowledgeGraphQueryFilter"
+        },
+        "extraction_config": {
+          "$ref": "#/$defs/KnowledgeExtractionConfig"
+        }
+      },
+      "required": ["session_ids", "extraction_config"]
+    },
+
+    "KnowledgeGraphBuilderOutput": {
+      "type": "object",
+      "description": "Output schema for the Knowledge Graph Builder Agent",
+      "properties": {
+        "knowledge_nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/KnowledgeNode"
+          },
+          "description": "Extracted knowledge nodes"
+        },
+        "knowledge_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/KnowledgeEdge"
+          },
+          "description": "Relationships between knowledge nodes"
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/KnowledgePattern"
+          },
+          "description": "Detected patterns in the knowledge graph"
+        },
+        "metrics": {
+          "$ref": "#/$defs/KnowledgeGraphMetrics"
+        },
+        "lineage": {
+          "$ref": "#/$defs/KnowledgeGraphLineage"
+        }
+      },
+      "required": ["knowledge_nodes", "knowledge_edges", "patterns", "metrics", "lineage"]
+    }
+  },
+
+  "oneOf": [
+    {
+      "title": "KnowledgeGraphBuilderInput",
+      "$ref": "#/$defs/KnowledgeGraphBuilderInput"
+    },
+    {
+      "title": "KnowledgeGraphBuilderOutput",
+      "$ref": "#/$defs/KnowledgeGraphBuilderOutput"
+    }
+  ]
+}

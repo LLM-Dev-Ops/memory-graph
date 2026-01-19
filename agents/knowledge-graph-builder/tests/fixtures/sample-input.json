@@ -1,0 +1,58 @@
+{
+  "session_ids": ["a1b2c3d4-e5f6-4789-abcd-123456789012", "b2c3d4e5-f6a7-4890-bcde-234567890123"],
+  "extraction_config": {
+    "extract_concepts": true,
+    "extract_entities": true,
+    "detect_patterns": true,
+    "min_pattern_frequency": 2,
+    "max_depth": 3
+  },
+  "conversation_data": [
+    {
+      "session_id": "a1b2c3d4-e5f6-4789-abcd-123456789012",
+      "turns": [
+        {
+          "turn_id": "turn-001-uuid-1234-5678-abcdefabcdef",
+          "role": "user",
+          "content": "How do I implement authentication in Node.js using JWT?",
+          "timestamp": "2024-01-15T10:00:00.000Z"
+        },
+        {
+          "turn_id": "turn-002-uuid-1234-5678-abcdefabcdef",
+          "role": "assistant",
+          "content": "To implement JWT authentication in Node.js, you'll need to use the jsonwebtoken package. First, install it with npm install jsonwebtoken. Then create middleware to verify tokens.",
+          "timestamp": "2024-01-15T10:00:05.000Z"
+        },
+        {
+          "turn_id": "turn-003-uuid-1234-5678-abcdefabcdef",
+          "role": "user",
+          "content": "Can you show me how to create the JWT middleware?",
+          "timestamp": "2024-01-15T10:00:30.000Z"
+        },
+        {
+          "turn_id": "turn-004-uuid-1234-5678-abcdefabcdef",
+          "role": "assistant",
+          "content": "Here's a JWT middleware implementation using Express.js and jsonwebtoken.",
+          "timestamp": "2024-01-15T10:00:45.000Z"
+        }
+      ]
+    },
+    {
+      "session_id": "b2c3d4e5-f6a7-4890-bcde-234567890123",
+      "turns": [
+        {
+          "turn_id": "turn-005-uuid-1234-5678-abcdefabcdef",
+          "role": "user",
+          "content": "What's the best practice for JWT token refresh?",
+          "timestamp": "2024-01-15T11:00:00.000Z"
+        },
+        {
+          "turn_id": "turn-006-uuid-1234-5678-abcdefabcdef",
+          "role": "assistant",
+          "content": "For JWT token refresh, implement a refresh token mechanism. Store refresh tokens securely and use short-lived access tokens.",
+          "timestamp": "2024-01-15T11:00:10.000Z"
+        }
+      ]
+    }
+  ]
+}

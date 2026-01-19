@@ -1,0 +1,415 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/memory-retrieval/v1",
+  "title": "Memory Retrieval Agent Contract",
+  "description": "Contract definitions for the Memory Retrieval Agent - MEMORY READ classification",
+
+  "definitions": {
+    "AgentMetadata": {
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "pattern": "^memory-retrieval-agent$",
+          "description": "Fixed agent identifier"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of the agent"
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["MEMORY_READ"],
+          "description": "Agent classification - this agent performs MEMORY READ operations"
+        }
+      },
+      "required": ["agent_id", "agent_version", "classification"]
+    },
+
+    "QueryConstraint": {
+      "type": "object",
+      "description": "A constraint to apply when querying the memory graph",
+      "properties": {
+        "constraint_type": {
+          "type": "string",
+          "enum": ["session_filter", "node_type_filter", "time_range", "depth_limit", "agent_filter", "tag_filter", "similarity_threshold"],
+          "description": "Type of constraint to apply"
+        },
+        "value": {
+          "description": "Constraint value (type depends on constraint_type)"
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["equals", "contains", "greater_than", "less_than", "between", "in"],
+          "default": "equals"
+        }
+      },
+      "required": ["constraint_type", "value"]
+    },
+
+    "TraversalOptions": {
+      "type": "object",
+      "description": "Options for graph traversal during retrieval",
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum traversal depth from anchor nodes"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["outgoing", "incoming", "both"],
+          "default": "both",
+          "description": "Edge traversal direction"
+        },
+        "follow_edge_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["belongs_to", "responds_to", "follows", "invokes", "references", "inherits"]
+          },
+          "description": "Edge types to follow during traversal"
+        },
+        "include_node_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["prompt", "response", "session", "tool_invocation", "agent", "template"]
+          },
+          "description": "Node types to include in results"
+        }
+      }
+    },
+
+    "MemoryRetrievalInput": {
+      "type": "object",
+      "description": "Input schema for the Memory Retrieval Agent",
+      "properties": {
+        "query_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this query"
+        },
+        "query_type": {
+          "type": "string",
+          "enum": ["subgraph", "nodes", "edges", "lineage", "context", "similarity"],
+          "description": "Type of retrieval operation"
+        },
+        "anchor_nodes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Node IDs to use as starting points for traversal"
+        },
+        "anchor_sessions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Session IDs to scope the query"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/QueryConstraint"
+          },
+          "description": "Constraints to apply to the query"
+        },
+        "traversal_options": {
+          "$ref": "#/definitions/TraversalOptions"
+        },
+        "semantic_query": {
+          "type": "string",
+          "maxLength": 4096,
+          "description": "Natural language query for similarity search (deferred to ruvector-service)"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100,
+          "description": "Maximum number of results to return"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Offset for pagination"
+        },
+        "include_metadata": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include node/edge metadata in results"
+        },
+        "requesting_agent_id": {
+          "type": "string",
+          "description": "Agent requesting this retrieval (for audit)"
+        }
+      },
+      "required": ["query_id", "query_type"]
+    },
+
+    "RetrievedNode": {
+      "type": "object",
+      "description": "A node retrieved from the memory graph",
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "node_type": {
+          "type": "string",
+          "enum": ["prompt", "response", "session", "tool_invocation", "agent", "template"]
+        },
+        "content": {
+          "type": "string",
+          "description": "Node content (truncated if large)"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "relevance_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Relevance score for similarity queries"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Distance from anchor node"
+        }
+      },
+      "required": ["node_id", "node_type"]
+    },
+
+    "RetrievedEdge": {
+      "type": "object",
+      "description": "An edge retrieved from the memory graph",
+      "properties": {
+        "edge_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "edge_type": {
+          "type": "string",
+          "enum": ["belongs_to", "responds_to", "follows", "invokes", "references", "inherits"]
+        },
+        "from_node_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "to_node_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Edge weight/strength"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["edge_id", "edge_type", "from_node_id", "to_node_id"]
+    },
+
+    "RetrievedSubgraph": {
+      "type": "object",
+      "description": "A subgraph retrieved from memory",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RetrievedNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RetrievedEdge"
+          }
+        },
+        "anchor_node_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "The anchor nodes from which traversal started"
+        },
+        "truncated": {
+          "type": "boolean",
+          "description": "Whether results were truncated due to limits"
+        }
+      },
+      "required": ["nodes", "edges"]
+    },
+
+    "MemoryRetrievalOutput": {
+      "type": "object",
+      "description": "Output schema for the Memory Retrieval Agent",
+      "properties": {
+        "query_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "query_type": {
+          "type": "string",
+          "enum": ["subgraph", "nodes", "edges", "lineage", "context", "similarity"]
+        },
+        "subgraph": {
+          "$ref": "#/definitions/RetrievedSubgraph"
+        },
+        "total_nodes_retrieved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_edges_retrieved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retrieval_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Human-readable list of constraints that were applied"
+        },
+        "traversal_stats": {
+          "type": "object",
+          "properties": {
+            "max_depth_reached": {
+              "type": "integer"
+            },
+            "nodes_visited": {
+              "type": "integer"
+            },
+            "edges_traversed": {
+              "type": "integer"
+            }
+          }
+        },
+        "pagination": {
+          "type": "object",
+          "properties": {
+            "offset": { "type": "integer" },
+            "limit": { "type": "integer" },
+            "has_more": { "type": "boolean" },
+            "total_available": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["query_id", "query_type", "subgraph", "total_nodes_retrieved", "total_edges_retrieved", "retrieval_timestamp"]
+    },
+
+    "DecisionEvent": {
+      "type": "object",
+      "description": "DecisionEvent emitted to ruvector-service for every agent invocation",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "const": "memory-retrieval-agent"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "decision_type": {
+          "type": "string",
+          "enum": ["memory_retrieval"],
+          "description": "The type of memory operation performed"
+        },
+        "inputs_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the input payload for idempotency"
+        },
+        "outputs": {
+          "$ref": "#/definitions/MemoryRetrievalOutput"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Retrieval confidence - average relevance score for results"
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Graph or query constraints that were applied"
+        },
+        "execution_ref": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to this execution instance"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp of decision"
+        },
+        "telemetry": {
+          "type": "object",
+          "properties": {
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "memory_bytes": { "type": "integer", "minimum": 0 },
+            "ruvector_latency_ms": { "type": "integer", "minimum": 0 },
+            "nodes_scanned": { "type": "integer", "minimum": 0 },
+            "cache_hit": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["agent_id", "agent_version", "decision_type", "inputs_hash", "outputs", "confidence", "execution_ref", "timestamp"]
+    },
+
+    "AgentError": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "VALIDATION_ERROR",
+            "RUVECTOR_CONNECTION_ERROR",
+            "RUVECTOR_READ_ERROR",
+            "QUERY_TIMEOUT",
+            "INVALID_ANCHOR_NODE",
+            "INTERNAL_ERROR",
+            "RATE_LIMIT_EXCEEDED"
+          ]
+        },
+        "message": { "type": "string" },
+        "details": { "type": "object" },
+        "execution_ref": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["error_code", "message", "execution_ref", "timestamp"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "input": { "$ref": "#/definitions/MemoryRetrievalInput" },
+    "output": { "$ref": "#/definitions/MemoryRetrievalOutput" },
+    "decision_event": { "$ref": "#/definitions/DecisionEvent" }
+  }
+}

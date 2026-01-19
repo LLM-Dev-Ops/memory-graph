@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/conversation-memory/v1",
+  "title": "Conversation Memory Agent Contract",
+  "description": "Contract definitions for the Conversation Memory Agent - MEMORY WRITE classification",
+
+  "definitions": {
+    "AgentMetadata": {
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "pattern": "^conversation-memory-agent$",
+          "description": "Fixed agent identifier"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of the agent"
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["MEMORY_WRITE"],
+          "description": "Agent classification - this agent performs MEMORY WRITE operations"
+        }
+      },
+      "required": ["agent_id", "agent_version", "classification"]
+    },
+
+    "ConversationTurn": {
+      "type": "object",
+      "description": "A single turn in a multi-turn conversation",
+      "properties": {
+        "turn_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this turn"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "assistant", "system", "tool"],
+          "description": "Role of the message sender"
+        },
+        "content": {
+          "type": "string",
+          "description": "The message content"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this turn occurred (UTC)"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model used for assistant responses"
+        },
+        "token_usage": {
+          "$ref": "#/definitions/TokenUsage"
+        },
+        "tool_invocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToolInvocationRef"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional turn-specific metadata"
+        }
+      },
+      "required": ["turn_id", "role", "content", "timestamp"]
+    },
+
+    "TokenUsage": {
+      "type": "object",
+      "properties": {
+        "prompt_tokens": { "type": "integer", "minimum": 0 },
+        "completion_tokens": { "type": "integer", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["prompt_tokens", "completion_tokens", "total_tokens"]
+    },
+
+    "ToolInvocationRef": {
+      "type": "object",
+      "properties": {
+        "tool_name": { "type": "string" },
+        "invocation_id": { "type": "string", "format": "uuid" },
+        "success": { "type": "boolean" }
+      },
+      "required": ["tool_name", "invocation_id"]
+    },
+
+    "ConversationCaptureInput": {
+      "type": "object",
+      "description": "Input schema for the Conversation Memory Agent",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Session identifier for this conversation"
+        },
+        "conversation_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique conversation identifier"
+        },
+        "turns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConversationTurn"
+          },
+          "minItems": 1,
+          "description": "The conversation turns to capture"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "agent_id": {
+              "type": "string",
+              "description": "Agent that handled this conversation"
+            },
+            "user_id": {
+              "type": "string",
+              "description": "User identifier (if available)"
+            },
+            "source_system": {
+              "type": "string",
+              "description": "Source system that produced this conversation"
+            },
+            "tags": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "capture_options": {
+          "type": "object",
+          "properties": {
+            "create_lineage": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to create lineage edges between turns"
+            },
+            "extract_entities": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether to extract named entities"
+            },
+            "compute_embeddings": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether to compute embeddings (deferred to ruvector-service)"
+            }
+          }
+        }
+      },
+      "required": ["session_id", "conversation_id", "turns"]
+    },
+
+    "ConversationCaptureOutput": {
+      "type": "object",
+      "description": "Output schema for the Conversation Memory Agent",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nodes_created": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeReference"
+          }
+        },
+        "edges_created": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EdgeReference"
+          }
+        },
+        "capture_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "turn_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "total_tokens": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["conversation_id", "session_id", "nodes_created", "edges_created", "capture_timestamp", "turn_count"]
+    },
+
+    "NodeReference": {
+      "type": "object",
+      "properties": {
+        "node_id": { "type": "string", "format": "uuid" },
+        "node_type": {
+          "type": "string",
+          "enum": ["prompt", "response", "session", "tool_invocation"]
+        },
+        "turn_index": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["node_id", "node_type"]
+    },
+
+    "EdgeReference": {
+      "type": "object",
+      "properties": {
+        "edge_id": { "type": "string", "format": "uuid" },
+        "edge_type": {
+          "type": "string",
+          "enum": ["belongs_to", "responds_to", "follows", "invokes"]
+        },
+        "from_node_id": { "type": "string", "format": "uuid" },
+        "to_node_id": { "type": "string", "format": "uuid" }
+      },
+      "required": ["edge_id", "edge_type", "from_node_id", "to_node_id"]
+    },
+
+    "DecisionEvent": {
+      "type": "object",
+      "description": "DecisionEvent emitted to ruvector-service for every agent invocation",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "const": "conversation-memory-agent"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "decision_type": {
+          "type": "string",
+          "enum": ["conversation_capture"],
+          "description": "The type of memory operation performed"
+        },
+        "inputs_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the input payload for idempotency"
+        },
+        "outputs": {
+          "$ref": "#/definitions/ConversationCaptureOutput"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Association confidence score (1.0 for direct capture)"
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Graph or query constraints that were applied"
+        },
+        "execution_ref": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to this execution instance"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp of decision"
+        },
+        "telemetry": {
+          "type": "object",
+          "properties": {
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "memory_bytes": { "type": "integer", "minimum": 0 },
+            "ruvector_latency_ms": { "type": "integer", "minimum": 0 }
+          }
+        }
+      },
+      "required": ["agent_id", "agent_version", "decision_type", "inputs_hash", "outputs", "confidence", "execution_ref", "timestamp"]
+    },
+
+    "AgentError": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "VALIDATION_ERROR",
+            "RUVECTOR_CONNECTION_ERROR",
+            "RUVECTOR_WRITE_ERROR",
+            "INTERNAL_ERROR",
+            "RATE_LIMIT_EXCEEDED"
+          ]
+        },
+        "message": { "type": "string" },
+        "details": { "type": "object" },
+        "execution_ref": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["error_code", "message", "execution_ref", "timestamp"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "input": { "$ref": "#/definitions/ConversationCaptureInput" },
+    "output": { "$ref": "#/definitions/ConversationCaptureOutput" },
+    "decision_event": { "$ref": "#/definitions/DecisionEvent" }
+  }
+}

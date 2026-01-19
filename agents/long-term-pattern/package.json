@@ -1,0 +1,48 @@
+{
+  "name": "@llm-memory-graph/long-term-pattern-agent",
+  "version": "1.0.0",
+  "description": "Long-Term Pattern Agent - MEMORY ANALYSIS agent for analyzing historical memory patterns, trends, and behaviors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-esm src/index.ts",
+    "test": "jest",
+    "test:integration": "jest --config jest.integration.config.js",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "deploy": "gcloud functions deploy long-term-pattern-agent --runtime nodejs20 --trigger-http --entry-point handler"
+  },
+  "keywords": [
+    "llm-memory-graph",
+    "agentics",
+    "long-term-pattern",
+    "memory-analysis",
+    "pattern-detection",
+    "edge-function"
+  ],
+  "author": "LLM-Dev-Ops",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
+}

@@ -1,0 +1,78 @@
+[package]
+name = "prompt-lineage-agent"
+version = "1.0.0"
+edition = "2021"
+authors = ["LLM Memory Graph Team"]
+description = "Prompt Lineage Agent - Track prompt evolution and lineage across iterations and agents"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your-org/memory-graph"
+keywords = ["llm", "memory", "graph", "lineage", "prompt"]
+categories = ["development-tools", "data-structures"]
+
+[lib]
+name = "prompt_lineage_agent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "prompt-lineage-agent"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "time"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# HTTP client/server
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+
+# CLI
+clap = { version = "4.4", features = ["derive", "env"] }
+colored = "2.1"
+comfy-table = "7.1"
+anyhow = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+thiserror = "1.0"
+sha2 = "0.10"
+hex = "0.4"
+
+# Tracing/Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+
+# Memory Graph dependencies (optional, for full integration)
+llm-memory-graph = { path = "../../crates/llm-memory-graph", optional = true }
+llm-memory-graph-types = { path = "../../crates/llm-memory-graph-types", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+criterion = "0.5"
+proptest = "1.4"
+
+[[bench]]
+name = "lineage_benchmarks"
+harness = false
+
+[features]
+default = []
+# Enable for Google Cloud Functions deployment
+cloud-functions = []
+# Enable integration with the main memory graph crate
+integration = ["llm-memory-graph", "llm-memory-graph-types"]
+# CLI feature enables full CLI capabilities with memory graph integration
+cli = ["integration"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

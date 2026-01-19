@@ -1,0 +1,460 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/long-term-pattern-agent/v1",
+  "title": "Long-Term Pattern Agent Contract",
+  "description": "Contract definitions for the Long-Term Pattern Agent - MEMORY ANALYSIS classification. Analyzes historical memory to identify recurring patterns, trends, and behaviors.",
+
+  "definitions": {
+    "AgentMetadata": {
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "pattern": "^long-term-pattern-agent$",
+          "description": "Fixed agent identifier"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of the agent"
+        },
+        "classification": {
+          "type": "string",
+          "enum": ["MEMORY_ANALYSIS"],
+          "description": "Agent classification - this agent performs MEMORY ANALYSIS operations"
+        }
+      },
+      "required": ["agent_id", "agent_version", "classification"]
+    },
+
+    "TimeRange": {
+      "type": "object",
+      "description": "Time range for pattern analysis",
+      "properties": {
+        "from_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Start of analysis window (UTC)"
+        },
+        "to_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "End of analysis window (UTC)"
+        }
+      },
+      "required": ["from_timestamp", "to_timestamp"]
+    },
+
+    "PatternType": {
+      "type": "string",
+      "enum": [
+        "conversation_flow",
+        "topic_recurrence",
+        "response_pattern",
+        "tool_usage",
+        "error_pattern",
+        "session_behavior",
+        "user_interaction",
+        "temporal_trend"
+      ],
+      "description": "Type of pattern to analyze"
+    },
+
+    "AnalysisScope": {
+      "type": "object",
+      "description": "Defines the scope of pattern analysis",
+      "properties": {
+        "session_ids": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" },
+          "description": "Specific sessions to analyze (optional, analyzes all if empty)"
+        },
+        "agent_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Filter by specific agents"
+        },
+        "user_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Filter by specific users (anonymized)"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Filter by tags"
+        }
+      }
+    },
+
+    "AnalysisOptions": {
+      "type": "object",
+      "description": "Options controlling pattern analysis behavior",
+      "properties": {
+        "min_occurrence_threshold": {
+          "type": "integer",
+          "minimum": 2,
+          "default": 3,
+          "description": "Minimum occurrences to consider a pattern"
+        },
+        "min_confidence_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7,
+          "description": "Minimum confidence score to report a pattern"
+        },
+        "max_patterns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20,
+          "description": "Maximum number of patterns to return"
+        },
+        "include_examples": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include example occurrences in pattern results"
+        },
+        "max_examples_per_pattern": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum examples to include per pattern"
+        },
+        "compute_temporal_distribution": {
+          "type": "boolean",
+          "default": false,
+          "description": "Compute temporal distribution of pattern occurrences"
+        }
+      }
+    },
+
+    "PatternAnalysisInput": {
+      "type": "object",
+      "description": "Input schema for the Long-Term Pattern Agent",
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this analysis request"
+        },
+        "pattern_types": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PatternType" },
+          "minItems": 1,
+          "description": "Types of patterns to search for"
+        },
+        "time_range": {
+          "$ref": "#/definitions/TimeRange"
+        },
+        "scope": {
+          "$ref": "#/definitions/AnalysisScope"
+        },
+        "options": {
+          "$ref": "#/definitions/AnalysisOptions"
+        }
+      },
+      "required": ["analysis_id", "pattern_types", "time_range"]
+    },
+
+    "PatternOccurrence": {
+      "type": "object",
+      "description": "A single occurrence of a detected pattern",
+      "properties": {
+        "occurrence_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "node_ids": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" },
+          "description": "Graph nodes involved in this occurrence"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "context_snippet": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Anonymized context snippet"
+        }
+      },
+      "required": ["occurrence_id", "session_id", "timestamp"]
+    },
+
+    "TemporalDistribution": {
+      "type": "object",
+      "description": "Temporal distribution of pattern occurrences",
+      "properties": {
+        "hourly_distribution": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "minItems": 24,
+          "maxItems": 24,
+          "description": "Occurrence count per hour (0-23)"
+        },
+        "daily_distribution": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "minItems": 7,
+          "maxItems": 7,
+          "description": "Occurrence count per day of week (0=Sunday)"
+        },
+        "trend": {
+          "type": "string",
+          "enum": ["increasing", "stable", "decreasing", "variable"],
+          "description": "Overall trend direction"
+        },
+        "trend_coefficient": {
+          "type": "number",
+          "description": "Slope of the trend line"
+        }
+      }
+    },
+
+    "DetectedPattern": {
+      "type": "object",
+      "description": "A detected recurring pattern",
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pattern_type": {
+          "$ref": "#/definitions/PatternType"
+        },
+        "pattern_signature": {
+          "type": "string",
+          "description": "Unique signature identifying this pattern"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Human-readable description of the pattern"
+        },
+        "occurrence_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence score for pattern validity"
+        },
+        "relevance_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Relevance/importance score"
+        },
+        "first_seen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "example_occurrences": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PatternOccurrence" }
+        },
+        "temporal_distribution": {
+          "$ref": "#/definitions/TemporalDistribution"
+        },
+        "related_patterns": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" },
+          "description": "IDs of related patterns"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Pattern-type-specific metadata"
+        }
+      },
+      "required": [
+        "pattern_id",
+        "pattern_type",
+        "pattern_signature",
+        "occurrence_count",
+        "confidence",
+        "relevance_score",
+        "first_seen",
+        "last_seen"
+      ]
+    },
+
+    "AnalysisStatistics": {
+      "type": "object",
+      "description": "Statistics about the analysis execution",
+      "properties": {
+        "sessions_analyzed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nodes_scanned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edges_traversed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "patterns_found": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "patterns_filtered": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Patterns filtered by threshold"
+        },
+        "analysis_duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["sessions_analyzed", "nodes_scanned", "patterns_found"]
+    },
+
+    "PatternAnalysisOutput": {
+      "type": "object",
+      "description": "Output schema for the Long-Term Pattern Agent",
+      "properties": {
+        "analysis_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "patterns": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/DetectedPattern" }
+        },
+        "statistics": {
+          "$ref": "#/definitions/AnalysisStatistics"
+        },
+        "time_range_analyzed": {
+          "$ref": "#/definitions/TimeRange"
+        },
+        "analysis_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "analysis_id",
+        "patterns",
+        "statistics",
+        "time_range_analyzed",
+        "analysis_timestamp"
+      ]
+    },
+
+    "DecisionEvent": {
+      "type": "object",
+      "description": "DecisionEvent emitted to ruvector-service for every agent invocation",
+      "properties": {
+        "agent_id": {
+          "type": "string",
+          "const": "long-term-pattern-agent"
+        },
+        "agent_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "decision_type": {
+          "type": "string",
+          "enum": ["long_term_pattern_analysis"],
+          "description": "The type of memory analysis performed"
+        },
+        "inputs_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the input payload for idempotency"
+        },
+        "outputs": {
+          "$ref": "#/definitions/PatternAnalysisOutput"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall confidence in the analysis results (mean of pattern confidences)"
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Analysis constraints that were applied"
+        },
+        "execution_ref": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to this execution instance"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "UTC timestamp of analysis completion"
+        },
+        "telemetry": {
+          "type": "object",
+          "properties": {
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "memory_bytes": { "type": "integer", "minimum": 0 },
+            "ruvector_read_latency_ms": { "type": "integer", "minimum": 0 },
+            "ruvector_write_latency_ms": { "type": "integer", "minimum": 0 }
+          }
+        }
+      },
+      "required": [
+        "agent_id",
+        "agent_version",
+        "decision_type",
+        "inputs_hash",
+        "outputs",
+        "confidence",
+        "execution_ref",
+        "timestamp"
+      ]
+    },
+
+    "AgentError": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "VALIDATION_ERROR",
+            "RUVECTOR_CONNECTION_ERROR",
+            "RUVECTOR_READ_ERROR",
+            "RUVECTOR_WRITE_ERROR",
+            "INSUFFICIENT_DATA",
+            "ANALYSIS_TIMEOUT",
+            "INTERNAL_ERROR",
+            "RATE_LIMIT_EXCEEDED"
+          ]
+        },
+        "message": { "type": "string" },
+        "details": { "type": "object" },
+        "execution_ref": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["error_code", "message", "execution_ref", "timestamp"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "input": { "$ref": "#/definitions/PatternAnalysisInput" },
+    "output": { "$ref": "#/definitions/PatternAnalysisOutput" },
+    "decision_event": { "$ref": "#/definitions/DecisionEvent" }
+  }
+}

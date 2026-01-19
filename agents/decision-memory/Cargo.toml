@@ -1,0 +1,65 @@
+[package]
+name = "decision-memory-agent"
+version = "1.0.0"
+edition = "2021"
+authors = ["Agentics Dev Contributors"]
+description = "Decision Memory Agent - Persists decisions, outcomes, and reasoning artifacts for audit and learning"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/globalbusinessadvisors/llm-memory-graph"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "decision-memory-edge-function"
+path = "src/bin/edge_function.rs"
+
+[dependencies]
+# Workspace crates
+llm-memory-graph-types = { path = "../../crates/llm-memory-graph-types" }
+llm-memory-graph = { path = "../../crates/llm-memory-graph" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Identifiers and time
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# HTTP client for ruvector-service
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+
+# Hashing
+sha2 = "0.10"
+hex = "0.4"
+
+# Google Cloud Functions runtime
+# Note: Using standard HTTP for Edge Function compatibility
+warp = "0.3"
+hyper = "0.14"
+
+# Validation
+validator = { version = "0.16", features = ["derive"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+tempfile = "3.8"
+proptest = "1.4"
+
+[features]
+default = []
+test-utils = []

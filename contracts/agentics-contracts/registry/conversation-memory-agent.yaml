@@ -1,0 +1,206 @@
+# Agent Registration - Conversation Memory Agent
+# This file registers the agent in the agentics-contracts registry
+
+apiVersion: agentics.dev/v1
+kind: AgentRegistration
+metadata:
+  name: conversation-memory-agent
+  namespace: llm-memory-graph
+  labels:
+    classification: MEMORY_WRITE
+    tier: core
+    domain: memory
+
+spec:
+  # Agent identification
+  agent_id: conversation-memory-agent
+  version: 1.0.0
+
+  # Classification
+  classification: MEMORY_WRITE
+  decision_types:
+    - conversation_capture
+
+  # Purpose statement (precise, non-marketing)
+  purpose: |
+    Captures and persists structured representations of multi-turn conversations
+    as graph nodes and edges. Creates memory records with lineage tracking for
+    prompts, responses, and tool invocations within conversation sessions.
+
+  # Input/Output schema references
+  schemas:
+    input: https://agentics.dev/contracts/conversation-memory/v1#/definitions/ConversationCaptureInput
+    output: https://agentics.dev/contracts/conversation-memory/v1#/definitions/ConversationCaptureOutput
+    decision_event: https://agentics.dev/contracts/conversation-memory/v1#/definitions/DecisionEvent
+    error: https://agentics.dev/contracts/conversation-memory/v1#/definitions/AgentError
+
+  # Graph node/edge types used
+  graph_mappings:
+    node_types:
+      - session
+      - prompt
+      - response
+      - tool_invocation
+    edge_types:
+      - belongs_to     # Turn → Session membership
+      - responds_to    # Response → Prompt relationship
+      - follows        # Sequential turn ordering
+      - invokes        # Turn → Tool invocation
+
+  # DecisionEvent specifications
+  decision_event:
+    decision_type: conversation_capture
+    confidence_semantics: |
+      Always 1.0 for direct capture operations. This agent performs
+      deterministic memory writes without probabilistic components.
+    constraints:
+      - lineage_creation_enabled
+      - entity_extraction_enabled
+      - embedding_computation_deferred
+
+  # CLI contract
+  cli:
+    command: memory-graph agent conversation-memory
+    subcommands:
+      - name: inspect
+        description: View a specific DecisionEvent by execution_ref
+        usage: memory-graph agent conversation-memory inspect <execution_ref>
+      - name: retrieve
+        description: Query DecisionEvents by criteria
+        usage: memory-graph agent conversation-memory retrieve --session-id <id>
+      - name: replay
+        description: Re-execute a previous capture operation
+        usage: memory-graph agent conversation-memory replay <execution_ref>
+      - name: capture
+        description: Capture a new conversation
+        usage: memory-graph agent conversation-memory capture --input <file>
+      - name: health
+        description: Check agent health status
+        usage: memory-graph agent conversation-memory health
+
+  # Deployment specification
+  deployment:
+    runtime: google-cloud-edge-function
+    service: llm-memory-graph
+    entry_point: handler
+    health_endpoint: /health
+
+    environment:
+      - RUVECTOR_SERVICE_URL
+      - RUVECTOR_API_KEY
+      - LLM_OBSERVATORY_URL
+
+    resources:
+      memory: 256Mi
+      timeout: 30s
+      max_instances: 100
+
+  # Dependencies
+  dependencies:
+    services:
+      - name: ruvector-service
+        type: persistence
+        required: true
+        description: Physical persistence layer (Postgres-backed)
+      - name: llm-observatory
+        type: telemetry
+        required: false
+        description: Telemetry and monitoring
+
+    contracts:
+      - agentics-contracts/decision-event/v1
+      - agentics-contracts/conversation-memory/v1
+
+  # Downstream consumers
+  consumers:
+    - llm-orchestrator
+    - llm-copilot-agent
+    - core-bundles
+    - agentics-cli
+
+  # Explicit non-responsibilities
+  non_responsibilities:
+    - MUST NOT modify runtime execution of any system
+    - MUST NOT trigger remediation actions
+    - MUST NOT trigger retry logic in other systems
+    - MUST NOT emit alerts to external systems
+    - MUST NOT enforce policies
+    - MUST NOT perform orchestration
+    - MUST NOT invoke other agents directly
+    - MUST NOT connect directly to Google SQL
+    - MUST NOT execute SQL queries
+
+  # Failure modes
+  failure_modes:
+    - code: VALIDATION_ERROR
+      description: Input does not conform to schema
+      recovery: Return error, do not persist
+    - code: RUVECTOR_CONNECTION_ERROR
+      description: Cannot connect to ruvector-service
+      recovery: Return error after retry exhaustion
+    - code: RUVECTOR_WRITE_ERROR
+      description: Persistence operation failed
+      recovery: Return error, no automatic retry
+    - code: INTERNAL_ERROR
+      description: Unexpected internal error
+      recovery: Log and return error
+    - code: RATE_LIMIT_EXCEEDED
+      description: Request rate limit exceeded
+      recovery: Return 429 status
+
+---
+# Verification checklist
+apiVersion: agentics.dev/v1
+kind: VerificationChecklist
+metadata:
+  name: conversation-memory-agent-verification
+  agent: conversation-memory-agent
+
+spec:
+  checks:
+    - name: schema_validation
+      description: All inputs/outputs validated against agentics-contracts
+      command: npm run test -- --grep "validation"
+
+    - name: decision_event_emission
+      description: Exactly ONE DecisionEvent emitted per invocation
+      command: npm run test -- --grep "DecisionEvent"
+
+    - name: ruvector_persistence
+      description: DecisionEvents persist correctly to ruvector-service
+      command: npm run test:integration -- --grep "ruvector"
+
+    - name: telemetry_emission
+      description: Telemetry visible in LLM-Observatory
+      command: npm run test:integration -- --grep "telemetry"
+
+    - name: cli_invokable
+      description: All CLI commands function correctly
+      command: |
+        memory-graph agent conversation-memory health
+        memory-graph agent conversation-memory inspect test-ref
+        memory-graph agent conversation-memory retrieve --limit 1
+
+    - name: graph_operations
+      description: Graph queries behave deterministically
+      command: npm run test -- --grep "graph"
+
+    - name: no_orchestration
+      description: Agent does not perform orchestration
+      command: npm run test -- --grep "non-responsibilities"
+
+    - name: stateless_execution
+      description: Agent is stateless at runtime
+      command: npm run test -- --grep "stateless"
+
+  smoke_tests:
+    - name: capture_simple_conversation
+      command: |
+        echo '{"session_id":"00000000-0000-0000-0000-000000000001","conversation_id":"00000000-0000-0000-0000-000000000002","turns":[{"turn_id":"00000000-0000-0000-0000-000000000003","role":"user","content":"Hello","timestamp":"2024-01-01T00:00:00Z"}]}' | \
+        curl -X POST -H "Content-Type: application/json" -d @- http://localhost:8080/conversation-memory
+
+    - name: health_check
+      command: curl http://localhost:8080/conversation-memory/health
+
+    - name: cli_health
+      command: memory-graph agent conversation-memory health

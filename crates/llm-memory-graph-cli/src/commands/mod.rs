@@ -5,8 +5,11 @@
 
 pub mod agent;
 pub mod benchmark;
+pub mod decision;
 pub mod export;
 pub mod import;
+pub mod memory_retrieval;
+pub mod pattern;
 pub mod query;
 pub mod server;
 pub mod session;

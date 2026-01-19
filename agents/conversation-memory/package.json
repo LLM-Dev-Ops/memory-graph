@@ -1,0 +1,47 @@
+{
+  "name": "@llm-memory-graph/conversation-memory-agent",
+  "version": "1.0.0",
+  "description": "Conversation Memory Agent - MEMORY WRITE agent for capturing multi-turn conversations",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-esm src/index.ts",
+    "test": "jest",
+    "test:integration": "jest --config jest.integration.config.js",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "deploy": "gcloud functions deploy conversation-memory-agent --runtime nodejs20 --trigger-http --entry-point handler"
+  },
+  "keywords": [
+    "llm-memory-graph",
+    "agentics",
+    "conversation-memory",
+    "memory-write",
+    "edge-function"
+  ],
+  "author": "LLM-Dev-Ops",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
+}

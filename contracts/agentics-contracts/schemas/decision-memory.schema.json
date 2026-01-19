@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/decision-memory-agent/v1",
+  "title": "Decision Memory Agent Schema",
+  "description": "Schema for the Decision Memory Agent - captures decisions, outcomes, and reasoning artifacts for audit and learning",
+
+  "definitions": {
+    "DecisionOutcome": {
+      "type": "object",
+      "properties": {
+        "outcome_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this outcome"
+        },
+        "decision_ref": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to the decision this outcome relates to"
+        },
+        "result_type": {
+          "type": "string",
+          "enum": ["success", "failure", "partial", "deferred"],
+          "description": "Type of outcome result"
+        },
+        "result_data": {
+          "type": "object",
+          "description": "Outcome-specific result payload"
+        },
+        "metrics": {
+          "$ref": "#/definitions/OutcomeMetrics"
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["outcome_id", "decision_ref", "result_type", "recorded_at"]
+    },
+
+    "OutcomeMetrics": {
+      "type": "object",
+      "properties": {
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Execution latency in milliseconds"
+        },
+        "tokens_consumed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total tokens consumed during decision execution"
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of retry attempts"
+        },
+        "cost_estimate_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated cost in USD"
+        }
+      }
+    },
+
+    "ReasoningArtifact": {
+      "type": "object",
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this artifact"
+        },
+        "artifact_type": {
+          "type": "string",
+          "enum": ["prompt_template", "chain_of_thought", "evaluation_criteria", "constraints", "context_snapshot", "tool_trace"],
+          "description": "Type of reasoning artifact"
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of the artifact content"
+        },
+        "content_ref": {
+          "type": "string",
+          "description": "Reference to artifact content (ruvector storage key)"
+        },
+        "parent_artifact_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to parent artifact for lineage"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["artifact_id", "artifact_type", "content_hash", "created_at"]
+    },
+
+    "DecisionContext": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Session this decision belongs to"
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Agent that made the decision"
+        },
+        "predecessor_decision_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Previous decision in the chain (if any)"
+        },
+        "conversation_turn": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Turn number in the conversation"
+        },
+        "model_id": {
+          "type": "string",
+          "description": "LLM model used for the decision"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "user_id": {
+          "type": "string",
+          "description": "User context (anonymized/hashed)"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["development", "staging", "production"],
+          "description": "Deployment environment"
+        }
+      },
+      "required": ["session_id"]
+    },
+
+    "DecisionMemoryInput": {
+      "type": "object",
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the decision being captured"
+        },
+        "decision_type": {
+          "type": "string",
+          "description": "Type/category of decision"
+        },
+        "context": {
+          "$ref": "#/definitions/DecisionContext"
+        },
+        "reasoning_artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ReasoningArtifact" },
+          "description": "Artifacts capturing the reasoning process"
+        },
+        "outcome": {
+          "$ref": "#/definitions/DecisionOutcome"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tags for categorization and retrieval"
+        }
+      },
+      "required": ["decision_id", "decision_type", "context"]
+    },
+
+    "GraphNodeCreated": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "node_type": {
+          "type": "string",
+          "enum": ["decision", "outcome", "artifact", "session"]
+        }
+      },
+      "required": ["node_id", "node_type"]
+    },
+
+    "GraphEdgeCreated": {
+      "type": "object",
+      "properties": {
+        "edge_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "edge_type": {
+          "type": "string",
+          "enum": ["has_outcome", "has_artifact", "follows", "part_of", "derived_from"]
+        },
+        "from_node_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "to_node_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["edge_id", "edge_type", "from_node_id", "to_node_id"]
+    },
+
+    "DecisionMemoryOutput": {
+      "type": "object",
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nodes_created": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GraphNodeCreated" }
+        },
+        "edges_created": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GraphEdgeCreated" }
+        },
+        "artifacts_stored": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capture_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ruvector_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "References to ruvector-stored data"
+        }
+      },
+      "required": ["decision_id", "nodes_created", "edges_created", "capture_timestamp"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "const": "decision-memory-agent",
+      "description": "Fixed agent identifier"
+    },
+    "agent_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "decision_type": {
+      "const": "decision_memory_capture",
+      "description": "This agent only does decision memory capture"
+    },
+    "inputs_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "input": {
+      "$ref": "#/definitions/DecisionMemoryInput"
+    },
+    "outputs": {
+      "$ref": "#/definitions/DecisionMemoryOutput"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Association strength between decision and artifacts"
+    },
+    "constraints_applied": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "session_boundary",
+          "max_artifacts",
+          "content_size_limit",
+          "pii_redaction",
+          "retention_policy"
+        ]
+      }
+    },
+    "execution_ref": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_version",
+    "decision_type",
+    "inputs_hash",
+    "input",
+    "outputs",
+    "confidence",
+    "execution_ref",
+    "timestamp"
+  ]
+}

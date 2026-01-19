@@ -1,0 +1,123 @@
+# Cloud Build Configuration for LLM-Memory-Graph
+# Unified service deployment to Google Cloud Run
+#
+# Usage:
+#   gcloud builds submit --config=deploy/gcloud/cloudbuild.yaml \
+#     --substitutions=_ENV=dev,_REGION=us-central1
+#
+# Required IAM Permissions:
+#   - Cloud Build Service Account
+#   - Cloud Run Admin
+#   - Secret Manager Secret Accessor
+#   - Artifact Registry Writer
+
+timeout: 1800s
+
+substitutions:
+  _SERVICE_NAME: llm-memory-graph
+  _REGION: us-central1
+  _ENV: dev
+  _IMAGE_TAG: ${SHORT_SHA}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+steps:
+  # Step 1: Build the Rust-based unified service container
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-unified-service'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:${_IMAGE_TAG}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:latest'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:${_ENV}'
+      - '-f'
+      - 'deploy/gcloud/Dockerfile'
+      - '--build-arg'
+      - 'BUILD_VERSION=${_IMAGE_TAG}'
+      - '--build-arg'
+      - 'BUILD_ENV=${_ENV}'
+      - '.'
+
+  # Step 2: Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}'
+    waitFor: ['build-unified-service']
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}-${_ENV}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:${_IMAGE_TAG}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--port'
+      - '8080'
+      - '--cpu'
+      - '2'
+      - '--memory'
+      - '2Gi'
+      - '--min-instances'
+      - '1'
+      - '--max-instances'
+      - '100'
+      - '--timeout'
+      - '300s'
+      - '--concurrency'
+      - '80'
+      - '--set-env-vars'
+      - 'PLATFORM_ENV=${_ENV}'
+      - '--set-env-vars'
+      - 'SERVICE_NAME=${_SERVICE_NAME}'
+      - '--set-env-vars'
+      - 'SERVICE_VERSION=${_IMAGE_TAG}'
+      - '--set-secrets'
+      - 'RUVECTOR_API_KEY=ruvector-api-key:latest,RUVECTOR_SERVICE_URL=ruvector-service-url-${_ENV}:latest,TELEMETRY_ENDPOINT=observatory-endpoint-${_ENV}:latest'
+      - '--service-account'
+      - 'llm-memory-graph-sa@${PROJECT_ID}.iam.gserviceaccount.com'
+      - '--allow-unauthenticated'
+      - '--labels'
+      - 'service=llm-memory-graph,env=${_ENV},managed-by=cloud-build'
+    waitFor: ['push-image']
+
+  # Step 4: Run smoke tests
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'smoke-test'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        SERVICE_URL=$(gcloud run services describe ${_SERVICE_NAME}-${_ENV} --region=${_REGION} --format='value(status.url)')
+        echo "Testing service at: $${SERVICE_URL}"
+
+        # Health check
+        curl -sf "$${SERVICE_URL}/health" || exit 1
+        echo "Health check passed"
+
+        # Agent endpoint checks
+        for agent in conversation-memory prompt-lineage decision-memory knowledge-graph-builder memory-retrieval long-term-pattern; do
+          curl -sf "$${SERVICE_URL}/$${agent}/health" || echo "Warning: $${agent} health check failed"
+        done
+
+        echo "Smoke tests completed"
+    waitFor: ['deploy-cloud-run']
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:${_IMAGE_TAG}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:latest'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/llm-memory-graph/${_SERVICE_NAME}:${_ENV}'

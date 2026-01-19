@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentics.dev/contracts/decision-event/v1",
+  "title": "DecisionEvent Base Schema",
+  "description": "Base schema for all agent DecisionEvents persisted to ruvector-service",
+
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Unique identifier for the agent type"
+    },
+    "agent_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the agent"
+    },
+    "decision_type": {
+      "type": "string",
+      "description": "Type of decision made by the agent",
+      "enum": [
+        "conversation_capture",
+        "lineage_trace",
+        "memory_retrieval",
+        "pattern_analysis",
+        "decision_memory_capture",
+        "knowledge_graph_construction",
+        "long_term_pattern_analysis"
+      ]
+    },
+    "inputs_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the input payload"
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Agent-specific output payload"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score for the decision (retrieval relevance or association strength)"
+    },
+    "constraints_applied": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of constraints applied during processing"
+    },
+    "execution_ref": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique reference for this execution instance"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when the decision was made"
+    }
+  },
+  "required": [
+    "agent_id",
+    "agent_version",
+    "decision_type",
+    "inputs_hash",
+    "outputs",
+    "confidence",
+    "execution_ref",
+    "timestamp"
+  ]
+}

@@ -110,6 +110,10 @@ enum Commands {
     #[command(subcommand)]
     Benchmark(BenchmarkCommands),
 
+    /// Long-term pattern analysis (Memory Analysis Agent)
+    #[command(subcommand)]
+    Pattern(PatternCommands),
+
     /// Flush database to disk
     Flush,
 
@@ -300,6 +304,79 @@ enum BenchmarkCommands {
     Run,
 }
 
+#[derive(Subcommand)]
+enum PatternCommands {
+    /// Analyze memory for long-term patterns
+    Analyze {
+        /// Pattern types to detect (comma-separated: conversation_flow,topic_recurrence,response_pattern,tool_usage,error_pattern,session_behavior,user_interaction,temporal_trend)
+        #[arg(short = 't', long, required = true)]
+        pattern_types: String,
+
+        /// Start timestamp for analysis window (RFC3339, required)
+        #[arg(long, required = true)]
+        from: String,
+
+        /// End timestamp for analysis window (RFC3339, required)
+        #[arg(long, required = true)]
+        to: String,
+
+        /// Session IDs to analyze (comma-separated UUIDs, optional for global)
+        #[arg(short, long)]
+        session_ids: Option<String>,
+
+        /// Agent IDs to filter (comma-separated)
+        #[arg(short, long)]
+        agent_ids: Option<String>,
+
+        /// Tags to filter (comma-separated)
+        #[arg(long)]
+        tags: Option<String>,
+
+        /// Minimum occurrence threshold for patterns
+        #[arg(long)]
+        min_occurrence: Option<u32>,
+
+        /// Minimum confidence threshold (0.0-1.0)
+        #[arg(long, default_value = "0.7")]
+        min_confidence: Option<f64>,
+
+        /// Maximum number of patterns to return
+        #[arg(long, default_value = "20")]
+        max_patterns: Option<u32>,
+
+        /// Include temporal distribution analysis
+        #[arg(long)]
+        include_temporal: bool,
+    },
+
+    /// Get a specific pattern analysis by execution_ref
+    Inspect {
+        /// Execution reference UUID
+        execution_ref: String,
+    },
+
+    /// Query pattern analysis decision events
+    Retrieve {
+        /// Filter by start timestamp (RFC3339)
+        #[arg(long)]
+        from: Option<String>,
+
+        /// Filter by end timestamp (RFC3339)
+        #[arg(long)]
+        to: Option<String>,
+
+        /// Limit number of results
+        #[arg(short, long)]
+        limit: Option<u32>,
+    },
+
+    /// Replay a previous pattern analysis
+    Replay {
+        /// Original execution reference UUID
+        execution_ref: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -449,6 +526,73 @@ async fn main() -> Result<()> {
 
         Commands::Benchmark(benchmark_cmd) => match benchmark_cmd {
             BenchmarkCommands::Run => commands::benchmark::handle_benchmark_run(&ctx).await?,
+        },
+
+        Commands::Pattern(pattern_cmd) => match pattern_cmd {
+            PatternCommands::Analyze {
+                pattern_types,
+                from,
+                to,
+                session_ids,
+                agent_ids,
+                tags,
+                min_occurrence,
+                min_confidence,
+                max_patterns,
+                include_temporal,
+            } => {
+                // Parse comma-separated values into Vec<String>
+                let types_vec: Vec<String> = pattern_types
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+
+                let sessions_vec = session_ids.map(|s| {
+                    s.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                });
+
+                let agents_vec = agent_ids.map(|s| {
+                    s.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                });
+
+                let tags_vec = tags.map(|s| {
+                    s.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                });
+
+                commands::pattern::handle_analyze(
+                    &ctx,
+                    types_vec,
+                    from,
+                    to,
+                    sessions_vec,
+                    agents_vec,
+                    tags_vec,
+                    min_occurrence,
+                    min_confidence,
+                    max_patterns,
+                    include_temporal,
+                )
+                .await?
+            }
+            PatternCommands::Inspect { execution_ref } => {
+                commands::pattern::handle_inspect(&ctx, execution_ref).await?
+            }
+            PatternCommands::Retrieve { from, to, limit } => {
+                commands::pattern::handle_retrieve(&ctx, from, to, limit).await?
+            }
+            PatternCommands::Replay { execution_ref } => {
+                commands::pattern::handle_replay(&ctx, execution_ref).await?
+            }
         },
 
         Commands::Flush => commands::session::handle_flush(&ctx).await?,

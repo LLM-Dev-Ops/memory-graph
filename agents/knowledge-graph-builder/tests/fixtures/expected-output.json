@@ -1,0 +1,115 @@
+{
+  "knowledge_graph": {
+    "concepts": [
+      {
+        "concept_id": "concept-jwt-authentication",
+        "name": "JWT Authentication",
+        "category": "security",
+        "frequency": 3,
+        "confidence": 0.95
+      },
+      {
+        "concept_id": "concept-nodejs",
+        "name": "Node.js",
+        "category": "technology",
+        "frequency": 2,
+        "confidence": 0.98
+      },
+      {
+        "concept_id": "concept-middleware",
+        "name": "Middleware",
+        "category": "architecture",
+        "frequency": 2,
+        "confidence": 0.92
+      },
+      {
+        "concept_id": "concept-refresh-token",
+        "name": "Refresh Token",
+        "category": "security",
+        "frequency": 2,
+        "confidence": 0.90
+      }
+    ],
+    "entities": [
+      {
+        "entity_id": "entity-jsonwebtoken",
+        "name": "jsonwebtoken",
+        "type": "library",
+        "mentions": 2,
+        "confidence": 0.99
+      },
+      {
+        "entity_id": "entity-expressjs",
+        "name": "Express.js",
+        "type": "framework",
+        "mentions": 1,
+        "confidence": 0.97
+      },
+      {
+        "entity_id": "entity-npm",
+        "name": "npm",
+        "type": "tool",
+        "mentions": 1,
+        "confidence": 0.99
+      }
+    ],
+    "relationships": [
+      {
+        "relationship_id": "rel-001",
+        "source_id": "concept-jwt-authentication",
+        "target_id": "concept-nodejs",
+        "type": "implemented_in",
+        "confidence": 0.88
+      },
+      {
+        "relationship_id": "rel-002",
+        "source_id": "concept-jwt-authentication",
+        "target_id": "entity-jsonwebtoken",
+        "type": "requires",
+        "confidence": 0.95
+      },
+      {
+        "relationship_id": "rel-003",
+        "source_id": "concept-middleware",
+        "target_id": "entity-expressjs",
+        "type": "uses",
+        "confidence": 0.85
+      },
+      {
+        "relationship_id": "rel-004",
+        "source_id": "concept-refresh-token",
+        "target_id": "concept-jwt-authentication",
+        "type": "extends",
+        "confidence": 0.82
+      }
+    ],
+    "patterns": [
+      {
+        "pattern_id": "pattern-auth-flow",
+        "name": "Authentication Implementation Flow",
+        "description": "User asks about authentication, receives implementation guidance",
+        "frequency": 2,
+        "sessions": ["a1b2c3d4-e5f6-4789-abcd-123456789012", "b2c3d4e5-f6a7-4890-bcde-234567890123"],
+        "confidence": 0.85
+      }
+    ]
+  },
+  "metadata": {
+    "sessions_analyzed": 2,
+    "turns_processed": 6,
+    "concepts_extracted": 4,
+    "entities_extracted": 3,
+    "relationships_created": 4,
+    "patterns_detected": 1,
+    "extraction_timestamp": "2024-01-15T12:00:00.000Z"
+  },
+  "decision_event": {
+    "agent_id": "knowledge-graph-builder-agent",
+    "agent_version": "1.0.0",
+    "decision_type": "pattern_analysis",
+    "inputs_hash": "<sha256-hash-of-input>",
+    "confidence": 0.89,
+    "execution_ref": "<uuid>",
+    "timestamp": "<iso8601-utc>"
+  }
+}
