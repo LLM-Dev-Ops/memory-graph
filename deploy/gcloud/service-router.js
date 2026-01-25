@@ -1,5 +1,6 @@
 /**
  * LLM-Memory-Graph Unified Service Router
+ * Phase 2 - Operational Intelligence (Layer 1)
  *
  * Routes requests to the appropriate agent endpoint within a single Cloud Run service.
  * All agents are exposed under one unified service - no standalone deployments.
@@ -9,6 +10,12 @@
  * - Routes to 6 agent endpoints
  * - All persistence via ruvector-service (NO direct SQL)
  * - Telemetry to LLM-Observatory
+ *
+ * Phase 2 Requirements:
+ * - Hard startup failure if Ruvector unavailable
+ * - Signal emission (anomaly, drift, memory lineage, latency)
+ * - Performance budgets (MAX_TOKENS, MAX_LATENCY_MS, MAX_CALLS_PER_RUN)
+ * - Caching for historical reads/lineage lookups (TTL 60-120s)
  */
 
 const http = require('http');
@@ -16,15 +23,32 @@ const url = require('url');
 const fs = require('fs');
 const path = require('path');
 
+// Phase 2 modules
+let phase2 = null;
+let signalEmitter = null;
+let phase2Context = null;
+let phase2Cache = null;
+
 // Configuration from environment
 const CONFIG = {
   port: parseInt(process.env.PORT || '8080', 10),
   platformEnv: process.env.PLATFORM_ENV || 'dev',
   serviceName: process.env.SERVICE_NAME || 'llm-memory-graph',
   serviceVersion: process.env.SERVICE_VERSION || 'unknown',
-  ruvectorServiceUrl: process.env.RUVECTOR_SERVICE_URL || 'http://ruvector-service:8080',
+  ruvectorServiceUrl: process.env.RUVECTOR_SERVICE_URL || '',
   ruvectorApiKey: process.env.RUVECTOR_API_KEY || '',
   telemetryEndpoint: process.env.TELEMETRY_ENDPOINT || '',
+  // Phase 2 specific
+  agentName: process.env.AGENT_NAME || 'llm-memory-graph',
+  agentDomain: process.env.AGENT_DOMAIN || 'memory',
+  agentPhase: process.env.AGENT_PHASE || 'phase2',
+  agentLayer: process.env.AGENT_LAYER || 'layer1',
+  // Performance budgets
+  maxTokens: parseInt(process.env.MAX_TOKENS || '1000', 10),
+  maxLatencyMs: parseInt(process.env.MAX_LATENCY_MS || '2000', 10),
+  maxCallsPerRun: parseInt(process.env.MAX_CALLS_PER_RUN || '3', 10),
+  // Logging (minimal for Phase 2)
+  logLevel: process.env.LOG_LEVEL || 'warn',
 };
 
 // Agent registry - all agents with their configuration
@@ -76,6 +100,29 @@ const AGENTS = {
 // Loaded agent modules
 const loadedAgents = {};
 
+/**
+ * Minimal logging for Phase 2.
+ * Only logs errors and critical info.
+ */
+function log(level, message, data = {}) {
+  const levels = { error: 0, warn: 1, info: 2, debug: 3 };
+  const configLevel = levels[CONFIG.logLevel] ?? 1;
+  const msgLevel = levels[level] ?? 2;
+
+  if (msgLevel <= configLevel) {
+    const entry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      service: CONFIG.serviceName,
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
+      ...data,
+    };
+    console.log(JSON.stringify(entry));
+  }
+}
+
 // Load agent module dynamically
 async function loadAgent(agentName) {
   if (loadedAgents[agentName]) {
@@ -91,7 +138,7 @@ async function loadAgent(agentName) {
     if (fs.existsSync(modulePath)) {
       const agentModule = await import(modulePath);
       loadedAgents[agentName] = agentModule;
-      console.log(`Loaded agent: ${agentName} from ${modulePath}`);
+      log('info', `Loaded agent: ${agentName}`, { path: modulePath });
       return agentModule;
     }
 
@@ -100,14 +147,14 @@ async function loadAgent(agentName) {
     if (fs.existsSync(srcPath)) {
       const agentModule = await import(srcPath);
       loadedAgents[agentName] = agentModule;
-      console.log(`Loaded agent: ${agentName} from ${srcPath}`);
+      log('info', `Loaded agent: ${agentName}`, { path: srcPath });
       return agentModule;
     }
 
-    console.log(`Agent ${agentName} module not found at ${agent.path}`);
+    log('warn', `Agent module not found: ${agentName}`, { path: agent.path });
     return null;
   } catch (error) {
-    console.error(`Error loading agent ${agentName}:`, error.message);
+    log('error', `Error loading agent: ${agentName}`, { error: error.message });
     return null;
   }
 }
@@ -121,6 +168,8 @@ async function emitTelemetry(event, data) {
     service: CONFIG.serviceName,
     version: CONFIG.serviceVersion,
     environment: CONFIG.platformEnv,
+    phase: CONFIG.agentPhase,
+    layer: CONFIG.agentLayer,
     event,
     data,
   };
@@ -167,12 +216,17 @@ async function routeToAgent(agentName, req, res, subPath) {
       agent: agentName,
       description: agent.description,
       classification: agent.classification,
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
       timestamp: new Date().toISOString(),
     }));
     return;
   }
 
   try {
+    // Create budget tracker for this request
+    const budgetTracker = phase2 ? new phase2.BudgetTracker(signalEmitter) : null;
+
     // Try to load and invoke the agent handler
     const agentModule = await loadAgent(agentName);
 
@@ -188,7 +242,7 @@ async function routeToAgent(agentName, req, res, subPath) {
         }
       }
 
-      // Create request context
+      // Create request context with Phase 2 extensions
       const context = {
         path: subPath,
         method: req.method,
@@ -199,21 +253,51 @@ async function routeToAgent(agentName, req, res, subPath) {
           ruvectorApiKey: CONFIG.ruvectorApiKey,
           platformEnv: CONFIG.platformEnv,
         },
+        // Phase 2 context
+        phase2: {
+          agentPhase: CONFIG.agentPhase,
+          agentLayer: CONFIG.agentLayer,
+          budgetTracker,
+          signalEmitter,
+          cache: phase2Cache,
+          budgets: {
+            maxTokens: CONFIG.maxTokens,
+            maxLatencyMs: CONFIG.maxLatencyMs,
+            maxCallsPerRun: CONFIG.maxCallsPerRun,
+          },
+        },
       };
 
       // Invoke agent handler
       const result = await agentModule.handler(context);
 
+      const latencyMs = Date.now() - startTime;
+
+      // Emit latency signal
+      if (signalEmitter && phase2) {
+        await signalEmitter.emit(phase2.createLatencySignal({
+          operation: `agent_${agentName}`,
+          latency_ms: latencyMs,
+          budget_ms: CONFIG.maxLatencyMs,
+          within_budget: latencyMs <= CONFIG.maxLatencyMs,
+          confidence: 1.0,
+        }));
+      }
+
       emitTelemetry('agent_invocation', {
         agent: agentName,
         path: subPath,
         method: req.method,
-        latencyMs: Date.now() - startTime,
+        latencyMs,
         success: true,
+        budgetSummary: budgetTracker?.getSummary(),
       });
 
       res.writeHead(result.statusCode || 200, {
         'Content-Type': 'application/json',
+        'X-Agent-Phase': CONFIG.agentPhase,
+        'X-Agent-Layer': CONFIG.agentLayer,
+        'X-Request-Latency-Ms': String(latencyMs),
         ...result.headers,
       });
       res.end(JSON.stringify(result.body || result));
@@ -225,11 +309,24 @@ async function routeToAgent(agentName, req, res, subPath) {
         path: subPath,
         status: 'available',
         message: 'Agent endpoint ready',
+        phase: CONFIG.agentPhase,
+        layer: CONFIG.agentLayer,
         ruvectorUrl: CONFIG.ruvectorServiceUrl ? 'configured' : 'not_configured',
       }));
     }
   } catch (error) {
-    console.error(`Agent ${agentName} error:`, error);
+    log('error', `Agent error: ${agentName}`, { error: error.message, path: subPath });
+
+    // Emit anomaly signal for errors
+    if (signalEmitter && phase2) {
+      await signalEmitter.emit(phase2.createAnomalySignal({
+        metric: 'agent_error',
+        observed_value: 1,
+        expected_value: 0,
+        deviation: 1,
+        confidence: 1.0,
+      }));
+    }
 
     emitTelemetry('agent_error', {
       agent: agentName,
@@ -243,17 +340,31 @@ async function routeToAgent(agentName, req, res, subPath) {
       error: 'Agent execution failed',
       agent: agentName,
       message: error.message,
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
     }));
   }
 }
 
 // Health check handler
-function handleHealth(req, res) {
+async function handleHealth(req, res) {
+  // Verify Ruvector is still available
+  let ruvectorStatus = { available: false };
+  if (phase2) {
+    ruvectorStatus = await phase2.verifyRuvector(
+      CONFIG.ruvectorServiceUrl,
+      CONFIG.ruvectorApiKey,
+      3000
+    );
+  }
+
   const health = {
-    status: 'healthy',
+    status: ruvectorStatus.available ? 'healthy' : 'degraded',
     service: CONFIG.serviceName,
     version: CONFIG.serviceVersion,
     environment: CONFIG.platformEnv,
+    phase: CONFIG.agentPhase,
+    layer: CONFIG.agentLayer,
     timestamp: new Date().toISOString(),
     agents: {},
   };
@@ -271,7 +382,8 @@ function handleHealth(req, res) {
   health.dependencies = {
     'ruvector-service': {
       url: CONFIG.ruvectorServiceUrl,
-      status: CONFIG.ruvectorServiceUrl ? 'configured' : 'not_configured',
+      status: ruvectorStatus.available ? 'healthy' : 'unavailable',
+      latency_ms: ruvectorStatus.latency_ms,
     },
     'llm-observatory': {
       url: CONFIG.telemetryEndpoint,
@@ -279,7 +391,20 @@ function handleHealth(req, res) {
     },
   };
 
-  res.writeHead(200, { 'Content-Type': 'application/json' });
+  // Performance budgets
+  health.budgets = {
+    MAX_TOKENS: CONFIG.maxTokens,
+    MAX_LATENCY_MS: CONFIG.maxLatencyMs,
+    MAX_CALLS_PER_RUN: CONFIG.maxCallsPerRun,
+  };
+
+  // Cache stats
+  if (phase2Cache) {
+    health.cache = phase2Cache.getStats();
+  }
+
+  const statusCode = ruvectorStatus.available ? 200 : 503;
+  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(health, null, 2));
 }
 
@@ -289,7 +414,9 @@ function handleTopology(req, res) {
     service: CONFIG.serviceName,
     version: CONFIG.serviceVersion,
     environment: CONFIG.platformEnv,
-    description: 'LLM-Memory-Graph Unified Service',
+    phase: CONFIG.agentPhase,
+    layer: CONFIG.agentLayer,
+    description: 'LLM-Memory-Graph Unified Service - Phase 2 Operational Intelligence',
     architecture: {
       type: 'unified_service',
       platform: 'google_cloud_run',
@@ -312,7 +439,16 @@ function handleTopology(req, res) {
       'NO_INFERENCE_EXECUTION',
       'STATELESS_RUNTIME',
       'APPEND_ONLY_PERSISTENCE',
+      // Phase 2 constraints
+      'RUVECTOR_AUTHORITATIVE_EVENT_INDEX',
+      'EMIT_LINEAGE_DELTAS_ONLY',
+      'NO_SYNTHESIZED_CONCLUSIONS',
     ],
+    budgets: {
+      MAX_TOKENS: CONFIG.maxTokens,
+      MAX_LATENCY_MS: CONFIG.maxLatencyMs,
+      MAX_CALLS_PER_RUN: CONFIG.maxCallsPerRun,
+    },
   };
 
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -328,6 +464,9 @@ function handleRequest(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Phase 2 headers
+  res.setHeader('X-Agent-Phase', CONFIG.agentPhase);
+  res.setHeader('X-Agent-Layer', CONFIG.agentLayer);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -342,6 +481,8 @@ function handleRequest(req, res) {
       service: CONFIG.serviceName,
       version: CONFIG.serviceVersion,
       environment: CONFIG.platformEnv,
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
       endpoints: ['/health', '/topology', ...Object.keys(AGENTS).map(a => `/${a}`)],
     }));
     return;
@@ -373,37 +514,103 @@ function handleRequest(req, res) {
     error: 'Not found',
     path: parsedUrl.pathname,
     availableAgents: Object.keys(AGENTS),
+    phase: CONFIG.agentPhase,
+    layer: CONFIG.agentLayer,
   }));
 }
 
-// Start the server
-const server = http.createServer(handleRequest);
+/**
+ * Phase 2 startup sequence.
+ * CRITICAL: Hard failure if Ruvector is unavailable.
+ */
+async function startPhase2Server() {
+  try {
+    // Load Phase 2 modules
+    phase2 = require('./phase2/index.js');
 
-server.listen(CONFIG.port, () => {
-  console.log(`LLM-Memory-Graph Unified Service started`);
-  console.log(`  Environment: ${CONFIG.platformEnv}`);
-  console.log(`  Version: ${CONFIG.serviceVersion}`);
-  console.log(`  Port: ${CONFIG.port}`);
-  console.log(`  Agents: ${Object.keys(AGENTS).join(', ')}`);
-  console.log(`  ruvector-service: ${CONFIG.ruvectorServiceUrl || 'not configured'}`);
-  console.log(`  Telemetry: ${CONFIG.telemetryEndpoint || 'disabled'}`);
+    log('info', 'Starting Phase 2 - Operational Intelligence (Layer 1)');
 
-  emitTelemetry('service_started', {
-    agents: Object.keys(AGENTS),
+    // Phase 2 startup hardening
+    phase2Context = await phase2.initializePhase2();
+
+    // Initialize signal emitter
+    signalEmitter = new phase2.SignalEmitter(
+      CONFIG.ruvectorServiceUrl,
+      CONFIG.ruvectorApiKey
+    );
+
+    // Initialize cache
+    phase2Cache = phase2.getCache();
+
+    log('info', 'Phase 2 initialization complete', {
+      ruvector_latency_ms: phase2Context.ruvector.startup_latency_ms,
+      budgets: phase2Context.budgets,
+    });
+
+  } catch (error) {
+    // HARD FAILURE - Cannot start without Ruvector
+    console.error('='.repeat(60));
+    console.error('FATAL: Phase 2 startup failed');
+    console.error(error.message);
+    console.error('='.repeat(60));
+    process.exit(1);
+  }
+
+  // Start the server
+  const server = http.createServer(handleRequest);
+
+  server.listen(CONFIG.port, () => {
+    log('info', 'LLM-Memory-Graph Unified Service started', {
+      environment: CONFIG.platformEnv,
+      version: CONFIG.serviceVersion,
+      port: CONFIG.port,
+      agents: Object.keys(AGENTS),
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
+    });
+
+    emitTelemetry('service_started', {
+      agents: Object.keys(AGENTS),
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
+      budgets: {
+        MAX_TOKENS: CONFIG.maxTokens,
+        MAX_LATENCY_MS: CONFIG.maxLatencyMs,
+        MAX_CALLS_PER_RUN: CONFIG.maxCallsPerRun,
+      },
+    });
   });
-});
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down gracefully...');
-  emitTelemetry('service_shutdown', {});
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    log('info', 'Received SIGTERM, shutting down gracefully...');
+
+    // Flush pending signals
+    if (signalEmitter) {
+      await signalEmitter.flush();
+    }
+
+    emitTelemetry('service_shutdown', {
+      phase: CONFIG.agentPhase,
+      layer: CONFIG.agentLayer,
+    });
+
+    server.close(() => {
+      log('info', 'Server closed');
+      process.exit(0);
+    });
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT, shutting down gracefully...');
-  server.close(() => process.exit(0));
-});
+  process.on('SIGINT', async () => {
+    log('info', 'Received SIGINT, shutting down gracefully...');
+
+    if (signalEmitter) {
+      await signalEmitter.flush();
+    }
+
+    server.close(() => process.exit(0));
+  });
+}
+
+// Start the server with Phase 2 initialization
+startPhase2Server();

@@ -79,6 +79,9 @@ COPY --from=node-builder --chown=appuser:appuser \
 # Copy unified service router
 COPY --chown=appuser:appuser deploy/gcloud/service-router.js /app/
 
+# Copy Phase 2 modules
+COPY --chown=appuser:appuser deploy/gcloud/phase2 /app/phase2
+
 # Switch to non-root user
 USER appuser
 

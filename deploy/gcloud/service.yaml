@@ -1,5 +1,6 @@
 # Cloud Run Service Configuration
 # LLM-Memory-Graph Unified Service
+# Phase 2 - Operational Intelligence (Layer 1)
 #
 # Apply with:
 #   gcloud run services replace deploy/gcloud/service.yaml --region=us-central1
@@ -12,8 +13,10 @@ metadata:
     service: llm-memory-graph
     domain: memory
     tier: core
+    phase: phase2
+    layer: layer1
   annotations:
-    run.googleapis.com/description: "LLM-Memory-Graph - Memory, lineage, and context tracking for LLM systems"
+    run.googleapis.com/description: "LLM-Memory-Graph - Phase 2 Operational Intelligence (Layer 1)"
     run.googleapis.com/launch-stage: GA
 spec:
   template:
@@ -63,8 +66,28 @@ spec:
               value: production
             - name: RUST_LOG
               value: info
+            - name: LOG_LEVEL
+              value: warn  # Minimal logging for Phase 2
 
-            # Secrets from Secret Manager
+            # Phase 2 - Agent Identity (REQUIRED)
+            - name: AGENT_NAME
+              value: llm-memory-graph
+            - name: AGENT_DOMAIN
+              value: memory
+            - name: AGENT_PHASE
+              value: phase2
+            - name: AGENT_LAYER
+              value: layer1
+
+            # Phase 2 - Performance Budgets
+            - name: MAX_TOKENS
+              value: "1000"
+            - name: MAX_LATENCY_MS
+              value: "2000"
+            - name: MAX_CALLS_PER_RUN
+              value: "3"
+
+            # Secrets from Secret Manager (Vault)
             - name: RUVECTOR_API_KEY
               valueFrom:
                 secretKeyRef:
