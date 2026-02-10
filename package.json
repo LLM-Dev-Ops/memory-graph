@@ -1,5 +1,14 @@
 {
+  "type": "module",
+  "scripts": {
+    "test:execution": "vitest run src/execution/tests/",
+    "test:execution:watch": "vitest src/execution/tests/"
+  },
   "dependencies": {
-    "claude-flow": "^2.7.41"
+    "claude-flow": "^2.7.41",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.18"
   }
 }

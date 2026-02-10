@@ -18,6 +18,8 @@
 
 import { ConversationMemoryAgent, createAgent } from './agent.js';
 import type { AgentResult } from './agent.js';
+import type { AgentExecutionResult } from '../../../src/execution/agent-adapter.js';
+import { AGENT_ID, AGENT_VERSION } from './types.js';
 
 // Export types for consumers
 export type {
@@ -187,6 +189,43 @@ export async function healthHandler(): Promise<EdgeFunctionResponse> {
     }),
   };
 }
+
+/**
+ * FEU entry point: Execute this agent as part of a Foundational Execution Unit.
+ *
+ * Returns an AgentExecutionResult that the orchestrator wraps into an AgentSpan.
+ * This function does NOT create spans itself -- span creation is handled by
+ * the adapter layer in src/execution/agent-adapter.ts.
+ */
+export async function executeAsUnit(input: unknown): Promise<AgentExecutionResult> {
+  const agent = createAgent();
+  const result = await agent.execute(input);
+
+  if (result.success) {
+    return {
+      success: true,
+      output: result.output,
+      decisionEvent: result.decisionEvent,
+    };
+  }
+
+  return {
+    success: false,
+    error: {
+      error_code: result.error.error_code,
+      message: result.error.message,
+      details: result.error.details,
+    },
+  };
+}
+
+/**
+ * FEU metadata for adapter registration.
+ */
+export const FEU_METADATA = {
+  agent_id: AGENT_ID,
+  agent_version: AGENT_VERSION,
+} as const;
 
 /**
  * CLI-invokable endpoint for inspect operation
