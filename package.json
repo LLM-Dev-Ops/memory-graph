@@ -1,14 +1,24 @@
 {
+  "name": "memory-graph-agents",
+  "version": "1.0.0",
+  "main": "functions/index.js",
   "type": "module",
   "scripts": {
     "test:execution": "vitest run src/execution/tests/",
-    "test:execution:watch": "vitest src/execution/tests/"
+    "test:execution:watch": "vitest src/execution/tests/",
+    "start": "npx @google-cloud/functions-framework --target=api --source=functions/",
+    "deploy": "gcloud functions deploy memory-graph-agents --runtime nodejs20 --trigger-http --allow-unauthenticated --region us-central1 --project agentics-dev --entry-point api --memory 512MB --timeout 60s"
   },
   "dependencies": {
+    "@google-cloud/functions-framework": "^3.5.1",
     "claude-flow": "^2.7.41",
+    "express": "^4.21.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
