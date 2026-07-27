@@ -115,20 +115,20 @@ tonic-build = "0.11"
 # ============================================================================
 
 # Schema Registry - Centralized schema management and validation
-llm-schema-registry = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
-llm-schema-registry-client = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
+# schema-registry-core is deliberately unprefixed upstream (ADR-015 grandfather clause).
+schema-registry-core = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
+llm-schema-registry-sdk = { git = "https://github.com/LLM-Dev-Ops/schema-registry", branch = "main" }
 
 # Config Manager - Enterprise configuration management with encryption
-llm-config-manager = { git = "https://github.com/LLM-Dev-Ops/config-manager", branch = "main" }
-llm-config-manager-client = { git = "https://github.com/LLM-Dev-Ops/config-manager", branch = "main" }
+llm-config-core = { git = "https://github.com/LLM-Dev-Ops/config-manager", branch = "main" }
 
 # Data Vault - Secure storage and anonymization for sensitive data
 llm-data-vault = { git = "https://github.com/LLM-Dev-Ops/data-vault", branch = "main" }
-llm-data-vault-client = { git = "https://github.com/LLM-Dev-Ops/data-vault", branch = "main" }
+vault-sdk = { git = "https://github.com/LLM-Dev-Ops/data-vault", branch = "main" }
 
 # Observatory - Real-time observability and telemetry platform
-llm-observatory = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
-llm-observatory-client = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
+llm-observatory-core = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
+llm-observatory-sdk = { git = "https://github.com/LLM-Dev-Ops/observatory", branch = "main" }
 
 [profile.release]
 opt-level = 3
