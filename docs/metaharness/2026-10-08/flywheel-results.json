@@ -1,0 +1,516 @@
+{
+  "contract": {
+    "baselineCommit": "2123e26e1ac072515dadf1c5dd7357fe2764749b",
+    "upstreamCommit": "ea287d6ef7548b0b32fa3e20956fa548cfe51edb",
+    "versions": {
+      "metaharness": "0.4.17",
+      "darwin": "0.10.3",
+      "flywheel": "0.1.12"
+    },
+    "candidate": "Remove the unused production dependency claude-flow@2.7.41 and its lockfile graph",
+    "evidence": "Repository-wide search finds no runtime import outside package metadata; CLAUDE.md uses npx and does not require a production install",
+    "primaryMetric": "clean npm ci exit status",
+    "secondaryMetrics": [
+      "production dependency audit severity counts",
+      "installed production dependency count",
+      "70 execution tests",
+      "Cloud Function health and decision-route smoke cases"
+    ],
+    "acceptance": "candidate npm ci exits 0; all 70 tests and smoke cases pass; production audit total and critical findings decrease; no runtime file changes",
+    "rejection": "reject if any test/smoke regression, clean install still fails, audit findings do not decrease, or source imports require claude-flow",
+    "rollback": "Revert the implementation commit to restore claude-flow and the prior lockfile graph",
+    "scope": "package.json and package-lock.json only, plus reproducible evaluation evidence; no Rust, persistence, GCP, IAM, deployment, or publication changes",
+    "darwinBoundary": "real-sandbox repository tests may not distinguish harness variants; Darwin output is separate from this source dependency evaluation"
+  },
+  "hashes": {
+    "baselinePackage": "1ec189d0a9ae28e520a58f561e7008230005c69f55cf6e19e6cf26c53ba00531",
+    "candidatePackage": "dfba24be4255fca1dec03a1ae1a28b8aad4922fe55f6f228412b348ac4e8229f",
+    "baselineLock": "e9d27cfbe1b6111858260257acbad37c86d886b763928c6c6e0f95dc5183acd0",
+    "candidateLock": "2147737674444d61f1df88240a49297bb2cc1fa74fd48a6de282ec54844b1471"
+  },
+  "measurements": [
+    {
+      "policy": {
+        "includeUnusedDependency": true
+      },
+      "suite": "holdout",
+      "score": {
+        "primary": 0,
+        "noopRate": 1,
+        "costPerWin": 0,
+        "regressed": false,
+        "itemWins": [
+          false,
+          false,
+          false
+        ]
+      },
+      "logs": {
+        "install": {
+          "exit": 1,
+          "signal": null,
+          "stdoutTail": "",
+          "stderrTail": "r gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp WARN install got an error, rolling back install\nnpm error gyp ERR! configure error \nnpm error gyp ERR! stack Error: There was a fatal problem while downloading/extracting the tarball\nnpm error gyp ERR! stack at go (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:254:17)\nnpm error gyp ERR! stack at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\nnpm error gyp ERR! stack at async install (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:88:16)\nnpm error gyp ERR! stack at async getNodeDir (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/configure.js:79:7)\nnpm error gyp ERR! stack at async run (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js:81:18)\nnpm error gyp ERR! System Linux 6.18.44\nnpm error gyp ERR! command \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node\" \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js\" \"rebuild\"\nnpm error gyp ERR! cwd /tmp/llm-meta-cycle-20261008-IlM4pP/baseline/node_modules/hnswlib-node\nnpm error gyp ERR! node -v v24.19.0\nnpm error gyp ERR! node-gyp -v v12.2.0\nnpm error gyp ERR! $npm_package_name hnswlib-node\nnpm error gyp ERR! $npm_package_version 3.0.0\nnpm error gyp ERR! not ok\nnpm error A complete log of this run can be found in: /root/.npm/_logs/2026-10-09T00_20_29_099Z-debug-0.log\n"
+        },
+        "audit": {
+          "exit": 1,
+          "signal": null,
+          "stdoutTail": "hub.com/advisories/GHSA-w5hq-g745-h8pq\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-787\",\n            \"CWE-1285\"\n          ],\n          \"cvss\": {\n            \"score\": 7.5,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N\"\n          },\n          \"range\": \">=13.0.0 <13.0.1\"\n        }\n      ],\n      \"effects\": [\n        \"cloudevents\",\n        \"ruv-swarm\"\n      ],\n      \"range\": \"<=11.1.0 || 13.0.0\",\n      \"nodes\": [\n        \"node_modules/claude-flow/node_modules/uuid\",\n        \"node_modules/cloudevents/node_modules/uuid\",\n        \"node_modules/uuid\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"@google-cloud/functions-framework\",\n        \"version\": \"2.0.0\",\n        \"isSemVerMajor\": true\n      }\n    },\n    \"validator\": {\n      \"name\": \"validator\",\n      \"severity\": \"high\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1112713,\n          \"name\": \"validator\",\n          \"dependency\": \"validator\",\n          \"title\": \"Validator is Vulnerable to Incomplete Filtering of One or More Instances of Special Elements\",\n          \"url\": \"https://github.com/advisories/GHSA-vghf-hv5q-vc2g\",\n          \"severity\": \"high\",\n          \"cwe\": [\n            \"CWE-172\",\n            \"CWE-792\"\n          ],\n          \"cvss\": {\n            \"score\": 7.5,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H\"\n          },\n          \"range\": \"<13.15.22\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"<13.15.22\",\n      \"nodes\": [\n        \"node_modules/validator\"\n      ],\n      \"fixAvailable\": true\n    },\n    \"ws\": {\n      \"name\": \"ws\",\n      \"severity\": \"high\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1119108,\n          \"name\": \"ws\",\n          \"dependency\": \"ws\",\n          \"title\": \"ws: Uninitialized memory disclosure\",\n          \"url\": \"https://github.com/advisories/GHSA-58qx-3vcg-4xpx\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-908\"\n          ],\n          \"cvss\": {\n            \"score\": 4.4,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N\"\n          },\n          \"range\": \">=8.0.0 <8.20.1\"\n        },\n        {\n          \"source\": 1123259,\n          \"name\": \"ws\",\n          \"dependency\": \"ws\",\n          \"title\": \"ws: Memory exhaustion DoS from tiny fragments and data chunks\",\n          \"url\": \"https://github.com/advisories/GHSA-96hv-2xvq-fx4p\",\n          \"severity\": \"high\",\n          \"cwe\": [\n            \"CWE-400\",\n            \"CWE-770\",\n            \"CWE-1050\"\n          ],\n          \"cvss\": {\n            \"score\": 7.5,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H\"\n          },\n          \"range\": \">=8.0.0 <8.21.0\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"8.0.0 - 8.20.1\",\n      \"nodes\": [\n        \"node_modules/ws\"\n      ],\n      \"fixAvailable\": true\n    },\n    \"yaml\": {\n      \"name\": \"yaml\",\n      \"severity\": \"moderate\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1115556,\n          \"name\": \"yaml\",\n          \"dependency\": \"yaml\",\n          \"title\": \"yaml is vulnerable to Stack Overflow via deeply nested YAML collections\",\n          \"url\": \"https://github.com/advisories/GHSA-48c2-rrv3-qjmp\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-674\"\n          ],\n          \"cvss\": {\n            \"score\": 4.3,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L\"\n          },\n          \"range\": \">=2.0.0 <2.8.3\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"2.0.0 - 2.8.2\",\n      \"nodes\": [\n        \"node_modules/yaml\"\n      ],\n      \"fixAvailable\": true\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 1,\n      \"moderate\": 11,\n      \"high\": 27,\n      \"critical\": 2,\n      \"total\": 41\n    },\n    \"dependencies\": {\n      \"prod\": 533,\n      \"dev\": 91,\n      \"optional\": 79,\n      \"peer\": 7,\n      \"peerOptional\": 0,\n      \"total\": 654\n    }\n  }\n}\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+          "vulnerabilities": {
+            "info": 0,
+            "low": 1,
+            "moderate": 11,
+            "high": 27,
+            "critical": 2,
+            "total": 41
+          }
+        }
+      }
+    },
+    {
+      "policy": {
+        "includeUnusedDependency": true
+      },
+      "suite": "anchor",
+      "score": {
+        "primary": 1,
+        "noopRate": 0,
+        "costPerWin": 0,
+        "regressed": false,
+        "itemWins": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      "logs": {
+        "installForTests": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "\nadded 595 packages in 10s\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn EBADENGINE Unsupported engine {\nnpm warn EBADENGINE   package: 'cloudevents@8.0.3',\nnpm warn EBADENGINE   required: { node: '>=16 <=22' },\nnpm warn EBADENGINE   current: { node: 'v24.19.0', npm: '11.9.0' }\nnpm warn EBADENGINE }\nnpm warn reify invalid or damaged lockfile detected\nnpm warn reify please re-try this operation once it completes\nnpm warn reify so that the damage can be corrected, or perform\nnpm warn reify a fresh install with no lockfile if the problem persists.\nnpm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n"
+        },
+        "tests": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/baseline\n\n ✓ src/execution/tests/types.test.ts (29 tests) 25ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 18ms\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 23ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 28ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:21:20\n   Duration  395ms (transform 323ms, setup 0ms, import 499ms, tests 94ms, environment 1ms)\n\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n"
+        },
+        "smoke": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "{\"health\":200,\"capture\":200,\"query\":200}\n",
+          "stderrTail": ""
+        }
+      }
+    },
+    {
+      "policy": {
+        "includeUnusedDependency": false
+      },
+      "suite": "holdout",
+      "score": {
+        "primary": 1,
+        "noopRate": 0,
+        "costPerWin": 0,
+        "regressed": false,
+        "itemWins": [
+          true,
+          true,
+          true
+        ]
+      },
+      "logs": {
+        "install": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "\nadded 197 packages in 2s\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn EBADENGINE Unsupported engine {\nnpm warn EBADENGINE   package: 'cloudevents@8.0.3',\nnpm warn EBADENGINE   required: { node: '>=16 <=22' },\nnpm warn EBADENGINE   current: { node: 'v24.19.0', npm: '11.9.0' }\nnpm warn EBADENGINE }\n"
+        },
+        "audit": {
+          "exit": 1,
+          "signal": null,
+          "stdoutTail": " \"proxy-addr\",\n      \"severity\": \"critical\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1241210,\n          \"name\": \"proxy-addr\",\n          \"dependency\": \"proxy-addr\",\n          \"title\": \"proxy-addr vulnerable to IP spoofing via IPv4-mapped IPv6 trust subnet\",\n          \"url\": \"https://github.com/advisories/GHSA-jqcg-44mw-7w3h\",\n          \"severity\": \"critical\",\n          \"cwe\": [\n            \"CWE-290\",\n            \"CWE-348\",\n            \"CWE-697\"\n          ],\n          \"cvss\": {\n            \"score\": 9.1,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N\"\n          },\n          \"range\": \">=1.1.0 <2.0.8\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"1.1.0 - 2.0.7\",\n      \"nodes\": [\n        \"node_modules/proxy-addr\"\n      ],\n      \"fixAvailable\": true\n    },\n    \"qs\": {\n      \"name\": \"qs\",\n      \"severity\": \"moderate\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1119502,\n          \"name\": \"qs\",\n          \"dependency\": \"qs\",\n          \"title\": \"qs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set\",\n          \"url\": \"https://github.com/advisories/GHSA-q8mj-m7cp-5q26\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-476\"\n          ],\n          \"cvss\": {\n            \"score\": 5.3,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L\"\n          },\n          \"range\": \">=6.11.1 <=6.15.1\"\n        },\n        {\n          \"source\": 1158506,\n          \"name\": \"qs\",\n          \"dependency\": \"qs\",\n          \"title\": \"qs array-limit bypass via bracket-key comma parsing\",\n          \"url\": \"https://github.com/advisories/GHSA-x5fp-wj9c-mxmx\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-770\"\n          ],\n          \"cvss\": {\n            \"score\": 3.7,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L\"\n          },\n          \"range\": \">=6.14.2 <=6.15.3\"\n        },\n        {\n          \"source\": 1158507,\n          \"name\": \"qs\",\n          \"dependency\": \"qs\",\n          \"title\": \"qs: Denial of Service via Attacker Controlled isBuffer\",\n          \"url\": \"https://github.com/advisories/GHSA-4mjr-xmp4-gh2g\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-248\",\n            \"CWE-703\"\n          ],\n          \"cvss\": {\n            \"score\": 5.3,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L\"\n          },\n          \"range\": \">=2.2.5 <6.16.0\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"2.2.5 - 6.15.3\",\n      \"nodes\": [\n        \"node_modules/qs\"\n      ],\n      \"fixAvailable\": true\n    },\n    \"uuid\": {\n      \"name\": \"uuid\",\n      \"severity\": \"moderate\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1119441,\n          \"name\": \"uuid\",\n          \"dependency\": \"uuid\",\n          \"title\": \"uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided\",\n          \"url\": \"https://github.com/advisories/GHSA-w5hq-g745-h8pq\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-787\",\n            \"CWE-1285\"\n          ],\n          \"cvss\": {\n            \"score\": 7.5,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N\"\n          },\n          \"range\": \"<11.1.1\"\n        }\n      ],\n      \"effects\": [\n        \"cloudevents\"\n      ],\n      \"range\": \"<11.1.1\",\n      \"nodes\": [\n        \"node_modules/cloudevents/node_modules/uuid\"\n      ],\n      \"fixAvailable\": {\n        \"name\": \"@google-cloud/functions-framework\",\n        \"version\": \"2.0.0\",\n        \"isSemVerMajor\": true\n      }\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 1,\n      \"moderate\": 5,\n      \"high\": 2,\n      \"critical\": 1,\n      \"total\": 9\n    },\n    \"dependencies\": {\n      \"prod\": 155,\n      \"dev\": 92,\n      \"optional\": 52,\n      \"peer\": 0,\n      \"peerOptional\": 0,\n      \"total\": 246\n    }\n  }\n}\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n",
+          "vulnerabilities": {
+            "info": 0,
+            "low": 1,
+            "moderate": 5,
+            "high": 2,
+            "critical": 1,
+            "total": 9
+          }
+        }
+      }
+    },
+    {
+      "policy": {
+        "includeUnusedDependency": false
+      },
+      "suite": "anchor",
+      "score": {
+        "primary": 1,
+        "noopRate": 0,
+        "costPerWin": 0,
+        "regressed": false,
+        "itemWins": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      "logs": {
+        "installForTests": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "\nadded 197 packages in 2s\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn EBADENGINE Unsupported engine {\nnpm warn EBADENGINE   package: 'cloudevents@8.0.3',\nnpm warn EBADENGINE   required: { node: '>=16 <=22' },\nnpm warn EBADENGINE   current: { node: 'v24.19.0', npm: '11.9.0' }\nnpm warn EBADENGINE }\n"
+        },
+        "tests": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/memory-graph\n\n ✓ src/execution/tests/types.test.ts (29 tests) 27ms\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 19ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 30ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 31ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:21:34\n   Duration  373ms (transform 271ms, setup 0ms, import 462ms, tests 107ms, environment 1ms)\n\n",
+          "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n"
+        },
+        "smoke": {
+          "exit": 0,
+          "signal": null,
+          "stdoutTail": "{\"health\":200,\"capture\":200,\"query\":200}\n",
+          "stderrTail": ""
+        }
+      }
+    }
+  ],
+  "pinnedGateFingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+  "replay": {
+    "pass": true,
+    "checks": {
+      "receipts": true,
+      "reachesRoot": true,
+      "contiguousParents": true,
+      "allPromoted": true,
+      "gateUnchanged": true,
+      "gateReExecutes": true,
+      "allCommitsReceipts": true,
+      "sealedFieldsAuthentic": true
+    },
+    "failures": [],
+    "chainSummary": "gen1(includeUnusedDependency) → gen0(root)"
+  },
+  "promotions": 1,
+  "finalPolicy": {
+    "includeUnusedDependency": false
+  },
+  "replayBundle": {
+    "data_source": "LOCAL_PROCESS_REAL_NPM_AND_HTTP",
+    "root_id": "root",
+    "chain": [
+      {
+        "id": "root__includeUnusedDependency_gen1",
+        "generation": 1,
+        "parents": [
+          "root"
+        ],
+        "mutation": {
+          "target": "includeUnusedDependency",
+          "summary": "Remove unused claude-flow production dependency and lockfile graph",
+          "inverse": {
+            "files": [
+              "package.json",
+              "package-lock.json"
+            ],
+            "baselineCommit": "2123e26e1ac072515dadf1c5dd7357fe2764749b"
+          }
+        },
+        "primaryDelta": 1,
+        "anchorScore": 1,
+        "verdict": "PROMOTED",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__includeUnusedDependency_gen1",
+            "target": "includeUnusedDependency",
+            "verdict": "PROMOTED",
+            "primaryDelta": 1,
+            "baselineScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false
+              ]
+            },
+            "candidateScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true
+              ]
+            },
+            "anchorScore": 1,
+            "failureReasons": [],
+            "parents": [
+              "root"
+            ],
+            "generation": 1
+          },
+          "signature": "SJkM+0HP5ER0/oFjBlOYyQK0tZSn2fHjMF5SFCyMaw12266MzY6GWTx37jckfV62E6E1fJTB9/GB3uxUPg+fCg==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-08-generation-1",
+        "baselineScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false
+          ]
+        },
+        "candidateScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      {
+        "id": "root",
+        "generation": 0,
+        "parents": [],
+        "mutation": null,
+        "primaryDelta": 0,
+        "anchorScore": 1,
+        "verdict": "ROOT",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "root",
+            "root": "root"
+          },
+          "signature": "c68lFf7FUy/mh5aqIhy2lq6FbIvH5Mm4zG18Za3Qnml2pzXHRjhxRjEQX+KrnBL+AGfLXcL2BgZEW4JkwJoXAw==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-08-generation-0"
+      }
+    ],
+    "all_commits": [
+      {
+        "id": "root__includeUnusedDependency_gen1",
+        "generation": 1,
+        "parents": [
+          "root"
+        ],
+        "mutation": {
+          "target": "includeUnusedDependency",
+          "summary": "Remove unused claude-flow production dependency and lockfile graph",
+          "inverse": {
+            "files": [
+              "package.json",
+              "package-lock.json"
+            ],
+            "baselineCommit": "2123e26e1ac072515dadf1c5dd7357fe2764749b"
+          }
+        },
+        "primaryDelta": 1,
+        "anchorScore": 1,
+        "verdict": "PROMOTED",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__includeUnusedDependency_gen1",
+            "target": "includeUnusedDependency",
+            "verdict": "PROMOTED",
+            "primaryDelta": 1,
+            "baselineScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false
+              ]
+            },
+            "candidateScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true
+              ]
+            },
+            "anchorScore": 1,
+            "failureReasons": [],
+            "parents": [
+              "root"
+            ],
+            "generation": 1
+          },
+          "signature": "SJkM+0HP5ER0/oFjBlOYyQK0tZSn2fHjMF5SFCyMaw12266MzY6GWTx37jckfV62E6E1fJTB9/GB3uxUPg+fCg==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-08-generation-1",
+        "baselineScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false
+          ]
+        },
+        "candidateScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      {
+        "id": "root__includeUnusedDependency_gen1__includeUnusedDependency_gen2",
+        "generation": 2,
+        "parents": [
+          "root__includeUnusedDependency_gen1"
+        ],
+        "mutation": {
+          "target": "includeUnusedDependency",
+          "summary": "Remove unused claude-flow production dependency and lockfile graph",
+          "inverse": {
+            "files": [
+              "package.json",
+              "package-lock.json"
+            ],
+            "baselineCommit": "2123e26e1ac072515dadf1c5dd7357fe2764749b"
+          }
+        },
+        "primaryDelta": 0,
+        "anchorScore": null,
+        "verdict": "REJECTED",
+        "failureReasons": [
+          "no_improvement_at_noop_floor"
+        ],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__includeUnusedDependency_gen1__includeUnusedDependency_gen2",
+            "target": "includeUnusedDependency",
+            "verdict": "REJECTED",
+            "primaryDelta": 0,
+            "baselineScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true
+              ]
+            },
+            "candidateScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 0,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true
+              ]
+            },
+            "anchorScore": null,
+            "failureReasons": [
+              "no_improvement_at_noop_floor"
+            ],
+            "parents": [
+              "root__includeUnusedDependency_gen1"
+            ],
+            "generation": 2
+          },
+          "signature": "T1TODToVtcY7+XOOEy4S9oxRZgOMPmbiPzS63YlIfeOQ0Xsxgm14+35TmcbtumVc/PG+eSNHvJpa9XmKNfMlDQ==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-08-generation-2",
+        "baselineScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true
+          ]
+        },
+        "candidateScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 0,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true
+          ]
+        }
+      }
+    ],
+    "lift_curve": [
+      {
+        "generation": 0,
+        "primary": 0,
+        "delta": 0,
+        "anchor": 1
+      },
+      {
+        "generation": 1,
+        "primary": 1,
+        "delta": 1,
+        "anchor": 1
+      }
+    ],
+    "gate_fingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+    "verified_improvements": 1,
+    "anchor_surviving_improvements": 1,
+    "milestone_reached": false,
+    "created_at": "2026-10-08-generation-2"
+  },
+  "billingUsd": 0,
+  "runtimeCostAndEnergy": "unmeasured",
+  "boundary": "local dependency install, audit, repository tests and loopback HTTP; no deployment or Rust-build claim"
+}

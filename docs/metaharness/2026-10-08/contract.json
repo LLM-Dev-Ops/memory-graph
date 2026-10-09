@@ -1,0 +1,23 @@
+{
+  "baselineCommit": "2123e26e1ac072515dadf1c5dd7357fe2764749b",
+  "upstreamCommit": "ea287d6ef7548b0b32fa3e20956fa548cfe51edb",
+  "versions": {
+    "metaharness": "0.4.17",
+    "darwin": "0.10.3",
+    "flywheel": "0.1.12"
+  },
+  "candidate": "Remove the unused production dependency claude-flow@2.7.41 and its lockfile graph",
+  "evidence": "Repository-wide search finds no runtime import outside package metadata; CLAUDE.md uses npx and does not require a production install",
+  "primaryMetric": "clean npm ci exit status",
+  "secondaryMetrics": [
+    "production dependency audit severity counts",
+    "installed production dependency count",
+    "70 execution tests",
+    "Cloud Function health and decision-route smoke cases"
+  ],
+  "acceptance": "candidate npm ci exits 0; all 70 tests and smoke cases pass; production audit total and critical findings decrease; no runtime file changes",
+  "rejection": "reject if any test/smoke regression, clean install still fails, audit findings do not decrease, or source imports require claude-flow",
+  "rollback": "Revert the implementation commit to restore claude-flow and the prior lockfile graph",
+  "scope": "package.json and package-lock.json only, plus reproducible evaluation evidence; no Rust, persistence, GCP, IAM, deployment, or publication changes",
+  "darwinBoundary": "real-sandbox repository tests may not distinguish harness variants; Darwin output is separate from this source dependency evaluation"
+}
