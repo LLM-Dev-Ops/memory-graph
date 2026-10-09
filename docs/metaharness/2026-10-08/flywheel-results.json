@@ -50,7 +50,7 @@
           "exit": 1,
           "signal": null,
           "stdoutTail": "",
-          "stderrTail": "r gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp WARN install got an error, rolling back install\nnpm error gyp ERR! configure error \nnpm error gyp ERR! stack Error: There was a fatal problem while downloading/extracting the tarball\nnpm error gyp ERR! stack at go (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:254:17)\nnpm error gyp ERR! stack at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\nnpm error gyp ERR! stack at async install (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:88:16)\nnpm error gyp ERR! stack at async getNodeDir (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/configure.js:79:7)\nnpm error gyp ERR! stack at async run (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js:81:18)\nnpm error gyp ERR! System Linux 6.18.44\nnpm error gyp ERR! command \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node\" \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js\" \"rebuild\"\nnpm error gyp ERR! cwd /tmp/llm-meta-cycle-20261008-IlM4pP/baseline/node_modules/hnswlib-node\nnpm error gyp ERR! node -v v24.19.0\nnpm error gyp ERR! node-gyp -v v12.2.0\nnpm error gyp ERR! $npm_package_name hnswlib-node\nnpm error gyp ERR! $npm_package_version 3.0.0\nnpm error gyp ERR! not ok\nnpm error A complete log of this run can be found in: /root/.npm/_logs/2026-10-09T00_14_09_904Z-debug-0.log\n"
+          "stderrTail": "r gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp ERR! error while extracting tarball TAR_ENTRY_ERROR EINVAL: invalid argument, fchown\nnpm error gyp WARN install got an error, rolling back install\nnpm error gyp ERR! configure error \nnpm error gyp ERR! stack Error: There was a fatal problem while downloading/extracting the tarball\nnpm error gyp ERR! stack at go (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:254:17)\nnpm error gyp ERR! stack at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\nnpm error gyp ERR! stack at async install (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/install.js:88:16)\nnpm error gyp ERR! stack at async getNodeDir (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/lib/configure.js:79:7)\nnpm error gyp ERR! stack at async run (/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js:81:18)\nnpm error gyp ERR! System Linux 6.18.44\nnpm error gyp ERR! command \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node\" \"/opt/codex/runtimes/codex-primary-runtime/dependencies/node/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js\" \"rebuild\"\nnpm error gyp ERR! cwd /tmp/llm-meta-cycle-20261008-IlM4pP/baseline/node_modules/hnswlib-node\nnpm error gyp ERR! node -v v24.19.0\nnpm error gyp ERR! node-gyp -v v12.2.0\nnpm error gyp ERR! $npm_package_name hnswlib-node\nnpm error gyp ERR! $npm_package_version 3.0.0\nnpm error gyp ERR! not ok\nnpm error A complete log of this run can be found in: /root/.npm/_logs/2026-10-09T00_20_29_099Z-debug-0.log\n"
         },
         "audit": {
           "exit": 1,
@@ -89,13 +89,13 @@
         "installForTests": {
           "exit": 0,
           "signal": null,
-          "stdoutTail": "\nadded 595 packages in 14s\n",
+          "stdoutTail": "\nadded 595 packages in 10s\n",
           "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\nnpm warn EBADENGINE Unsupported engine {\nnpm warn EBADENGINE   package: 'cloudevents@8.0.3',\nnpm warn EBADENGINE   required: { node: '>=16 <=22' },\nnpm warn EBADENGINE   current: { node: 'v24.19.0', npm: '11.9.0' }\nnpm warn EBADENGINE }\nnpm warn reify invalid or damaged lockfile detected\nnpm warn reify please re-try this operation once it completes\nnpm warn reify so that the damage can be corrected, or perform\nnpm warn reify a fresh install with no lockfile if the problem persists.\nnpm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n"
         },
         "tests": {
           "exit": 0,
           "signal": null,
-          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/baseline\n\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 26ms\n ✓ src/execution/tests/types.test.ts (29 tests) 25ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 23ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 21ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:14:58\n   Duration  388ms (transform 500ms, setup 0ms, import 678ms, tests 95ms, environment 2ms)\n\n",
+          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/baseline\n\n ✓ src/execution/tests/types.test.ts (29 tests) 25ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 18ms\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 23ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 28ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:21:20\n   Duration  395ms (transform 323ms, setup 0ms, import 499ms, tests 94ms, environment 1ms)\n\n",
           "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n"
         },
         "smoke": {
@@ -172,7 +172,7 @@
         "tests": {
           "exit": 0,
           "signal": null,
-          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/memory-graph\n\n ✓ src/execution/tests/types.test.ts (29 tests) 20ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 18ms\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 21ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 25ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:15:15\n   Duration  368ms (transform 293ms, setup 0ms, import 483ms, tests 84ms, environment 1ms)\n\n",
+          "stdoutTail": "\n> memory-graph-agents@1.0.0 test:execution\n> vitest run src/execution/tests/\n\n\n RUN  v4.0.18 /tmp/llm-meta-cycle-20261008-IlM4pP/memory-graph\n\n ✓ src/execution/tests/types.test.ts (29 tests) 27ms\n ✓ src/execution/tests/artifact-builder.test.ts (11 tests) 19ms\n ✓ src/execution/tests/executor.test.ts (21 tests) 30ms\n ✓ src/execution/tests/contract.test.ts (9 tests) 31ms\n\n Test Files  4 passed (4)\n      Tests  70 passed (70)\n   Start at  20:21:34\n   Duration  373ms (transform 271ms, setup 0ms, import 462ms, tests 107ms, environment 1ms)\n\n",
           "stderrTail": "npm warn Unknown env config \"http-proxy\". This will stop working in the next major version of npm.\n"
         },
         "smoke": {
@@ -265,8 +265,8 @@
             ],
             "generation": 1
           },
-          "signature": "GfOxxv//dZnyxVsDIIZz9U18sR4V1HzxPRcElCa8Q9G7XYEkT6f2vqOBfrVllyM+wjFVjskytDDgsNqw49GVCg==",
-          "publicKey": "MCowBQYDK2VwAyEAS+hxPfQbiFM6SyC9qigAKeCkrRrtEdpAfTgg1rnk9NU=",
+          "signature": "SJkM+0HP5ER0/oFjBlOYyQK0tZSn2fHjMF5SFCyMaw12266MzY6GWTx37jckfV62E6E1fJTB9/GB3uxUPg+fCg==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
           "alg": "ed25519"
         },
         "createdAt": "2026-10-08-generation-1",
@@ -307,8 +307,8 @@
             "kind": "root",
             "root": "root"
           },
-          "signature": "nLMkXIS7WZ5bE4DsOhBsnSRsBjrxmz6MYKW1lqFgQHIg62utGEl0ArXAxXGe8objRaFuGgzM8JiIfjiwWyJ6DA==",
-          "publicKey": "MCowBQYDK2VwAyEAS+hxPfQbiFM6SyC9qigAKeCkrRrtEdpAfTgg1rnk9NU=",
+          "signature": "c68lFf7FUy/mh5aqIhy2lq6FbIvH5Mm4zG18Za3Qnml2pzXHRjhxRjEQX+KrnBL+AGfLXcL2BgZEW4JkwJoXAw==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
           "alg": "ed25519"
         },
         "createdAt": "2026-10-08-generation-0"
@@ -372,8 +372,8 @@
             ],
             "generation": 1
           },
-          "signature": "GfOxxv//dZnyxVsDIIZz9U18sR4V1HzxPRcElCa8Q9G7XYEkT6f2vqOBfrVllyM+wjFVjskytDDgsNqw49GVCg==",
-          "publicKey": "MCowBQYDK2VwAyEAS+hxPfQbiFM6SyC9qigAKeCkrRrtEdpAfTgg1rnk9NU=",
+          "signature": "SJkM+0HP5ER0/oFjBlOYyQK0tZSn2fHjMF5SFCyMaw12266MzY6GWTx37jckfV62E6E1fJTB9/GB3uxUPg+fCg==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
           "alg": "ed25519"
         },
         "createdAt": "2026-10-08-generation-1",
@@ -461,8 +461,8 @@
             ],
             "generation": 2
           },
-          "signature": "J5uQVAV+CXAmxas4K7q8iAQIqEuoBHh3HxGih3q/LeRfkFcK3BPS/FrYtP2YWrwFcW2zeKK6V6YacYDwT5RZDg==",
-          "publicKey": "MCowBQYDK2VwAyEAS+hxPfQbiFM6SyC9qigAKeCkrRrtEdpAfTgg1rnk9NU=",
+          "signature": "T1TODToVtcY7+XOOEy4S9oxRZgOMPmbiPzS63YlIfeOQ0Xsxgm14+35TmcbtumVc/PG+eSNHvJpa9XmKNfMlDQ==",
+          "publicKey": "MCowBQYDK2VwAyEAERynBxqFxAPOvbgIbgs+Ik/3PaICugW6rO4Cc9R9eEI=",
           "alg": "ed25519"
         },
         "createdAt": "2026-10-08-generation-2",

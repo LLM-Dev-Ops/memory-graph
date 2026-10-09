@@ -52,8 +52,10 @@ const evaluator = async (policy, suite) => {
     logs.install = run(cwd, 'npm', ['ci']);
     logs.audit = audit(cwd);
     itemWins.push(logs.install.exit === 0);
-    itemWins.push((logs.audit.vulnerabilities?.critical ?? Infinity) <= 1);
-    itemWins.push((logs.audit.vulnerabilities?.total ?? Infinity) <= 9);
+    // Frozen baseline thresholds: promote only a strict reduction from
+    // 2 critical and 41 total production findings.
+    itemWins.push((logs.audit.vulnerabilities?.critical ?? Infinity) < 2);
+    itemWins.push((logs.audit.vulnerabilities?.total ?? Infinity) < 41);
   } else {
     logs.installForTests = run(cwd, 'npm', policy.includeUnusedDependency
       ? ['ci', '--ignore-scripts'] : ['ci']);
