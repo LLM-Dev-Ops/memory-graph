@@ -1,0 +1,181 @@
+{
+  "model": "none; fixed command contract",
+  "package": "@metaharness/flywheel@0.1.12",
+  "pinnedGateFingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+  "baselineRevision": "647d9be6e4518dcfe509287a10c033765465e6ae",
+  "candidateRevision": "131262670434b85b7626bebf907f9ae5eb3b82f7",
+  "rollback": {
+    "primaryPath": "crates/llm-memory-graph/src/integrations/mod.rs",
+    "hash": "ee0995756d7a0e97045ac956b1d77a33e369d6ba5c54837f2a432155cf4fe856",
+    "sourcePatchReverseCheck": true,
+    "productionRollbackExecuted": false
+  },
+  "anchorResults": {
+    "baseline": {
+      "exit": 0,
+      "outputSha256": "0cf9b7866c904837fc72d99edcdfd65f5b1923e590c0b1502e470440f2dce90c"
+    }
+  },
+  "finalPolicy": {
+    "implementation": "baseline"
+  },
+  "liftCurve": [
+    {
+      "generation": 0,
+      "primary": 0,
+      "delta": 0,
+      "anchor": 1
+    }
+  ],
+  "replayVerdict": {
+    "pass": true,
+    "checks": {
+      "receipts": true,
+      "reachesRoot": true,
+      "contiguousParents": true,
+      "allPromoted": true,
+      "gateUnchanged": true,
+      "gateReExecutes": true,
+      "allCommitsReceipts": true,
+      "sealedFieldsAuthentic": true
+    },
+    "failures": [],
+    "chainSummary": "gen0(root)"
+  },
+  "replayBundle": {
+    "data_source": "MEASURED_RUOS_COMMAND_REPLAY_WITH_LIVE_NODE_ANCHORS",
+    "root_id": "root",
+    "chain": [
+      {
+        "id": "root",
+        "generation": 0,
+        "parents": [],
+        "mutation": null,
+        "primaryDelta": 0,
+        "anchorScore": 1,
+        "verdict": "ROOT",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "root",
+            "root": "root"
+          },
+          "signature": "NK05OAnrpmWlgGL2RBOXfZvxG8HJKnEDlSca8fuUbl9oiE51o65HOlT9Jt+JFhBFXEc6qwgjZgcNpZTnHfnZBg==",
+          "publicKey": "MCowBQYDK2VwAyEASseshJk640bMp1NqFvYDdajRChhYGtFKF+iBCzIBbgg=",
+          "alg": "ed25519"
+        },
+        "createdAt": "gen-0"
+      }
+    ],
+    "all_commits": [
+      {
+        "id": "root__implementation_gen1",
+        "generation": 1,
+        "parents": [
+          "root"
+        ],
+        "mutation": {
+          "target": "implementation",
+          "summary": "Bounded Rust retry/manifest and executable documentation repair; full gates still mandatory",
+          "inverse": {
+            "path": "crates/llm-memory-graph/src/integrations/mod.rs",
+            "parentBytes": "//! External integrations for LLM-Memory-Graph ecosystem\n//!\n//! This module provides integration clients for external LLM DevOps ecosystem services:\n//! - **LLM-Registry**: Model metadata, version tracking, and usage statistics\n//! - **Data-Vault**: Secure archival, retention policies, and compliance\n//! - **Schema-Registry**: Centralized schema management, validation, and versioning\n//! - **Config-Manager**: Centralized configuration management with remote fetch and local override\n\npub mod config_manager;\npub mod registry;\npub mod schema_registry;\npub mod vault;\n\n// Re-export main types\npub use config_manager::{\n    CascadingConfigProvider, ConfigAdapter, ConfigManagerClient, ConfigManagerConfig,\n    ConfigProvider, GraphLimitsInfo, LocalConfigProvider, MemoryGraphConfig, PruningInfo,\n    RemoteConfigProvider, RetentionInfo,\n};\npub use registry::{\n    ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration,\n    UsageStats,\n};\npub use schema_registry::{\n    CachingValidator, CompatibilityLevel, GracefulValidator, NoOpValidator, SchemaFormat,\n    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError,\n    ValidationResult,\n};\npub use vault::{\n    ArchivalScheduler, ArchiveEntry, ComplianceLevel, RetentionPolicy, SchedulerConfig,\n    VaultClient, VaultConfig,\n};\n\nuse crate::{Error, Result};\nuse std::time::Duration;\n\n/// Integration error types\n#[derive(Debug, thiserror::Error)]\npub enum IntegrationError {\n    /// HTTP request error\n    #[error(\"HTTP request failed: {0}\")]\n    HttpError(String),\n\n    /// Authentication error\n    #[error(\"Authentication failed: {0}\")]\n    AuthenticationError(String),\n\n    /// API error response\n    #[error(\"API error: {status} - {message}\")]\n    ApiError {\n        /// HTTP status code\n        status: u16,\n        /// Error message\n        message: String,\n    },\n\n    /// Connection error\n    #[error(\"Connection error: {0}\")]\n    ConnectionError(String),\n\n    /// Timeout error\n    #[error(\"Request timeout after {0}ms\")]\n    Timeout(u64),\n\n    /// Circuit breaker open\n    #[error(\"Circuit breaker open: {0}\")]\n    CircuitBreakerOpen(String),\n\n    /// Invalid configuration\n    #[error(\"Invalid configuration: {0}\")]\n    InvalidConfig(String),\n\n    /// Serialization error\n    #[error(\"Serialization error: {0}\")]\n    Serialization(String),\n}\n\nimpl From<IntegrationError> for Error {\n    fn from(err: IntegrationError) -> Self {\n        Error::Other(err.to_string())\n    }\n}\n\nimpl From<reqwest::Error> for IntegrationError {\n    fn from(err: reqwest::Error) -> Self {\n        if err.is_timeout() {\n            IntegrationError::Timeout(30000) // Default timeout\n        } else if err.is_connect() {\n            IntegrationError::ConnectionError(err.to_string())\n        } else {\n            IntegrationError::HttpError(err.to_string())\n        }\n    }\n}\n\nimpl From<serde_json::Error> for IntegrationError {\n    fn from(err: serde_json::Error) -> Self {\n        IntegrationError::Serialization(err.to_string())\n    }\n}\n\n/// Circuit breaker for external service calls\n#[derive(Debug, Clone)]\npub struct CircuitBreaker {\n    failure_threshold: usize,\n    success_threshold: usize,\n    timeout_duration: Duration,\n}\n\nimpl CircuitBreaker {\n    /// Create a new circuit breaker\n    pub fn new(failure_threshold: usize, success_threshold: usize, timeout_duration: Duration) -> Self {\n        Self {\n            failure_threshold,\n            success_threshold,\n            timeout_duration,\n        }\n    }\n\n    /// Default circuit breaker configuration\n    pub fn default_config() -> Self {\n        Self {\n            failure_threshold: 5,\n            success_threshold: 2,\n            timeout_duration: Duration::from_secs(60),\n        }\n    }\n}\n\n/// Retry configuration for integration calls\n#[derive(Debug, Clone)]\npub struct RetryPolicy {\n    /// Maximum number of retry attempts\n    pub max_attempts: usize,\n    /// Initial delay between retries\n    pub initial_delay: Duration,\n    /// Maximum delay between retries\n    pub max_delay: Duration,\n    /// Backoff multiplier\n    pub backoff_multiplier: f64,\n    /// Whether to retry on timeout\n    pub retry_on_timeout: bool,\n}\n\nimpl Default for RetryPolicy {\n    fn default() -> Self {\n        Self {\n            max_attempts: 3,\n            initial_delay: Duration::from_millis(100),\n            max_delay: Duration::from_secs(5),\n            backoff_multiplier: 2.0,\n            retry_on_timeout: true,\n        }\n    }\n}\n\nimpl RetryPolicy {\n    /// Create a new retry policy\n    pub fn new() -> Self {\n        Self::default()\n    }\n\n    /// Set maximum retry attempts\n    pub fn with_max_attempts(mut self, max_attempts: usize) -> Self {\n        self.max_attempts = max_attempts;\n        self\n    }\n\n    /// Set initial delay\n    pub fn with_initial_delay(mut self, delay: Duration) -> Self {\n        self.initial_delay = delay;\n        self\n    }\n\n    /// Set backoff multiplier\n    pub fn with_backoff_multiplier(mut self, multiplier: f64) -> Self {\n        self.backoff_multiplier = multiplier;\n        self\n    }\n}\n\n/// Execute a request with retry logic\npub async fn retry_request<F, Fut, T>(policy: &RetryPolicy, mut operation: F) -> Result<T, IntegrationError>\nwhere\n    F: FnMut() -> Fut,\n    Fut: std::future::Future<Output = Result<T, IntegrationError>>,\n{\n    let mut attempt = 0;\n    let mut delay = policy.initial_delay;\n\n    loop {\n        attempt += 1;\n        match operation().await {\n            Ok(value) => return Ok(value),\n            Err(err) => {\n                // Check if we should retry\n                let should_retry = match &err {\n                    IntegrationError::Timeout(_) => policy.retry_on_timeout,\n                    IntegrationError::ConnectionError(_) => true,\n                    IntegrationError::HttpError(_) => true,\n                    IntegrationError::ApiError { status, .. } => {\n                        // Retry on 5xx errors (server errors)\n                        *status >= 500 && *status < 600\n                    }\n                    _ => false,\n                };\n\n                if !should_retry || attempt >= policy.max_attempts {\n                    return Err(err);\n                }\n\n                // Wait before retrying\n                tokio::time::sleep(delay).await;\n\n                // Calculate next delay with exponential backoff\n                delay = std::cmp::min(\n                    Duration::from_millis(\n                        (delay.as_millis() as f64 * policy.backoff_multiplier) as u64,\n                    ),\n                    policy.max_delay,\n                );\n            }\n        }\n    }\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn test_circuit_breaker_creation() {\n        let cb = CircuitBreaker::new(5, 2, Duration::from_secs(60));\n        assert_eq!(cb.failure_threshold, 5);\n        assert_eq!(cb.success_threshold, 2);\n        assert_eq!(cb.timeout_duration, Duration::from_secs(60));\n    }\n\n    #[test]\n    fn test_retry_policy_builder() {\n        let policy = RetryPolicy::new()\n            .with_max_attempts(5)\n            .with_initial_delay(Duration::from_millis(200))\n            .with_backoff_multiplier(3.0);\n\n        assert_eq!(policy.max_attempts, 5);\n        assert_eq!(policy.initial_delay, Duration::from_millis(200));\n        assert_eq!(policy.backoff_multiplier, 3.0);\n    }\n\n    #[test]\n    fn test_integration_error_from_reqwest() {\n        // Test timeout error\n        let err = IntegrationError::Timeout(5000);\n        assert!(matches!(err, IntegrationError::Timeout(_)));\n    }\n}\n",
+            "hash": "ee0995756d7a0e97045ac956b1d77a33e369d6ba5c54837f2a432155cf4fe856"
+          }
+        },
+        "primaryDelta": 0,
+        "anchorScore": null,
+        "verdict": "REJECTED",
+        "failureReasons": [
+          "noop_rate_not_improved"
+        ],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__implementation_gen1",
+            "target": "implementation",
+            "verdict": "REJECTED",
+            "primaryDelta": 0,
+            "baselineScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 999,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false,
+                false,
+                false
+              ]
+            },
+            "candidateScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 999,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false,
+                false,
+                false
+              ]
+            },
+            "anchorScore": null,
+            "failureReasons": [
+              "noop_rate_not_improved"
+            ],
+            "parents": [
+              "root"
+            ],
+            "generation": 1
+          },
+          "signature": "fHu6hzkV5xH34TeVT9ksWxLaAmXfiZ6iChR5o6qU71aCTW9PiqizVaFYs71c/uizpTGidlIvdI4R+zwUGCOMDQ==",
+          "publicKey": "MCowBQYDK2VwAyEASseshJk640bMp1NqFvYDdajRChhYGtFKF+iBCzIBbgg=",
+          "alg": "ed25519"
+        },
+        "createdAt": "gen-1",
+        "baselineScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 999,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "candidateScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 999,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      }
+    ],
+    "lift_curve": [
+      {
+        "generation": 0,
+        "primary": 0,
+        "delta": 0,
+        "anchor": 1
+      }
+    ],
+    "gate_fingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+    "verified_improvements": 0,
+    "anchor_surviving_improvements": 0,
+    "milestone_reached": false,
+    "created_at": "gen-1"
+  }
+}
