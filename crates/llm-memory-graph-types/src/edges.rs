@@ -501,7 +501,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InstantiatesProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InstantiatesProperties};
     /// use std::collections::HashMap;
     ///
     /// let prompt_id = NodeId::new();
@@ -524,7 +524,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InheritsProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InheritsProperties};
     ///
     /// let child_id = NodeId::new();
     /// let parent_id = NodeId::new();
@@ -548,7 +548,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InvokesProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InvokesProperties};
     ///
     /// let response_id = NodeId::new();
     /// let tool_id = NodeId::new();
@@ -568,7 +568,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, TransfersToProperties, Priority};
+    /// use llm_memory_graph_types::{Edge, NodeId, TransfersToProperties, Priority};
     ///
     /// let response_id = NodeId::new();
     /// let agent_id = NodeId::new();
@@ -592,7 +592,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, ReferencesProperties, ContextType};
+    /// use llm_memory_graph_types::{Edge, NodeId, ReferencesProperties, ContextType};
     ///
     /// let prompt_id = NodeId::new();
     /// let context_id = NodeId::new();

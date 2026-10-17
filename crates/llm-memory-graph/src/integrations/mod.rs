@@ -18,13 +18,11 @@ pub use config_manager::{
     RemoteConfigProvider, RetentionInfo,
 };
 pub use registry::{
-    ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration,
-    UsageStats,
+    ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration, UsageStats,
 };
 pub use schema_registry::{
     CachingValidator, CompatibilityLevel, GracefulValidator, NoOpValidator, SchemaFormat,
-    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError,
-    ValidationResult,
+    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError, ValidationResult,
 };
 pub use vault::{
     ArchivalScheduler, ArchiveEntry, ComplianceLevel, RetentionPolicy, SchedulerConfig,
@@ -109,7 +107,11 @@ pub struct CircuitBreaker {
 
 impl CircuitBreaker {
     /// Create a new circuit breaker
-    pub fn new(failure_threshold: usize, success_threshold: usize, timeout_duration: Duration) -> Self {
+    pub fn new(
+        failure_threshold: usize,
+        success_threshold: usize,
+        timeout_duration: Duration,
+    ) -> Self {
         Self {
             failure_threshold,
             success_threshold,
@@ -295,7 +297,9 @@ mod tests {
                 }))
             })
             .await;
-        assert!(matches!(result, Err(IntegrationError::ApiError { status: 503, message }) if message == "attempt 3"));
+        assert!(
+            matches!(result, Err(IntegrationError::ApiError { status: 503, message }) if message == "attempt 3")
+        );
         assert_eq!(calls, 3);
     }
 
@@ -312,7 +316,9 @@ mod tests {
                     }))
                 })
                 .await;
-            assert!(matches!(result, Err(IntegrationError::ApiError { status: actual, .. }) if actual == status));
+            assert!(
+                matches!(result, Err(IntegrationError::ApiError { status: actual, .. }) if actual == status)
+            );
             assert_eq!(calls, 1);
         }
     }
