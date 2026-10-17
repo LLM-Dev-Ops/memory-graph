@@ -62,6 +62,8 @@ parking_lot = { workspace = true }
 # Utilities
 once_cell = { workspace = true }
 regex = { workspace = true }
+# Public benchmark targets use temporary stores in normal library builds.
+tempfile = { workspace = true }
 
 # Async runtime
 tokio = { workspace = true }
