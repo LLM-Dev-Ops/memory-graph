@@ -63,6 +63,14 @@ pub mod plugin;
 pub mod query;
 pub mod storage;
 
+/// Compatibility namespace for the graph entity types.
+///
+/// New code may import these types directly from the crate root; this module
+/// preserves the documented `llm_memory_graph::types` path.
+pub mod types {
+    pub use llm_memory_graph_types::*;
+}
+
 // Re-export main types
 pub use engine::{AsyncMemoryGraph, MemoryGraph};
 

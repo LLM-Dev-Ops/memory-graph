@@ -8,13 +8,13 @@
 //! - retrieve: Execute query and return results
 //! - replay: Re-execute a previous query by execution_ref
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::output::OutputFormat;
 use super::CommandContext;
+use crate::output::OutputFormat;
 
 /// Memory Retrieval Agent configuration
 #[derive(Debug, Clone)]
@@ -106,7 +106,7 @@ fn default_true() -> bool {
 }
 
 /// Retrieved node structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RetrievedNode {
     pub node_id: String,
     pub node_type: String,
@@ -123,7 +123,7 @@ pub struct RetrievedNode {
 }
 
 /// Retrieved edge structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RetrievedEdge {
     pub edge_id: String,
     pub edge_type: String,
@@ -134,7 +134,7 @@ pub struct RetrievedEdge {
 }
 
 /// Retrieved subgraph structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RetrievedSubgraph {
     pub nodes: Vec<RetrievedNode>,
     pub edges: Vec<RetrievedEdge>,
@@ -145,7 +145,7 @@ pub struct RetrievedSubgraph {
 }
 
 /// Output structure from the Memory Retrieval Agent
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MemoryRetrievalOutput {
     pub query_id: String,
     pub query_type: String,
@@ -158,7 +158,7 @@ pub struct MemoryRetrievalOutput {
 }
 
 /// Agent error structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AgentError {
     pub error_code: String,
     pub message: String,
@@ -256,8 +256,11 @@ pub async fn handle_retrieve(
 
     let query_type: QueryType = query_type.parse()?;
 
-    let traversal_options = if max_depth.is_some() || direction.is_some() ||
-                               edge_types.is_some() || node_types.is_some() {
+    let traversal_options = if max_depth.is_some()
+        || direction.is_some()
+        || edge_types.is_some()
+        || node_types.is_some()
+    {
         Some(TraversalOptions {
             max_depth,
             direction,
@@ -283,21 +286,23 @@ pub async fn handle_retrieve(
     let response = invoke_agent(&config, &input).await?;
 
     match response {
-        AgentResponse::Success { output, decision_event, .. } => {
-            match ctx.format {
-                OutputFormat::Json => {
-                    let full_response = serde_json::json!({
-                        "success": true,
-                        "output": output,
-                        "decision_event": decision_event,
-                    });
-                    println!("{}", serde_json::to_string_pretty(&full_response)?);
-                }
-                _ => {
-                    display_output(ctx.format, &output)?;
-                }
+        AgentResponse::Success {
+            output,
+            decision_event,
+            ..
+        } => match ctx.format {
+            OutputFormat::Json => {
+                let full_response = serde_json::json!({
+                    "success": true,
+                    "output": output,
+                    "decision_event": decision_event,
+                });
+                println!("{}", serde_json::to_string_pretty(&full_response)?);
             }
-        }
+            _ => {
+                display_output(ctx.format, &output)?;
+            }
+        },
         AgentResponse::Error { error, .. } => {
             match ctx.format {
                 OutputFormat::Json => {
@@ -320,10 +325,7 @@ pub async fn handle_retrieve(
 /// Handle memory-retrieval replay command
 ///
 /// Re-displays results from a previous query by execution_ref.
-pub async fn handle_replay(
-    ctx: &CommandContext<'_>,
-    execution_ref: String,
-) -> Result<()> {
+pub async fn handle_replay(ctx: &CommandContext<'_>, execution_ref: String) -> Result<()> {
     let config = MemoryRetrievalConfig::default();
 
     // Fetch the previous DecisionEvent
@@ -342,14 +344,14 @@ pub async fn handle_replay(
         .context("Failed to connect to ruvector-service")?;
 
     if !response.status().is_success() {
-        ctx.format.error(&format!(
-            "DecisionEvent not found: {}",
-            execution_ref
-        ));
+        ctx.format
+            .error(&format!("DecisionEvent not found: {}", execution_ref));
         std::process::exit(1);
     }
 
-    let event: serde_json::Value = response.json().await
+    let event: serde_json::Value = response
+        .json()
+        .await
         .context("Failed to parse DecisionEvent")?;
 
     match ctx.format {
@@ -363,7 +365,9 @@ pub async fn handle_replay(
         OutputFormat::Table | OutputFormat::Text => {
             println!(
                 "{}",
-                format!("Previous Execution: {}", execution_ref).bold().cyan()
+                format!("Previous Execution: {}", execution_ref)
+                    .bold()
+                    .cyan()
             );
             println!("{}", "=".repeat(50).cyan());
 
@@ -456,11 +460,12 @@ async fn invoke_agent(
         .await
         .context("Failed to connect to Memory Retrieval Agent")?;
 
-    let body = response.text().await
+    let body = response
+        .text()
+        .await
         .context("Failed to read response body")?;
 
-    serde_json::from_str(&body)
-        .context("Failed to parse agent response")
+    serde_json::from_str(&body).context("Failed to parse agent response")
 }
 
 /// Display the output in the appropriate format
@@ -475,12 +480,20 @@ fn display_output(format: &OutputFormat, output: &MemoryRetrievalOutput) -> Resu
         OutputFormat::Table | OutputFormat::Text => {
             println!(
                 "{}",
-                format!("Memory Retrieval: {}", output.query_type).bold().green()
+                format!("Memory Retrieval: {}", output.query_type)
+                    .bold()
+                    .green()
             );
             println!("{}", "=".repeat(50).green());
             println!("Query ID: {}", output.query_id);
-            println!("Nodes Retrieved: {}", output.total_nodes_retrieved.to_string().cyan());
-            println!("Edges Retrieved: {}", output.total_edges_retrieved.to_string().cyan());
+            println!(
+                "Nodes Retrieved: {}",
+                output.total_nodes_retrieved.to_string().cyan()
+            );
+            println!(
+                "Edges Retrieved: {}",
+                output.total_edges_retrieved.to_string().cyan()
+            );
             println!("Timestamp: {}", output.retrieval_timestamp);
 
             if let Some(constraints) = &output.constraints_applied {
@@ -495,7 +508,8 @@ fn display_output(format: &OutputFormat, output: &MemoryRetrievalOutput) -> Resu
             if !output.subgraph.nodes.is_empty() {
                 println!("\n{}", "Nodes:".bold());
                 for node in &output.subgraph.nodes {
-                    let score = node.relevance_score
+                    let score = node
+                        .relevance_score
                         .map(|s| format!(" (score: {:.3})", s))
                         .unwrap_or_default();
                     println!(
@@ -520,7 +534,10 @@ fn display_output(format: &OutputFormat, output: &MemoryRetrievalOutput) -> Resu
             }
 
             if output.subgraph.truncated == Some(true) {
-                println!("\n{}", "Results were truncated. Use --limit to retrieve more.".yellow());
+                println!(
+                    "\n{}",
+                    "Results were truncated. Use --limit to retrieve more.".yellow()
+                );
             }
         }
     }
@@ -538,15 +555,18 @@ fn display_similarity_output(format: &OutputFormat, output: &MemoryRetrievalOutp
             println!("{}", serde_yaml::to_string(output)?);
         }
         OutputFormat::Table | OutputFormat::Text => {
-            println!(
-                "{}",
-                "Similarity Search Results".bold().green()
-            );
+            println!("{}", "Similarity Search Results".bold().green());
             println!("{}", "=".repeat(50).green());
-            println!("Results: {}", output.total_nodes_retrieved.to_string().cyan());
+            println!(
+                "Results: {}",
+                output.total_nodes_retrieved.to_string().cyan()
+            );
 
             if !output.subgraph.nodes.is_empty() {
-                println!("\n{:5} {:36} {:15} {:8}", "Rank", "Node ID", "Type", "Score");
+                println!(
+                    "\n{:5} {:36} {:15} {:8}",
+                    "Rank", "Node ID", "Type", "Score"
+                );
                 println!("{}", "-".repeat(70));
 
                 for (i, node) in output.subgraph.nodes.iter().enumerate() {

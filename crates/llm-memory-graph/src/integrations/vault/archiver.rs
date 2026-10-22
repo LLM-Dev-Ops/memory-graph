@@ -507,7 +507,10 @@ impl VaultClient {
 
             if !status.is_success() {
                 let error_body = response.text().await.unwrap_or_default();
-                error!("Failed to create retention policy: {} - {}", status, error_body);
+                error!(
+                    "Failed to create retention policy: {} - {}",
+                    status, error_body
+                );
                 return Err(IntegrationError::ApiError {
                     status: status.as_u16(),
                     message: error_body,
@@ -518,7 +521,7 @@ impl VaultClient {
             let policy_id = response_json
                 .get("policy_id")
                 .and_then(|v| v.as_str())
-                .ok_or_else(|| IntegrationError::SerializationError("Missing policy_id".to_string()))?
+                .ok_or_else(|| IntegrationError::Serialization("Missing policy_id".to_string()))?
                 .to_string();
 
             Ok(policy_id)
@@ -560,7 +563,10 @@ impl VaultClient {
 
             if !status.is_success() {
                 let error_body = response.text().await.unwrap_or_default();
-                error!("Failed to apply retention policy: {} - {}", status, error_body);
+                error!(
+                    "Failed to apply retention policy: {} - {}",
+                    status, error_body
+                );
                 return Err(IntegrationError::ApiError {
                     status: status.as_u16(),
                     message: error_body,

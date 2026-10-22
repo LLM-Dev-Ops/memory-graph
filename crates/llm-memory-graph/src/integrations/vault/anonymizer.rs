@@ -39,7 +39,7 @@ impl DataAnonymizer {
         for pii_type in &config.pii_types {
             if let Some(pattern) = Self::get_pattern_for_type(*pii_type) {
                 let regex = Regex::new(&pattern).map_err(|e| {
-                    IntegrationError::ConfigError(format!(
+                    IntegrationError::InvalidConfig(format!(
                         "Failed to compile regex for {:?}: {}",
                         pii_type, e
                     ))
@@ -52,7 +52,7 @@ impl DataAnonymizer {
         let mut custom_patterns = Vec::new();
         for custom in &config.custom_patterns {
             let regex = Regex::new(&custom.pattern).map_err(|e| {
-                IntegrationError::ConfigError(format!(
+                IntegrationError::InvalidConfig(format!(
                     "Failed to compile custom pattern '{}': {}",
                     custom.name, e
                 ))
@@ -114,6 +114,10 @@ impl DataAnonymizer {
 
     /// Anonymize a string, detecting and replacing PII
     fn anonymize_string(&self, text: &str) -> Result<String, IntegrationError> {
+        if !self.config.enabled {
+            return Ok(text.to_string());
+        }
+
         let mut result = text.to_string();
 
         // Apply built-in PII patterns
@@ -219,24 +223,14 @@ impl DataAnonymizer {
     /// Get regex pattern for a PII type
     fn get_pattern_for_type(pii_type: PiiType) -> Option<String> {
         match pii_type {
-            PiiType::Email => Some(
-                r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#.to_string(),
-            ),
-            PiiType::PhoneNumber => Some(
-                r#"(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"#.to_string(),
-            ),
-            PiiType::CreditCard => Some(
-                r#"\b(?:\d{4}[-\s]?){3}\d{4}\b"#.to_string(),
-            ),
-            PiiType::SocialSecurity => Some(
-                r#"\b\d{3}-\d{2}-\d{4}\b"#.to_string(),
-            ),
-            PiiType::IpAddress => Some(
-                r#"\b(?:\d{1,3}\.){3}\d{1,3}\b"#.to_string(),
-            ),
-            PiiType::ApiKey => Some(
-                r#"\b(sk|pk|api)[-_][a-zA-Z0-9]{32,}\b"#.to_string(),
-            ),
+            PiiType::Email => Some(r#"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"#.to_string()),
+            PiiType::PhoneNumber => {
+                Some(r#"(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"#.to_string())
+            }
+            PiiType::CreditCard => Some(r#"\b(?:\d{4}[-\s]?){3}\d{4}\b"#.to_string()),
+            PiiType::SocialSecurity => Some(r#"\b\d{3}-\d{2}-\d{4}\b"#.to_string()),
+            PiiType::IpAddress => Some(r#"\b(?:\d{1,3}\.){3}\d{1,3}\b"#.to_string()),
+            PiiType::ApiKey => Some(r#"\b(sk|pk|api)[-_][a-zA-Z0-9]{32,}\b"#.to_string()),
             // These require more sophisticated detection
             PiiType::PhysicalAddress | PiiType::PersonName | PiiType::DateOfBirth => None,
         }
@@ -304,7 +298,10 @@ pub struct AnonymizationResult {
 
 impl DataAnonymizer {
     /// Anonymize with detailed result
-    pub fn anonymize_with_stats(&self, value: &Value) -> Result<AnonymizationResult, IntegrationError> {
+    pub fn anonymize_with_stats(
+        &self,
+        value: &Value,
+    ) -> Result<AnonymizationResult, IntegrationError> {
         let detections = if let Value::String(s) = value {
             self.detect_pii(s)
         } else {
@@ -313,10 +310,7 @@ impl DataAnonymizer {
 
         let anonymized = self.anonymize(value)?;
 
-        let mut pii_types_found: Vec<_> = detections
-            .iter()
-            .map(|d| d.pii_type)
-            .collect();
+        let mut pii_types_found: Vec<_> = detections.iter().map(|d| d.pii_type).collect();
         pii_types_found.sort_by_key(|t| format!("{:?}", t));
         pii_types_found.dedup();
 
@@ -354,7 +348,9 @@ mod tests {
         let detections = anonymizer.detect_pii(text);
 
         assert!(!detections.is_empty());
-        assert!(detections.iter().any(|d| d.pii_type == PiiType::PhoneNumber));
+        assert!(detections
+            .iter()
+            .any(|d| d.pii_type == PiiType::PhoneNumber));
     }
 
     #[test]

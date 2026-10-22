@@ -14,15 +14,14 @@
 //! # Example
 //!
 //! ```rust
-//! use llm_memory_graph_types::{NodeType, PromptNode, PromptMetadata};
+//! use llm_memory_graph_types::{PromptNode, SessionId};
 //!
-//! let prompt = PromptNode {
-//!     id: "prompt-123".to_string(),
-//!     content: "What is the capital of France?".to_string(),
-//!     metadata: PromptMetadata::default(),
-//!     session_id: Some("session-1".to_string()),
-//!     created_at: chrono::Utc::now(),
-//! };
+//! let session_id = SessionId::new();
+//! let prompt = PromptNode::new(
+//!     session_id,
+//!     "What is the capital of France?".to_string(),
+//! );
+//! assert_eq!(prompt.session_id, session_id);
 //! ```
 
 #![deny(missing_docs)]
@@ -33,6 +32,13 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::must_use_candidate)]
+// These APIs intentionally take owned property values to preserve their public
+// builder shape, and metrics/backoff calculations explicitly cross numeric
+// domains with bounded values.
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
 
 pub mod config;
 pub mod edges;

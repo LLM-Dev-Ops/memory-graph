@@ -742,7 +742,7 @@ impl std::str::FromStr for Version {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split('.').collect();
         if parts.len() != 3 {
-            return Err(format!("Invalid version format: {}", s));
+            return Err(format!("Invalid version format: {s}"));
         }
 
         let major = parts[0]
@@ -773,7 +773,7 @@ pub enum VersionLevel {
 /// Variable specification for template variables
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VariableSpec {
-    /// Variable name (e.g., "user_query")
+    /// Variable name (e.g., "`user_query`")
     pub name: String,
     /// Type hint (e.g., "string", "number", "array")
     pub type_hint: String,
@@ -826,7 +826,7 @@ impl VariableSpec {
         if let Some(val) = value {
             if let Some(ref pattern) = self.validation_pattern {
                 let re = regex::Regex::new(pattern)
-                    .map_err(|e| format!("Invalid regex pattern: {}", e))?;
+                    .map_err(|e| format!("Invalid regex pattern: {e}"))?;
                 if !re.is_match(val) {
                     return Err(format!(
                         "Variable '{}' value '{}' does not match pattern '{}'",
@@ -947,7 +947,7 @@ impl PromptTemplate {
         // Replace variables in template
         let mut result = self.template.clone();
         for (key, value) in final_values {
-            let placeholder = format!("{{{{{}}}}}", key);
+            let placeholder = format!("{{{{{key}}}}}");
             result = result.replace(&placeholder, &value);
         }
 

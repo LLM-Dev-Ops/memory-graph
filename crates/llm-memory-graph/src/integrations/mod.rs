@@ -18,20 +18,18 @@ pub use config_manager::{
     RemoteConfigProvider, RetentionInfo,
 };
 pub use registry::{
-    ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration,
-    UsageStats,
+    ModelMetadata, ModelParameters, RegistryClient, RegistryConfig, SessionRegistration, UsageStats,
 };
 pub use schema_registry::{
     CachingValidator, CompatibilityLevel, GracefulValidator, NoOpValidator, SchemaFormat,
-    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError,
-    ValidationResult,
+    SchemaRegistryClient, SchemaRegistryConfig, SchemaValidator, ValidationError, ValidationResult,
 };
 pub use vault::{
     ArchivalScheduler, ArchiveEntry, ComplianceLevel, RetentionPolicy, SchedulerConfig,
     VaultClient, VaultConfig,
 };
 
-use crate::{Error, Result};
+use crate::Error;
 use std::time::Duration;
 
 /// Integration error types
@@ -73,6 +71,14 @@ pub enum IntegrationError {
     /// Serialization error
     #[error("Serialization error: {0}")]
     Serialization(String),
+
+    /// Storage backend error
+    #[error("Storage error: {0}")]
+    Storage(String),
+
+    /// Requested integration resource was not found
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl From<IntegrationError> for Error {
@@ -99,6 +105,12 @@ impl From<serde_json::Error> for IntegrationError {
     }
 }
 
+impl From<llm_memory_graph_types::Error> for IntegrationError {
+    fn from(err: llm_memory_graph_types::Error) -> Self {
+        IntegrationError::Storage(err.to_string())
+    }
+}
+
 /// Circuit breaker for external service calls
 #[derive(Debug, Clone)]
 pub struct CircuitBreaker {
@@ -109,7 +121,11 @@ pub struct CircuitBreaker {
 
 impl CircuitBreaker {
     /// Create a new circuit breaker
-    pub fn new(failure_threshold: usize, success_threshold: usize, timeout_duration: Duration) -> Self {
+    pub fn new(
+        failure_threshold: usize,
+        success_threshold: usize,
+        timeout_duration: Duration,
+    ) -> Self {
         Self {
             failure_threshold,
             success_threshold,
@@ -180,10 +196,13 @@ impl RetryPolicy {
 }
 
 /// Execute a request with retry logic
-pub async fn retry_request<F, Fut, T>(policy: &RetryPolicy, mut operation: F) -> Result<T, IntegrationError>
+pub async fn retry_request<F, Fut, T>(
+    policy: &RetryPolicy,
+    mut operation: F,
+) -> std::result::Result<T, IntegrationError>
 where
     F: FnMut() -> Fut,
-    Fut: std::future::Future<Output = Result<T, IntegrationError>>,
+    Fut: std::future::Future<Output = std::result::Result<T, IntegrationError>>,
 {
     let mut attempt = 0;
     let mut delay = policy.initial_delay;
@@ -253,5 +272,82 @@ mod tests {
         // Test timeout error
         let err = IntegrationError::Timeout(5000);
         assert!(matches!(err, IntegrationError::Timeout(_)));
+    }
+
+    fn immediate_retry_policy(max_attempts: usize) -> RetryPolicy {
+        RetryPolicy {
+            max_attempts,
+            initial_delay: Duration::ZERO,
+            max_delay: Duration::ZERO,
+            ..RetryPolicy::default()
+        }
+    }
+
+    #[tokio::test]
+    async fn retry_returns_owned_success_after_transient_errors() {
+        let mut calls = 0;
+        let result = retry_request(&immediate_retry_policy(3), || {
+            calls += 1;
+            std::future::ready(if calls < 3 {
+                Err(IntegrationError::ConnectionError("temporary".to_owned()))
+            } else {
+                Ok(String::from("recovered"))
+            })
+        })
+        .await;
+        assert_eq!(result.unwrap(), "recovered");
+        assert_eq!(calls, 3);
+    }
+
+    #[tokio::test]
+    async fn retry_preserves_terminal_integration_error() {
+        let mut calls = 0;
+        let result: std::result::Result<(), IntegrationError> =
+            retry_request(&immediate_retry_policy(3), || {
+                calls += 1;
+                std::future::ready(Err(IntegrationError::ApiError {
+                    status: 503,
+                    message: format!("attempt {calls}"),
+                }))
+            })
+            .await;
+        assert!(
+            matches!(result, Err(IntegrationError::ApiError { status: 503, message }) if message == "attempt 3")
+        );
+        assert_eq!(calls, 3);
+    }
+
+    #[tokio::test]
+    async fn retry_does_not_repeat_client_errors() {
+        for status in [400, 401, 403, 404, 429] {
+            let mut calls = 0;
+            let result: std::result::Result<(), IntegrationError> =
+                retry_request(&immediate_retry_policy(3), || {
+                    calls += 1;
+                    std::future::ready(Err(IntegrationError::ApiError {
+                        status,
+                        message: "terminal".to_owned(),
+                    }))
+                })
+                .await;
+            assert!(
+                matches!(result, Err(IntegrationError::ApiError { status: actual, .. }) if actual == status)
+            );
+            assert_eq!(calls, 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn retry_respects_disabled_timeout_retries() {
+        let mut policy = immediate_retry_policy(3);
+        policy.retry_on_timeout = false;
+        let mut calls = 0;
+        let result: std::result::Result<(), IntegrationError> = retry_request(&policy, || {
+            calls += 1;
+            std::future::ready(Err(IntegrationError::Timeout(17)))
+        })
+        .await;
+        assert!(matches!(result, Err(IntegrationError::Timeout(17))));
+        assert_eq!(calls, 1);
     }
 }

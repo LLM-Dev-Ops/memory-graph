@@ -43,6 +43,11 @@ impl std::str::FromStr for OutputFormat {
 }
 
 impl OutputFormat {
+    /// Serialize a value using this output format.
+    pub fn output<T: Serialize>(&self, value: &T) -> Result<()> {
+        self.print(value)
+    }
+
     /// Print a value using this format
     pub fn print<T: Serialize>(&self, value: &T) -> Result<()> {
         match self {
@@ -78,10 +83,7 @@ impl OutputFormat {
                 println!("{}", serde_json::to_string_pretty(&json).unwrap());
             }
             OutputFormat::Yaml => {
-                let data = HashMap::from([
-                    ("status", "success"),
-                    ("message", message),
-                ]);
+                let data = HashMap::from([("status", "success"), ("message", message)]);
                 println!("{}", serde_yaml::to_string(&data).unwrap());
             }
         }
@@ -101,10 +103,7 @@ impl OutputFormat {
                 eprintln!("{}", serde_json::to_string_pretty(&json).unwrap());
             }
             OutputFormat::Yaml => {
-                let data = HashMap::from([
-                    ("status", "error"),
-                    ("message", message),
-                ]);
+                let data = HashMap::from([("status", "error"), ("message", message)]);
                 eprintln!("{}", serde_yaml::to_string(&data).unwrap());
             }
         }
@@ -124,10 +123,7 @@ impl OutputFormat {
                 println!("{}", serde_json::to_string_pretty(&json).unwrap());
             }
             OutputFormat::Yaml => {
-                let data = HashMap::from([
-                    ("status", "warning"),
-                    ("message", message),
-                ]);
+                let data = HashMap::from([("status", "warning"), ("message", message)]);
                 println!("{}", serde_yaml::to_string(&data).unwrap());
             }
         }
@@ -189,7 +185,10 @@ mod tests {
         assert_eq!("text".parse::<OutputFormat>().unwrap(), OutputFormat::Text);
         assert_eq!("json".parse::<OutputFormat>().unwrap(), OutputFormat::Json);
         assert_eq!("yaml".parse::<OutputFormat>().unwrap(), OutputFormat::Yaml);
-        assert_eq!("table".parse::<OutputFormat>().unwrap(), OutputFormat::Table);
+        assert_eq!(
+            "table".parse::<OutputFormat>().unwrap(),
+            OutputFormat::Table
+        );
         assert!("invalid".parse::<OutputFormat>().is_err());
     }
 
@@ -198,7 +197,10 @@ mod tests {
         assert_eq!("TEXT".parse::<OutputFormat>().unwrap(), OutputFormat::Text);
         assert_eq!("Json".parse::<OutputFormat>().unwrap(), OutputFormat::Json);
         assert_eq!("YAML".parse::<OutputFormat>().unwrap(), OutputFormat::Yaml);
-        assert_eq!("TaBlE".parse::<OutputFormat>().unwrap(), OutputFormat::Table);
+        assert_eq!(
+            "TaBlE".parse::<OutputFormat>().unwrap(),
+            OutputFormat::Table
+        );
     }
 
     #[test]
