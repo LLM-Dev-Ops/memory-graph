@@ -31,8 +31,8 @@ impl Default for MappingConfig {
         patterns.insert("llm.completion".to_string(), NodeType::Response);
         patterns.insert("llm.prompt".to_string(), NodeType::Prompt);
         patterns.insert("llm.response".to_string(), NodeType::Response);
-        patterns.insert("tool.".to_string(), NodeType::Tool);
-        patterns.insert("function.".to_string(), NodeType::Tool);
+        patterns.insert("tool.".to_string(), NodeType::ToolInvocation);
+        patterns.insert("function.".to_string(), NodeType::ToolInvocation);
         patterns.insert("agent.".to_string(), NodeType::Agent);
 
         Self {
@@ -276,10 +276,10 @@ impl SpanMapper {
         let to = self.span_to_node.get(&edge.to)?.clone();
 
         let edge_type = match edge.edge_type {
-            LineageEdgeType::ParentChild => EdgeType::ParentChild,
+            LineageEdgeType::ParentChild => EdgeType::PartOf,
             LineageEdgeType::Follows => EdgeType::Follows,
             LineageEdgeType::CausedBy => EdgeType::References,
-            LineageEdgeType::DataFlow => EdgeType::Contains,
+            LineageEdgeType::DataFlow => EdgeType::References,
         };
 
         Some(MappedEdge {
@@ -295,12 +295,12 @@ impl SpanMapper {
         // Check configured patterns
         for (pattern, node_type) in &self.config.operation_patterns {
             if operation.contains(pattern) {
-                return *node_type;
+                return node_type.clone();
             }
         }
 
         // Default fallback
-        NodeType::Context
+        NodeType::Session
     }
 
     /// Convert a graph event to telemetry data
@@ -475,10 +475,10 @@ mod tests {
         let test_cases = vec![
             ("llm.generate", NodeType::Prompt),
             ("llm.completion", NodeType::Response),
-            ("tool.execute", NodeType::Tool),
-            ("function.call", NodeType::Tool),
+            ("tool.execute", NodeType::ToolInvocation),
+            ("function.call", NodeType::ToolInvocation),
             ("agent.handoff", NodeType::Agent),
-            ("unknown.operation", NodeType::Context),
+            ("unknown.operation", NodeType::Session),
         ];
 
         for (operation, expected_type) in test_cases {
@@ -494,7 +494,11 @@ mod tests {
             };
 
             let entity = mapper.map_span(&span).unwrap();
-            assert_eq!(entity.node_type, expected_type, "Failed for operation: {}", operation);
+            assert_eq!(
+                entity.node_type, expected_type,
+                "Failed for operation: {}",
+                operation
+            );
         }
     }
 
@@ -512,7 +516,12 @@ mod tests {
 
         let telemetry = mapper.event_to_telemetry(&event).unwrap();
 
-        if let TelemetryData::Span { operation_name, status, .. } = telemetry {
+        if let TelemetryData::Span {
+            operation_name,
+            status,
+            ..
+        } = telemetry
+        {
             assert!(operation_name.contains("Prompt"));
             assert_eq!(status, SpanStatus::Ok);
         } else {
@@ -564,7 +573,7 @@ mod tests {
     #[test]
     fn test_custom_mapping_config() {
         let mut patterns = HashMap::new();
-        patterns.insert("custom.op".to_string(), NodeType::Tool);
+        patterns.insert("custom.op".to_string(), NodeType::ToolInvocation);
 
         let config = MappingConfig {
             operation_patterns: patterns,
@@ -587,7 +596,7 @@ mod tests {
         };
 
         let entity = mapper.map_span(&span).unwrap();
-        assert_eq!(entity.node_type, NodeType::Tool);
+        assert_eq!(entity.node_type, NodeType::ToolInvocation);
         assert!(entity.session_id.is_none()); // trace_to_session is false
     }
 }

@@ -77,7 +77,8 @@ pub fn write_results_csv(
     let mut csv_content = String::new();
 
     // Header
-    csv_content.push_str("target_id,timestamp,mean_ns,std_dev_ns,median_ns,throughput,metrics_json\n");
+    csv_content
+        .push_str("target_id,timestamp,mean_ns,std_dev_ns,median_ns,throughput,metrics_json\n");
 
     // Data rows
     for result in results {
@@ -86,9 +87,15 @@ pub fn write_results_csv(
             result.target_id,
             result.timestamp.to_rfc3339(),
             result.mean_ns().map_or(String::from(""), |v| v.to_string()),
-            result.std_dev_ns().map_or(String::from(""), |v| v.to_string()),
-            result.median_ns().map_or(String::from(""), |v| v.to_string()),
-            result.throughput().map_or(String::from(""), |v| v.to_string()),
+            result
+                .std_dev_ns()
+                .map_or(String::from(""), |v| v.to_string()),
+            result
+                .median_ns()
+                .map_or(String::from(""), |v| v.to_string()),
+            result
+                .throughput()
+                .map_or(String::from(""), |v| v.to_string()),
             serde_json::to_string(&result.metrics).unwrap_or_default()
         ));
     }
@@ -103,10 +110,23 @@ pub fn write_results_csv(
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::sync::Mutex;
     use tempfile::tempdir;
+
+    static CWD_LOCK: Mutex<()> = Mutex::new(());
+
+    struct CwdGuard(PathBuf);
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.0).expect("restore test working directory");
+        }
+    }
 
     #[test]
     fn test_ensure_output_dirs() {
+        let _lock = CWD_LOCK.lock().expect("lock test working directory");
+        let _cwd = CwdGuard(std::env::current_dir().expect("read test working directory"));
         let temp = tempdir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
@@ -118,6 +138,8 @@ mod tests {
 
     #[test]
     fn test_write_and_read_json() {
+        let _lock = CWD_LOCK.lock().expect("lock test working directory");
+        let _cwd = CwdGuard(std::env::current_dir().expect("read test working directory"));
         let temp = tempdir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
@@ -137,12 +159,15 @@ mod tests {
 
     #[test]
     fn test_write_csv() {
+        let _lock = CWD_LOCK.lock().expect("lock test working directory");
+        let _cwd = CwdGuard(std::env::current_dir().expect("read test working directory"));
         let temp = tempdir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
-        let results = vec![
-            BenchmarkResult::new("test1", json!({"mean_ns": 1000.0, "throughput": 1000000.0})),
-        ];
+        let results = vec![BenchmarkResult::new(
+            "test1",
+            json!({"mean_ns": 1000.0, "throughput": 1000000.0}),
+        )];
 
         let path = write_results_csv(&results, "test_results.csv").unwrap();
         assert!(path.exists());

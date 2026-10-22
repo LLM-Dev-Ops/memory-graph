@@ -4,7 +4,7 @@
 //! storage backends, enabling durable archival, compliance, and encryption while
 //! maintaining fast local access through Sled.
 
-use super::anonymizer::{DataAnonymizer, AnonymizationResult};
+use super::anonymizer::{AnonymizationResult, DataAnonymizer};
 use super::archiver::{ArchiveEntry, VaultClient};
 use super::config::{ArchivalMode, StorageMode, VaultStorageConfig};
 use crate::integrations::IntegrationError;
@@ -69,7 +69,7 @@ pub struct AdapterStats {
     pub bytes_archived: u64,
 }
 
-impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
+impl<B: AsyncStorageBackend + 'static> VaultStorageAdapter<B> {
     /// Create a new vault storage adapter
     ///
     /// # Errors
@@ -154,7 +154,10 @@ impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
     ///
     /// # Errors
     /// Returns an error if archival fails and graceful degradation is disabled
-    pub async fn archive_session(&self, session_id: &SessionId) -> Result<String, IntegrationError> {
+    pub async fn archive_session(
+        &self,
+        session_id: &SessionId,
+    ) -> Result<String, IntegrationError> {
         // Get all data for the session
         let nodes = self.primary.get_session_nodes(session_id).await?;
 
@@ -184,7 +187,10 @@ impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
         // Anonymize if enabled
         let (final_data, pii_count) = if let Some(anonymizer) = &self.anonymizer {
             let result = anonymizer.anonymize_with_stats(&session_data)?;
-            debug!("Anonymized {} PII instances in session {}", result.pii_count, session_id);
+            debug!(
+                "Anonymized {} PII instances in session {}",
+                result.pii_count, session_id
+            );
 
             // Update stats
             {
@@ -268,21 +274,46 @@ impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
         }
     }
 
+    /// Resolve the owning session through canonical graph relationships rather
+    /// than assuming every node duplicates a session identifier.
+    async fn session_id_for_node(&self, node: &Node) -> Option<SessionId> {
+        match node {
+            Node::Prompt(prompt) => Some(prompt.session_id),
+            Node::Response(response) => self.session_id_for_prompt(&response.prompt_id).await,
+            Node::Session(session) => Some(session.id),
+            Node::ToolInvocation(tool) => {
+                let response = self
+                    .primary
+                    .get_node(&tool.response_id)
+                    .await
+                    .ok()
+                    .flatten()?;
+                match response {
+                    Node::Response(response) => {
+                        self.session_id_for_prompt(&response.prompt_id).await
+                    }
+                    _ => None,
+                }
+            }
+            Node::Agent(_) | Node::Template(_) => None,
+        }
+    }
+
+    async fn session_id_for_prompt(&self, prompt_id: &NodeId) -> Option<SessionId> {
+        let prompt = self.primary.get_node(prompt_id).await.ok().flatten()?;
+        match prompt {
+            Node::Prompt(prompt) => Some(prompt.session_id),
+            _ => None,
+        }
+    }
+
     /// Add node to pending archival queue
     async fn queue_for_archival(&self, node: &Node) {
         if matches!(self.config.archival_policy.mode, ArchivalMode::Immediate) {
             return; // Immediate mode doesn't use queue
         }
 
-        // Extract session ID from node
-        let session_id = match node {
-            Node::Prompt(p) => p.session_id,
-            Node::Response(r) => r.session_id,
-            Node::Session(s) => Some(s.id),
-            Node::ToolInvocation(t) => t.session_id,
-            Node::Agent(_) => None,
-            Node::Template(_) => None,
-        };
+        let session_id = self.session_id_for_node(node).await;
 
         if let Some(sid) = session_id {
             let mut pending = self.pending_archival.write().await;
@@ -292,7 +323,11 @@ impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
     }
 
     /// Write to vault based on storage mode
-    async fn write_to_vault(&self, session_id: &SessionId, node: &Node) -> Result<(), IntegrationError> {
+    async fn write_to_vault(
+        &self,
+        session_id: &SessionId,
+        node: &Node,
+    ) -> Result<(), IntegrationError> {
         match self.config.storage_mode {
             StorageMode::SledOnly => {
                 // No vault write
@@ -377,7 +412,7 @@ impl<B: AsyncStorageBackend> VaultStorageAdapter<B> {
 }
 
 #[async_trait]
-impl<B: AsyncStorageBackend> AsyncStorageBackend for VaultStorageAdapter<B> {
+impl<B: AsyncStorageBackend + 'static> AsyncStorageBackend for VaultStorageAdapter<B> {
     async fn store_node(&self, node: &Node) -> crate::Result<()> {
         // Always write to primary storage first
         self.primary.store_node(node).await?;
@@ -388,16 +423,9 @@ impl<B: AsyncStorageBackend> AsyncStorageBackend for VaultStorageAdapter<B> {
             stats.sled_writes += 1;
         }
 
-        // Write to vault based on configuration
-        // Extract session ID for vault write
-        let session_id = match node {
-            Node::Prompt(p) => p.session_id,
-            Node::Response(r) => r.session_id,
-            Node::Session(s) => Some(s.id),
-            Node::ToolInvocation(t) => t.session_id,
-            Node::Agent(_) => None,
-            Node::Template(_) => None,
-        };
+        // Resolve the session through canonical relationships before writing
+        // secondary archival state.
+        let session_id = self.session_id_for_node(node).await;
 
         if let Some(sid) = session_id {
             if let Err(e) = self.write_to_vault(&sid, node).await {
@@ -465,9 +493,9 @@ impl<B: AsyncStorageBackend> AsyncStorageBackend for VaultStorageAdapter<B> {
                 warn!("Failed to flush archival queue: {}", e);
             }
         } else {
-            self.flush_archival_queue()
-                .await
-                .map_err(|e| crate::Error::Storage(format!("Archival queue flush failed: {}", e)))?;
+            self.flush_archival_queue().await.map_err(|e| {
+                crate::Error::Storage(format!("Archival queue flush failed: {}", e))
+            })?;
         }
 
         Ok(())
@@ -483,6 +511,7 @@ impl<B: AsyncStorageBackend> AsyncStorageBackend for VaultStorageAdapter<B> {
 mod tests {
     use super::*;
     use crate::storage::AsyncSledBackend;
+    use crate::{PromptNode, ResponseNode, TokenUsage, ToolInvocation};
     use tempfile::TempDir;
 
     async fn create_test_adapter() -> (VaultStorageAdapter<AsyncSledBackend>, TempDir) {
@@ -516,6 +545,36 @@ mod tests {
         let stats = adapter.get_stats().await;
         assert_eq!(stats.pii_anonymized, 0);
         assert_eq!(stats.sessions_archived, 0);
+    }
+
+    #[tokio::test]
+    async fn resolves_response_and_tool_sessions_through_graph_links() {
+        let (adapter, _temp) = create_test_adapter().await;
+        let session_id = SessionId::new();
+        let prompt = PromptNode::new(session_id, "question".to_string());
+        let response = ResponseNode::new(prompt.id, "answer".to_string(), TokenUsage::new(1, 1));
+        let tool = ToolInvocation::new(response.id, "lookup".to_string(), serde_json::json!({}));
+
+        adapter.store_node(&Node::Prompt(prompt)).await.unwrap();
+        adapter
+            .store_node(&Node::Response(response.clone()))
+            .await
+            .unwrap();
+        adapter
+            .store_node(&Node::ToolInvocation(tool.clone()))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            adapter.session_id_for_node(&Node::Response(response)).await,
+            Some(session_id)
+        );
+        assert_eq!(
+            adapter
+                .session_id_for_node(&Node::ToolInvocation(tool))
+                .await,
+            Some(session_id)
+        );
     }
 
     #[test]

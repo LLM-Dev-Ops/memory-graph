@@ -71,6 +71,14 @@ pub enum IntegrationError {
     /// Serialization error
     #[error("Serialization error: {0}")]
     Serialization(String),
+
+    /// Storage backend error
+    #[error("Storage error: {0}")]
+    Storage(String),
+
+    /// Requested integration resource was not found
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl From<IntegrationError> for Error {
@@ -94,6 +102,12 @@ impl From<reqwest::Error> for IntegrationError {
 impl From<serde_json::Error> for IntegrationError {
     fn from(err: serde_json::Error) -> Self {
         IntegrationError::Serialization(err.to_string())
+    }
+}
+
+impl From<llm_memory_graph_types::Error> for IntegrationError {
+    fn from(err: llm_memory_graph_types::Error) -> Self {
+        IntegrationError::Storage(err.to_string())
     }
 }
 

@@ -32,6 +32,13 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::must_use_candidate)]
+// These APIs intentionally take owned property values to preserve their public
+// builder shape, and metrics/backoff calculations explicitly cross numeric
+// domains with bounded values.
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_sign_loss)]
 
 pub mod config;
 pub mod edges;
