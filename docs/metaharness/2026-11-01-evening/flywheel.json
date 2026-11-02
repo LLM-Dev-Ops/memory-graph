@@ -1,0 +1,521 @@
+{
+  "baselineRevision": "7aa7f5173c23e2de9f6ab25508feebb73845a68f",
+  "candidateRevision": "b640b966b0a07af5d0dc5ffe8e77823743ec9a4b",
+  "baseline": {
+    "probe": {
+      "holdout": [
+        {
+          "name": "JSON __proto__ stays inert data",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ true\n- undefined\n"
+        },
+        {
+          "name": "constructor.prototype stays inert data",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ true\n- undefined\n"
+        },
+        {
+          "name": "inherited nested destination is not mutated",
+          "passed": false,
+          "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n+   added: 2,\n    existing: 1\n  }\n"
+        },
+        {
+          "name": "nested poison key does not escape its destination",
+          "passed": false,
+          "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ true\n- undefined\n"
+        }
+      ],
+      "anchors": [
+        {
+          "name": "ordinary nested merge retains identity and values",
+          "passed": true
+        },
+        {
+          "name": "scalar array and null semantics retained",
+          "passed": true
+        },
+        {
+          "name": "multiple sources merge in order",
+          "passed": true
+        }
+      ]
+    },
+    "checks": {
+      "probe": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/tmp/memory-eve-repo/scripts/probe-sdk-merge.mjs",
+          "/tmp/memory-eve-baseline"
+        ],
+        "exit": 1,
+        "signal": null,
+        "ms": 139,
+        "pass": false,
+        "sha256": "3d1fae580c71d990d9526d52d8046260b48a969d7bc42e69b8ca79d696e37d45"
+      },
+      "rootTests": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "40",
+          "npm",
+          "test"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 1771,
+        "pass": true,
+        "sha256": "498b03f8c306dd696f83685836291ebce46e2cf9109815d18d09834acc5ce907"
+      },
+      "sdkBuild": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "30",
+          "npm",
+          "run",
+          "build"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 1669,
+        "pass": true,
+        "sha256": "310e5b2056a623703fcfbe3083454d87a643badfe443cf359bb747956c68c67b"
+      },
+      "sdkUtils": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "35",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--runTestsByPath",
+          "tests/unit/utils.test.ts",
+          "--json",
+          "--outputFile",
+          "/tmp/memory-eve-evaluation.json.baseline-utils.json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 3211,
+        "pass": true,
+        "sha256": "3c24826d17933a51aa4491f108e9150fe7441a8de20fc9f2ef79458a65f85946"
+      },
+      "sdkUnit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "45",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--testPathPatterns=tests/unit",
+          "--json",
+          "--outputFile",
+          "/tmp/memory-eve-evaluation.json.baseline-unit.json"
+        ],
+        "exit": 124,
+        "signal": null,
+        "ms": 45030,
+        "pass": false,
+        "sha256": "ea09bc0569e570b3f4ce03ffc28113e478091ce5755b2540f67b898370b05aed"
+      },
+      "audit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "20",
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "exit": 1,
+        "signal": null,
+        "ms": 12845,
+        "pass": false,
+        "sha256": "cc4178d01b177e8a27e7152e1d06abba2b76639b038f8b624576ed9d3191156a"
+      },
+      "sdkAudit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "20",
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "exit": 124,
+        "signal": null,
+        "ms": 20019,
+        "pass": false,
+        "sha256": "7125f194612fcff2f454c05d848e7cb71facc1967b4d5017e25b34fdee3ba74f"
+      },
+      "rust": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "cargo",
+          "test",
+          "--workspace",
+          "--all-features",
+          "--locked"
+        ],
+        "exit": 127,
+        "signal": null,
+        "ms": 5,
+        "pass": false,
+        "sha256": "dec8febc48e3e438fe00238a26134f7c099350c26c9f82457c54d510bc1a41af"
+      },
+      "ruflo": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "ruflo",
+          "--version"
+        ],
+        "exit": 127,
+        "signal": null,
+        "ms": 4,
+        "pass": false,
+        "sha256": "33facf6ce065f80c5c2d34a3d194b3f10cbff1a4233f8877b6b2075d9abe4fa1"
+      }
+    }
+  },
+  "candidate": {
+    "probe": {
+      "holdout": [
+        {
+          "name": "JSON __proto__ stays inert data",
+          "passed": true
+        },
+        {
+          "name": "constructor.prototype stays inert data",
+          "passed": true
+        },
+        {
+          "name": "inherited nested destination is not mutated",
+          "passed": true
+        },
+        {
+          "name": "nested poison key does not escape its destination",
+          "passed": true
+        }
+      ],
+      "anchors": [
+        {
+          "name": "ordinary nested merge retains identity and values",
+          "passed": true
+        },
+        {
+          "name": "scalar array and null semantics retained",
+          "passed": true
+        },
+        {
+          "name": "multiple sources merge in order",
+          "passed": true
+        }
+      ]
+    },
+    "checks": {
+      "probe": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "/tmp/memory-eve-repo/scripts/probe-sdk-merge.mjs",
+          "/tmp/memory-eve-repo"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 139,
+        "pass": true,
+        "sha256": "3af5def046b10b4a452ba53142b680c4ac5a5e3499b669f6dea03631e93da078"
+      },
+      "rootTests": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "40",
+          "npm",
+          "test"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 1835,
+        "pass": true,
+        "sha256": "bc75eed9371f84ee9532286ff99c2f58416ca0632d31807eb3db685862bb7386"
+      },
+      "sdkBuild": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "30",
+          "npm",
+          "run",
+          "build"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 1863,
+        "pass": true,
+        "sha256": "310e5b2056a623703fcfbe3083454d87a643badfe443cf359bb747956c68c67b"
+      },
+      "sdkUtils": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "35",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--runTestsByPath",
+          "tests/unit/utils.test.ts",
+          "--json",
+          "--outputFile",
+          "/tmp/memory-eve-evaluation.json.candidate-utils.json"
+        ],
+        "exit": 0,
+        "signal": null,
+        "ms": 3207,
+        "pass": true,
+        "sha256": "9c07c93e7c98b6c9bf818c6bec3fb032e60bd35b8e7a27814feb985711ae9c6b"
+      },
+      "sdkUnit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "45",
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+          "node_modules/jest/bin/jest.js",
+          "--runInBand",
+          "--testPathPatterns=tests/unit",
+          "--json",
+          "--outputFile",
+          "/tmp/memory-eve-evaluation.json.candidate-unit.json"
+        ],
+        "exit": 124,
+        "signal": null,
+        "ms": 45015,
+        "pass": false,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "audit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "20",
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "exit": 1,
+        "signal": null,
+        "ms": 6789,
+        "pass": false,
+        "sha256": "cc4178d01b177e8a27e7152e1d06abba2b76639b038f8b624576ed9d3191156a"
+      },
+      "sdkAudit": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "20",
+          "npm",
+          "audit",
+          "--json"
+        ],
+        "exit": 124,
+        "signal": null,
+        "ms": 20014,
+        "pass": false,
+        "sha256": "7125f194612fcff2f454c05d848e7cb71facc1967b4d5017e25b34fdee3ba74f"
+      },
+      "rust": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "cargo",
+          "test",
+          "--workspace",
+          "--all-features",
+          "--locked"
+        ],
+        "exit": 127,
+        "signal": null,
+        "ms": 4,
+        "pass": false,
+        "sha256": "dec8febc48e3e438fe00238a26134f7c099350c26c9f82457c54d510bc1a41af"
+      },
+      "ruflo": {
+        "command": [
+          "timeout",
+          "--kill-after=5",
+          "10",
+          "ruflo",
+          "--version"
+        ],
+        "exit": 127,
+        "signal": null,
+        "ms": 4,
+        "pass": false,
+        "sha256": "33facf6ce065f80c5c2d34a3d194b3f10cbff1a4233f8877b6b2075d9abe4fa1"
+      }
+    }
+  },
+  "result": {
+    "liftCurve": [
+      {
+        "generation": 0,
+        "primary": 0,
+        "delta": 0,
+        "anchor": 1
+      }
+    ],
+    "promotions": [],
+    "lineage": {
+      "commits": {}
+    },
+    "replayBundle": {
+      "data_source": "LIVE",
+      "root_id": "root",
+      "chain": [
+        {
+          "id": "root",
+          "generation": 0,
+          "parents": [],
+          "mutation": null,
+          "primaryDelta": 0,
+          "anchorScore": 1,
+          "verdict": "ROOT",
+          "failureReasons": [],
+          "receipt": {
+            "payload": {
+              "kind": "root",
+              "root": "root"
+            },
+            "signature": "+JIpCWi86syUYMxypBNE8pjbjLW+DnHGzcp4ColsiXkthn+ImpzhgLpViuPI3uP6lGE0YIb1X1CX03e/2dAkAg==",
+            "publicKey": "MCowBQYDK2VwAyEAdUZnYJcKXr1tkmgYKEG9/vv5E1PyOGi08lPTm8jMqE8=",
+            "alg": "ed25519"
+          },
+          "createdAt": "gen-0"
+        }
+      ],
+      "all_commits": [
+        {
+          "id": "root__revision_gen1",
+          "generation": 1,
+          "parents": [
+            "root"
+          ],
+          "mutation": {
+            "target": "revision",
+            "summary": "Prevent SDK deepMerge prototype pollution using own destinations and data properties",
+            "inverse": {
+              "path": "clients/typescript/src/utils.ts",
+              "parentBytes": "/**\n * Utility functions and helper methods\n *\n * Provides convenience functions and utilities for common operations.\n *\n * @module utils\n */\n\nimport {\n  Node,\n  Edge,\n  NodeType,\n  EdgeType,\n  PromptNode,\n  ResponseNode,\n  ToolInvocationNode,\n  TokenUsage,\n} from './types';\n\n/**\n * Sleep for a specified duration\n *\n * @param ms - Milliseconds to sleep\n * @returns Promise that resolves after the delay\n *\n * @example\n * ```typescript\n * await sleep(1000); // Wait 1 second\n * console.log('1 second later');\n * ```\n */\nexport function sleep(ms: number): Promise<void> {\n  return new Promise((resolve) => setTimeout(resolve, ms));\n}\n\n/**\n * Debounce a function\n *\n * @param fn - Function to debounce\n * @param delayMs - Delay in milliseconds\n * @returns Debounced function\n *\n * @example\n * ```typescript\n * const debouncedSearch = debounce((query: string) => {\n *   console.log('Searching for:', query);\n * }, 300);\n *\n * debouncedSearch('hello'); // Will only execute after 300ms of no calls\n * ```\n */\nexport function debounce<T extends (...args: any[]) => any>(\n  fn: T,\n  delayMs: number\n): (...args: Parameters<T>) => void {\n  let timeoutId: NodeJS.Timeout | null = null;\n\n  return (...args: Parameters<T>) => {\n    if (timeoutId) {\n      clearTimeout(timeoutId);\n    }\n\n    timeoutId = setTimeout(() => {\n      fn(...args);\n      timeoutId = null;\n    }, delayMs);\n  };\n}\n\n/**\n * Throttle a function\n *\n * @param fn - Function to throttle\n * @param limitMs - Minimum time between calls in milliseconds\n * @returns Throttled function\n *\n * @example\n * ```typescript\n * const throttledUpdate = throttle((value: number) => {\n *   console.log('Update:', value);\n * }, 1000);\n *\n * // Will only execute once per second\n * throttledUpdate(1);\n * throttledUpdate(2);\n * throttledUpdate(3);\n * ```\n */\nexport function throttle<T extends (...args: any[]) => any>(\n  fn: T,\n  limitMs: number\n): (...args: Parameters<T>) => void {\n  let lastCall = 0;\n\n  return (...args: Parameters<T>) => {\n    const now = Date.now();\n    if (now - lastCall >= limitMs) {\n      lastCall = now;\n      fn(...args);\n    }\n  };\n}\n\n/**\n * Format timestamp to ISO string\n *\n * @param date - Date to format\n * @returns ISO formatted string\n *\n * @example\n * ```typescript\n * const formatted = formatTimestamp(new Date());\n * // Returns: \"2024-01-15T10:30:00.000Z\"\n * ```\n */\nexport function formatTimestamp(date: Date): string {\n  return date.toISOString();\n}\n\n/**\n * Parse ISO timestamp string to Date\n *\n * @param timestamp - ISO timestamp string\n * @returns Date object\n *\n * @example\n * ```typescript\n * const date = parseTimestamp(\"2024-01-15T10:30:00.000Z\");\n * ```\n */\nexport function parseTimestamp(timestamp: string): Date {\n  return new Date(timestamp);\n}\n\n/**\n * Calculate time difference in milliseconds\n *\n * @param start - Start date\n * @param end - End date (defaults to now)\n * @returns Difference in milliseconds\n *\n * @example\n * ```typescript\n * const start = new Date();\n * await someOperation();\n * const duration = timeDiff(start);\n * console.log(`Operation took ${duration}ms`);\n * ```\n */\nexport function timeDiff(start: Date, end: Date = new Date()): number {\n  return end.getTime() - start.getTime();\n}\n\n/**\n * Format duration in milliseconds to human-readable string\n *\n * @param ms - Duration in milliseconds\n * @returns Formatted string\n *\n * @example\n * ```typescript\n * formatDuration(1500); // \"1.5s\"\n * formatDuration(65000); // \"1m 5s\"\n * formatDuration(3661000); // \"1h 1m 1s\"\n * ```\n */\nexport function formatDuration(ms: number): string {\n  if (ms < 1000) {\n    return `${ms}ms`;\n  }\n\n  const seconds = Math.floor(ms / 1000);\n  if (seconds < 60) {\n    return `${seconds}s`;\n  }\n\n  const minutes = Math.floor(seconds / 60);\n  const remainingSeconds = seconds % 60;\n  if (minutes < 60) {\n    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;\n  }\n\n  const hours = Math.floor(minutes / 60);\n  const remainingMinutes = minutes % 60;\n  return remainingSeconds > 0\n    ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s`\n    : `${hours}h ${remainingMinutes}m`;\n}\n\n/**\n * Calculate token usage statistics\n *\n * @param tokenUsages - Array of token usage objects\n * @returns Aggregated token usage\n *\n * @example\n * ```typescript\n * const total = calculateTokenUsage([\n *   { promptTokens: 10, completionTokens: 20, totalTokens: 30 },\n *   { promptTokens: 15, completionTokens: 25, totalTokens: 40 }\n * ]);\n * // Returns: { promptTokens: 25, completionTokens: 45, totalTokens: 70 }\n * ```\n */\nexport function calculateTokenUsage(tokenUsages: TokenUsage[]): TokenUsage {\n  return tokenUsages.reduce(\n    (acc, usage) => ({\n      promptTokens: acc.promptTokens + usage.promptTokens,\n      completionTokens: acc.completionTokens + usage.completionTokens,\n      totalTokens: acc.totalTokens + usage.totalTokens,\n    }),\n    { promptTokens: 0, completionTokens: 0, totalTokens: 0 }\n  );\n}\n\n/**\n * Type guard for PromptNode\n *\n * @param node - Node to check\n * @returns True if node is a PromptNode\n *\n * @example\n * ```typescript\n * if (isPromptNode(node)) {\n *   console.log('Prompt content:', node.data.content);\n * }\n * ```\n */\nexport function isPromptNode(node: Node): node is Node & { data: PromptNode } {\n  return node.type === NodeType.PROMPT && !!node.data;\n}\n\n/**\n * Type guard for ResponseNode\n *\n * @param node - Node to check\n * @returns True if node is a ResponseNode\n *\n * @example\n * ```typescript\n * if (isResponseNode(node)) {\n *   console.log('Response content:', node.data.content);\n * }\n * ```\n */\nexport function isResponseNode(node: Node): node is Node & { data: ResponseNode } {\n  return node.type === NodeType.RESPONSE && !!node.data;\n}\n\n/**\n * Type guard for ToolInvocationNode\n *\n * @param node - Node to check\n * @returns True if node is a ToolInvocationNode\n *\n * @example\n * ```typescript\n * if (isToolInvocationNode(node)) {\n *   console.log('Tool name:', node.data.toolName);\n * }\n * ```\n */\nexport function isToolInvocationNode(node: Node): node is Node & { data: ToolInvocationNode } {\n  return node.type === NodeType.TOOL_INVOCATION && !!node.data;\n}\n\n/**\n * Filter nodes by type\n *\n * @param nodes - Nodes to filter\n * @param type - Node type to filter by\n * @returns Filtered nodes\n *\n * @example\n * ```typescript\n * const prompts = filterNodesByType(nodes, NodeType.PROMPT);\n * ```\n */\nexport function filterNodesByType(nodes: Node[], type: NodeType): Node[] {\n  return nodes.filter((node) => node.type === type);\n}\n\n/**\n * Filter edges by type\n *\n * @param edges - Edges to filter\n * @param type - Edge type to filter by\n * @returns Filtered edges\n *\n * @example\n * ```typescript\n * const responses = filterEdgesByType(edges, EdgeType.RESPONDS_TO);\n * ```\n */\nexport function filterEdgesByType(edges: Edge[], type: EdgeType): Edge[] {\n  return edges.filter((edge) => edge.type === type);\n}\n\n/**\n * Group nodes by session ID\n *\n * @param nodes - Nodes to group\n * @returns Map of session ID to nodes\n *\n * @example\n * ```typescript\n * const grouped = groupNodesBySession(nodes);\n * for (const [sessionId, sessionNodes] of grouped.entries()) {\n *   console.log(`Session ${sessionId}: ${sessionNodes.length} nodes`);\n * }\n * ```\n */\nexport function groupNodesBySession(nodes: Node[]): Map<string, Node[]> {\n  const grouped = new Map<string, Node[]>();\n\n  for (const node of nodes) {\n    if (isPromptNode(node)) {\n      const sessionId = node.data.sessionId;\n      if (!grouped.has(sessionId)) {\n        grouped.set(sessionId, []);\n      }\n      grouped.get(sessionId)!.push(node);\n    }\n  }\n\n  return grouped;\n}\n\n/**\n * Sort nodes by creation time\n *\n * @param nodes - Nodes to sort\n * @param ascending - Sort in ascending order (default: true)\n * @returns Sorted nodes\n *\n * @example\n * ```typescript\n * const sorted = sortNodesByTime(nodes, false); // Newest first\n * ```\n */\nexport function sortNodesByTime(nodes: Node[], ascending = true): Node[] {\n  return [...nodes].sort((a, b) => {\n    const timeA = a.createdAt.getTime();\n    const timeB = b.createdAt.getTime();\n    return ascending ? timeA - timeB : timeB - timeA;\n  });\n}\n\n/**\n * Sort edges by creation time\n *\n * @param edges - Edges to sort\n * @param ascending - Sort in ascending order (default: true)\n * @returns Sorted edges\n *\n * @example\n * ```typescript\n * const sorted = sortEdgesByTime(edges, false); // Newest first\n * ```\n */\nexport function sortEdgesByTime(edges: Edge[], ascending = true): Edge[] {\n  return [...edges].sort((a, b) => {\n    const timeA = a.createdAt.getTime();\n    const timeB = b.createdAt.getTime();\n    return ascending ? timeA - timeB : timeB - timeA;\n  });\n}\n\n/**\n * Chunk array into smaller arrays\n *\n * @param array - Array to chunk\n * @param size - Size of each chunk\n * @returns Array of chunks\n *\n * @example\n * ```typescript\n * const chunks = chunk([1, 2, 3, 4, 5], 2);\n * // Returns: [[1, 2], [3, 4], [5]]\n * ```\n */\nexport function chunk<T>(array: T[], size: number): T[][] {\n  const chunks: T[][] = [];\n  for (let i = 0; i < array.length; i += size) {\n    chunks.push(array.slice(i, i + size));\n  }\n  return chunks;\n}\n\n/**\n * Batch process items with rate limiting\n *\n * @param items - Items to process\n * @param processFn - Function to process each item\n * @param batchSize - Number of items to process in parallel\n * @param delayMs - Delay between batches in milliseconds\n * @returns Promise with array of results\n *\n * @example\n * ```typescript\n * const results = await batchProcess(\n *   nodeIds,\n *   (id) => client.getNode(id),\n *   10, // Process 10 at a time\n *   100 // Wait 100ms between batches\n * );\n * ```\n */\nexport async function batchProcess<T, R>(\n  items: T[],\n  processFn: (item: T) => Promise<R>,\n  batchSize: number,\n  delayMs = 0\n): Promise<R[]> {\n  const results: R[] = [];\n  const chunks = chunk(items, batchSize);\n\n  for (let i = 0; i < chunks.length; i++) {\n    const batchResults = await Promise.all(chunks[i].map(processFn));\n    results.push(...batchResults);\n\n    // Add delay between batches (except for the last one)\n    if (i < chunks.length - 1 && delayMs > 0) {\n      await sleep(delayMs);\n    }\n  }\n\n  return results;\n}\n\n/**\n * Retry a promise with exponential backoff\n *\n * @param fn - Function that returns a promise\n * @param maxRetries - Maximum number of retries\n * @param initialDelayMs - Initial delay in milliseconds\n * @returns Promise with the result\n * @deprecated Use withRetry from retry module instead\n */\nexport async function retryWithBackoff<T>(\n  fn: () => Promise<T>,\n  maxRetries = 3,\n  initialDelayMs = 100\n): Promise<T> {\n  let lastError: Error | undefined;\n\n  for (let attempt = 0; attempt <= maxRetries; attempt++) {\n    try {\n      return await fn();\n    } catch (error) {\n      lastError = error as Error;\n\n      if (attempt < maxRetries) {\n        const delayMs = initialDelayMs * Math.pow(2, attempt);\n        await sleep(delayMs);\n      }\n    }\n  }\n\n  throw lastError;\n}\n\n/**\n * Create a promise with timeout\n *\n * @param promise - Promise to wrap\n * @param timeoutMs - Timeout in milliseconds\n * @param errorMessage - Error message if timeout occurs\n * @returns Promise that rejects on timeout\n *\n * @example\n * ```typescript\n * const result = await withTimeout(\n *   client.getNode('node-id'),\n *   5000,\n *   'Operation timed out after 5 seconds'\n * );\n * ```\n */\nexport function withTimeout<T>(\n  promise: Promise<T>,\n  timeoutMs: number,\n  errorMessage = 'Operation timed out'\n): Promise<T> {\n  return Promise.race([\n    promise,\n    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMessage)), timeoutMs)),\n  ]);\n}\n\n/**\n * Deep clone an object\n *\n * @param obj - Object to clone\n * @returns Cloned object\n *\n * @example\n * ```typescript\n * const copy = deepClone(originalObject);\n * ```\n */\nexport function deepClone<T>(obj: T): T {\n  return JSON.parse(JSON.stringify(obj));\n}\n\n/**\n * Merge objects deeply\n *\n * @param target - Target object\n * @param sources - Source objects to merge\n * @returns Merged object\n *\n * @example\n * ```typescript\n * const merged = deepMerge({ a: 1 }, { b: 2 }, { c: 3 });\n * // Returns: { a: 1, b: 2, c: 3 }\n * ```\n */\nexport function deepMerge<T extends Record<string, any>>(target: T, ...sources: Partial<T>[]): T {\n  if (!sources.length) return target;\n\n  const source = sources.shift();\n  if (!source) return target;\n\n  for (const key in source) {\n    if (Object.prototype.hasOwnProperty.call(source, key)) {\n      const value = source[key];\n      if (value && typeof value === 'object' && !Array.isArray(value)) {\n        if (!target[key]) {\n          target[key] = {} as any;\n        }\n        deepMerge(target[key], value);\n      } else {\n        target[key] = value as any;\n      }\n    }\n  }\n\n  return deepMerge(target, ...sources);\n}\n\n/**\n * Convert object to query string\n *\n * @param params - Object to convert\n * @returns Query string\n *\n * @example\n * ```typescript\n * const qs = toQueryString({ limit: 10, offset: 0 });\n * // Returns: \"limit=10&offset=0\"\n * ```\n */\nexport function toQueryString(params: Record<string, any>): string {\n  return Object.entries(params)\n    .filter(([_, value]) => value !== undefined && value !== null)\n    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)\n    .join('&');\n}\n\n/**\n * Generate a unique ID\n *\n * @returns Unique ID string\n *\n * @example\n * ```typescript\n * const id = generateId();\n * // Returns: \"abc123def456\"\n * ```\n */\nexport function generateId(): string {\n  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);\n}\n\n/**\n * Safe JSON parse with fallback\n *\n * @param json - JSON string to parse\n * @param fallback - Fallback value if parsing fails\n * @returns Parsed object or fallback\n *\n * @example\n * ```typescript\n * const data = safeJsonParse('{\"key\": \"value\"}', {});\n * const invalid = safeJsonParse('invalid json', { default: true });\n * ```\n */\nexport function safeJsonParse<T>(json: string, fallback: T): T {\n  try {\n    return JSON.parse(json);\n  } catch {\n    return fallback;\n  }\n}\n\n/**\n * Safe JSON stringify\n *\n * @param obj - Object to stringify\n * @param fallback - Fallback string if stringify fails\n * @returns JSON string or fallback\n *\n * @example\n * ```typescript\n * const json = safeJsonStringify({ key: 'value' }, '{}');\n * ```\n */\nexport function safeJsonStringify(obj: any, fallback = '{}'): string {\n  try {\n    return JSON.stringify(obj);\n  } catch {\n    return fallback;\n  }\n}\n\n/**\n * Check if value is empty (null, undefined, empty string, empty array, empty object)\n *\n * @param value - Value to check\n * @returns True if value is empty\n *\n * @example\n * ```typescript\n * isEmpty(null); // true\n * isEmpty(''); // true\n * isEmpty([]); // true\n * isEmpty({}); // true\n * isEmpty('hello'); // false\n * ```\n */\nexport function isEmpty(value: any): boolean {\n  if (value === null || value === undefined) return true;\n  if (typeof value === 'string') return value.trim().length === 0;\n  if (Array.isArray(value)) return value.length === 0;\n  if (typeof value === 'object') return Object.keys(value).length === 0;\n  return false;\n}\n\n/**\n * Omit properties from object\n *\n * @param obj - Source object\n * @param keys - Keys to omit\n * @returns New object without specified keys\n *\n * @example\n * ```typescript\n * const obj = { a: 1, b: 2, c: 3 };\n * const result = omit(obj, ['b', 'c']);\n * // Returns: { a: 1 }\n * ```\n */\nexport function omit<T extends Record<string, any>, K extends keyof T>(\n  obj: T,\n  keys: K[]\n): Omit<T, K> {\n  const result = { ...obj };\n  for (const key of keys) {\n    delete result[key];\n  }\n  return result;\n}\n\n/**\n * Pick properties from object\n *\n * @param obj - Source object\n * @param keys - Keys to pick\n * @returns New object with only specified keys\n *\n * @example\n * ```typescript\n * const obj = { a: 1, b: 2, c: 3 };\n * const result = pick(obj, ['a', 'c']);\n * // Returns: { a: 1, c: 3 }\n * ```\n */\nexport function pick<T extends Record<string, any>, K extends keyof T>(\n  obj: T,\n  keys: K[]\n): Pick<T, K> {\n  const result = {} as Pick<T, K>;\n  for (const key of keys) {\n    if (key in obj) {\n      result[key] = obj[key];\n    }\n  }\n  return result;\n}\n",
+              "sha256": "7825fe6c0f6b62233f19cd57f8b69aaa05d77935ba6792d87d08b0d0e81f7f64"
+            }
+          },
+          "primaryDelta": 1,
+          "anchorScore": null,
+          "verdict": "REJECTED",
+          "failureReasons": [
+            "safety_regressed"
+          ],
+          "receipt": {
+            "payload": {
+              "kind": "candidate",
+              "id": "root__revision_gen1",
+              "target": "revision",
+              "verdict": "REJECTED",
+              "primaryDelta": 1,
+              "baselineScore": {
+                "primary": 0,
+                "noopRate": 1,
+                "costPerWin": 0,
+                "regressed": true
+              },
+              "candidateScore": {
+                "primary": 1,
+                "noopRate": 0,
+                "costPerWin": 0,
+                "regressed": true
+              },
+              "anchorScore": null,
+              "failureReasons": [
+                "safety_regressed"
+              ],
+              "parents": [
+                "root"
+              ],
+              "generation": 1
+            },
+            "signature": "NIJTCatdZZH7UOq6rremn+/GB4cmmPc4oH823qGsnHojOXKN7rg26Ot9mDy/L3c9e0h0wVJTmuTjwmWHpvGzDg==",
+            "publicKey": "MCowBQYDK2VwAyEAdUZnYJcKXr1tkmgYKEG9/vv5E1PyOGi08lPTm8jMqE8=",
+            "alg": "ed25519"
+          },
+          "createdAt": "gen-1",
+          "baselineScore": {
+            "primary": 0,
+            "noopRate": 1,
+            "costPerWin": 0,
+            "regressed": true
+          },
+          "candidateScore": {
+            "primary": 1,
+            "noopRate": 0,
+            "costPerWin": 0,
+            "regressed": true
+          }
+        }
+      ],
+      "lift_curve": [
+        {
+          "generation": 0,
+          "primary": 0,
+          "delta": 0,
+          "anchor": 1
+        }
+      ],
+      "gate_fingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+      "verified_improvements": 0,
+      "anchor_surviving_improvements": 0,
+      "milestone_reached": false,
+      "created_at": "gen-1"
+    },
+    "generationsRun": 1,
+    "milestoneReached": false,
+    "finalPolicy": {
+      "revision": "7aa7f5173c23e2de9f6ab25508feebb73845a68f"
+    }
+  },
+  "replay": {
+    "pass": true,
+    "checks": {
+      "receipts": true,
+      "reachesRoot": true,
+      "contiguousParents": true,
+      "allPromoted": true,
+      "gateUnchanged": true,
+      "gateReExecutes": true,
+      "allCommitsReceipts": true,
+      "sealedFieldsAuthentic": true
+    },
+    "failures": [],
+    "chainSummary": "gen0(root)"
+  },
+  "fingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+  "rollback": {
+    "path": "clients/typescript/src/utils.ts",
+    "parentBytes": "/**\n * Utility functions and helper methods\n *\n * Provides convenience functions and utilities for common operations.\n *\n * @module utils\n */\n\nimport {\n  Node,\n  Edge,\n  NodeType,\n  EdgeType,\n  PromptNode,\n  ResponseNode,\n  ToolInvocationNode,\n  TokenUsage,\n} from './types';\n\n/**\n * Sleep for a specified duration\n *\n * @param ms - Milliseconds to sleep\n * @returns Promise that resolves after the delay\n *\n * @example\n * ```typescript\n * await sleep(1000); // Wait 1 second\n * console.log('1 second later');\n * ```\n */\nexport function sleep(ms: number): Promise<void> {\n  return new Promise((resolve) => setTimeout(resolve, ms));\n}\n\n/**\n * Debounce a function\n *\n * @param fn - Function to debounce\n * @param delayMs - Delay in milliseconds\n * @returns Debounced function\n *\n * @example\n * ```typescript\n * const debouncedSearch = debounce((query: string) => {\n *   console.log('Searching for:', query);\n * }, 300);\n *\n * debouncedSearch('hello'); // Will only execute after 300ms of no calls\n * ```\n */\nexport function debounce<T extends (...args: any[]) => any>(\n  fn: T,\n  delayMs: number\n): (...args: Parameters<T>) => void {\n  let timeoutId: NodeJS.Timeout | null = null;\n\n  return (...args: Parameters<T>) => {\n    if (timeoutId) {\n      clearTimeout(timeoutId);\n    }\n\n    timeoutId = setTimeout(() => {\n      fn(...args);\n      timeoutId = null;\n    }, delayMs);\n  };\n}\n\n/**\n * Throttle a function\n *\n * @param fn - Function to throttle\n * @param limitMs - Minimum time between calls in milliseconds\n * @returns Throttled function\n *\n * @example\n * ```typescript\n * const throttledUpdate = throttle((value: number) => {\n *   console.log('Update:', value);\n * }, 1000);\n *\n * // Will only execute once per second\n * throttledUpdate(1);\n * throttledUpdate(2);\n * throttledUpdate(3);\n * ```\n */\nexport function throttle<T extends (...args: any[]) => any>(\n  fn: T,\n  limitMs: number\n): (...args: Parameters<T>) => void {\n  let lastCall = 0;\n\n  return (...args: Parameters<T>) => {\n    const now = Date.now();\n    if (now - lastCall >= limitMs) {\n      lastCall = now;\n      fn(...args);\n    }\n  };\n}\n\n/**\n * Format timestamp to ISO string\n *\n * @param date - Date to format\n * @returns ISO formatted string\n *\n * @example\n * ```typescript\n * const formatted = formatTimestamp(new Date());\n * // Returns: \"2024-01-15T10:30:00.000Z\"\n * ```\n */\nexport function formatTimestamp(date: Date): string {\n  return date.toISOString();\n}\n\n/**\n * Parse ISO timestamp string to Date\n *\n * @param timestamp - ISO timestamp string\n * @returns Date object\n *\n * @example\n * ```typescript\n * const date = parseTimestamp(\"2024-01-15T10:30:00.000Z\");\n * ```\n */\nexport function parseTimestamp(timestamp: string): Date {\n  return new Date(timestamp);\n}\n\n/**\n * Calculate time difference in milliseconds\n *\n * @param start - Start date\n * @param end - End date (defaults to now)\n * @returns Difference in milliseconds\n *\n * @example\n * ```typescript\n * const start = new Date();\n * await someOperation();\n * const duration = timeDiff(start);\n * console.log(`Operation took ${duration}ms`);\n * ```\n */\nexport function timeDiff(start: Date, end: Date = new Date()): number {\n  return end.getTime() - start.getTime();\n}\n\n/**\n * Format duration in milliseconds to human-readable string\n *\n * @param ms - Duration in milliseconds\n * @returns Formatted string\n *\n * @example\n * ```typescript\n * formatDuration(1500); // \"1.5s\"\n * formatDuration(65000); // \"1m 5s\"\n * formatDuration(3661000); // \"1h 1m 1s\"\n * ```\n */\nexport function formatDuration(ms: number): string {\n  if (ms < 1000) {\n    return `${ms}ms`;\n  }\n\n  const seconds = Math.floor(ms / 1000);\n  if (seconds < 60) {\n    return `${seconds}s`;\n  }\n\n  const minutes = Math.floor(seconds / 60);\n  const remainingSeconds = seconds % 60;\n  if (minutes < 60) {\n    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;\n  }\n\n  const hours = Math.floor(minutes / 60);\n  const remainingMinutes = minutes % 60;\n  return remainingSeconds > 0\n    ? `${hours}h ${remainingMinutes}m ${remainingSeconds}s`\n    : `${hours}h ${remainingMinutes}m`;\n}\n\n/**\n * Calculate token usage statistics\n *\n * @param tokenUsages - Array of token usage objects\n * @returns Aggregated token usage\n *\n * @example\n * ```typescript\n * const total = calculateTokenUsage([\n *   { promptTokens: 10, completionTokens: 20, totalTokens: 30 },\n *   { promptTokens: 15, completionTokens: 25, totalTokens: 40 }\n * ]);\n * // Returns: { promptTokens: 25, completionTokens: 45, totalTokens: 70 }\n * ```\n */\nexport function calculateTokenUsage(tokenUsages: TokenUsage[]): TokenUsage {\n  return tokenUsages.reduce(\n    (acc, usage) => ({\n      promptTokens: acc.promptTokens + usage.promptTokens,\n      completionTokens: acc.completionTokens + usage.completionTokens,\n      totalTokens: acc.totalTokens + usage.totalTokens,\n    }),\n    { promptTokens: 0, completionTokens: 0, totalTokens: 0 }\n  );\n}\n\n/**\n * Type guard for PromptNode\n *\n * @param node - Node to check\n * @returns True if node is a PromptNode\n *\n * @example\n * ```typescript\n * if (isPromptNode(node)) {\n *   console.log('Prompt content:', node.data.content);\n * }\n * ```\n */\nexport function isPromptNode(node: Node): node is Node & { data: PromptNode } {\n  return node.type === NodeType.PROMPT && !!node.data;\n}\n\n/**\n * Type guard for ResponseNode\n *\n * @param node - Node to check\n * @returns True if node is a ResponseNode\n *\n * @example\n * ```typescript\n * if (isResponseNode(node)) {\n *   console.log('Response content:', node.data.content);\n * }\n * ```\n */\nexport function isResponseNode(node: Node): node is Node & { data: ResponseNode } {\n  return node.type === NodeType.RESPONSE && !!node.data;\n}\n\n/**\n * Type guard for ToolInvocationNode\n *\n * @param node - Node to check\n * @returns True if node is a ToolInvocationNode\n *\n * @example\n * ```typescript\n * if (isToolInvocationNode(node)) {\n *   console.log('Tool name:', node.data.toolName);\n * }\n * ```\n */\nexport function isToolInvocationNode(node: Node): node is Node & { data: ToolInvocationNode } {\n  return node.type === NodeType.TOOL_INVOCATION && !!node.data;\n}\n\n/**\n * Filter nodes by type\n *\n * @param nodes - Nodes to filter\n * @param type - Node type to filter by\n * @returns Filtered nodes\n *\n * @example\n * ```typescript\n * const prompts = filterNodesByType(nodes, NodeType.PROMPT);\n * ```\n */\nexport function filterNodesByType(nodes: Node[], type: NodeType): Node[] {\n  return nodes.filter((node) => node.type === type);\n}\n\n/**\n * Filter edges by type\n *\n * @param edges - Edges to filter\n * @param type - Edge type to filter by\n * @returns Filtered edges\n *\n * @example\n * ```typescript\n * const responses = filterEdgesByType(edges, EdgeType.RESPONDS_TO);\n * ```\n */\nexport function filterEdgesByType(edges: Edge[], type: EdgeType): Edge[] {\n  return edges.filter((edge) => edge.type === type);\n}\n\n/**\n * Group nodes by session ID\n *\n * @param nodes - Nodes to group\n * @returns Map of session ID to nodes\n *\n * @example\n * ```typescript\n * const grouped = groupNodesBySession(nodes);\n * for (const [sessionId, sessionNodes] of grouped.entries()) {\n *   console.log(`Session ${sessionId}: ${sessionNodes.length} nodes`);\n * }\n * ```\n */\nexport function groupNodesBySession(nodes: Node[]): Map<string, Node[]> {\n  const grouped = new Map<string, Node[]>();\n\n  for (const node of nodes) {\n    if (isPromptNode(node)) {\n      const sessionId = node.data.sessionId;\n      if (!grouped.has(sessionId)) {\n        grouped.set(sessionId, []);\n      }\n      grouped.get(sessionId)!.push(node);\n    }\n  }\n\n  return grouped;\n}\n\n/**\n * Sort nodes by creation time\n *\n * @param nodes - Nodes to sort\n * @param ascending - Sort in ascending order (default: true)\n * @returns Sorted nodes\n *\n * @example\n * ```typescript\n * const sorted = sortNodesByTime(nodes, false); // Newest first\n * ```\n */\nexport function sortNodesByTime(nodes: Node[], ascending = true): Node[] {\n  return [...nodes].sort((a, b) => {\n    const timeA = a.createdAt.getTime();\n    const timeB = b.createdAt.getTime();\n    return ascending ? timeA - timeB : timeB - timeA;\n  });\n}\n\n/**\n * Sort edges by creation time\n *\n * @param edges - Edges to sort\n * @param ascending - Sort in ascending order (default: true)\n * @returns Sorted edges\n *\n * @example\n * ```typescript\n * const sorted = sortEdgesByTime(edges, false); // Newest first\n * ```\n */\nexport function sortEdgesByTime(edges: Edge[], ascending = true): Edge[] {\n  return [...edges].sort((a, b) => {\n    const timeA = a.createdAt.getTime();\n    const timeB = b.createdAt.getTime();\n    return ascending ? timeA - timeB : timeB - timeA;\n  });\n}\n\n/**\n * Chunk array into smaller arrays\n *\n * @param array - Array to chunk\n * @param size - Size of each chunk\n * @returns Array of chunks\n *\n * @example\n * ```typescript\n * const chunks = chunk([1, 2, 3, 4, 5], 2);\n * // Returns: [[1, 2], [3, 4], [5]]\n * ```\n */\nexport function chunk<T>(array: T[], size: number): T[][] {\n  const chunks: T[][] = [];\n  for (let i = 0; i < array.length; i += size) {\n    chunks.push(array.slice(i, i + size));\n  }\n  return chunks;\n}\n\n/**\n * Batch process items with rate limiting\n *\n * @param items - Items to process\n * @param processFn - Function to process each item\n * @param batchSize - Number of items to process in parallel\n * @param delayMs - Delay between batches in milliseconds\n * @returns Promise with array of results\n *\n * @example\n * ```typescript\n * const results = await batchProcess(\n *   nodeIds,\n *   (id) => client.getNode(id),\n *   10, // Process 10 at a time\n *   100 // Wait 100ms between batches\n * );\n * ```\n */\nexport async function batchProcess<T, R>(\n  items: T[],\n  processFn: (item: T) => Promise<R>,\n  batchSize: number,\n  delayMs = 0\n): Promise<R[]> {\n  const results: R[] = [];\n  const chunks = chunk(items, batchSize);\n\n  for (let i = 0; i < chunks.length; i++) {\n    const batchResults = await Promise.all(chunks[i].map(processFn));\n    results.push(...batchResults);\n\n    // Add delay between batches (except for the last one)\n    if (i < chunks.length - 1 && delayMs > 0) {\n      await sleep(delayMs);\n    }\n  }\n\n  return results;\n}\n\n/**\n * Retry a promise with exponential backoff\n *\n * @param fn - Function that returns a promise\n * @param maxRetries - Maximum number of retries\n * @param initialDelayMs - Initial delay in milliseconds\n * @returns Promise with the result\n * @deprecated Use withRetry from retry module instead\n */\nexport async function retryWithBackoff<T>(\n  fn: () => Promise<T>,\n  maxRetries = 3,\n  initialDelayMs = 100\n): Promise<T> {\n  let lastError: Error | undefined;\n\n  for (let attempt = 0; attempt <= maxRetries; attempt++) {\n    try {\n      return await fn();\n    } catch (error) {\n      lastError = error as Error;\n\n      if (attempt < maxRetries) {\n        const delayMs = initialDelayMs * Math.pow(2, attempt);\n        await sleep(delayMs);\n      }\n    }\n  }\n\n  throw lastError;\n}\n\n/**\n * Create a promise with timeout\n *\n * @param promise - Promise to wrap\n * @param timeoutMs - Timeout in milliseconds\n * @param errorMessage - Error message if timeout occurs\n * @returns Promise that rejects on timeout\n *\n * @example\n * ```typescript\n * const result = await withTimeout(\n *   client.getNode('node-id'),\n *   5000,\n *   'Operation timed out after 5 seconds'\n * );\n * ```\n */\nexport function withTimeout<T>(\n  promise: Promise<T>,\n  timeoutMs: number,\n  errorMessage = 'Operation timed out'\n): Promise<T> {\n  return Promise.race([\n    promise,\n    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errorMessage)), timeoutMs)),\n  ]);\n}\n\n/**\n * Deep clone an object\n *\n * @param obj - Object to clone\n * @returns Cloned object\n *\n * @example\n * ```typescript\n * const copy = deepClone(originalObject);\n * ```\n */\nexport function deepClone<T>(obj: T): T {\n  return JSON.parse(JSON.stringify(obj));\n}\n\n/**\n * Merge objects deeply\n *\n * @param target - Target object\n * @param sources - Source objects to merge\n * @returns Merged object\n *\n * @example\n * ```typescript\n * const merged = deepMerge({ a: 1 }, { b: 2 }, { c: 3 });\n * // Returns: { a: 1, b: 2, c: 3 }\n * ```\n */\nexport function deepMerge<T extends Record<string, any>>(target: T, ...sources: Partial<T>[]): T {\n  if (!sources.length) return target;\n\n  const source = sources.shift();\n  if (!source) return target;\n\n  for (const key in source) {\n    if (Object.prototype.hasOwnProperty.call(source, key)) {\n      const value = source[key];\n      if (value && typeof value === 'object' && !Array.isArray(value)) {\n        if (!target[key]) {\n          target[key] = {} as any;\n        }\n        deepMerge(target[key], value);\n      } else {\n        target[key] = value as any;\n      }\n    }\n  }\n\n  return deepMerge(target, ...sources);\n}\n\n/**\n * Convert object to query string\n *\n * @param params - Object to convert\n * @returns Query string\n *\n * @example\n * ```typescript\n * const qs = toQueryString({ limit: 10, offset: 0 });\n * // Returns: \"limit=10&offset=0\"\n * ```\n */\nexport function toQueryString(params: Record<string, any>): string {\n  return Object.entries(params)\n    .filter(([_, value]) => value !== undefined && value !== null)\n    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)\n    .join('&');\n}\n\n/**\n * Generate a unique ID\n *\n * @returns Unique ID string\n *\n * @example\n * ```typescript\n * const id = generateId();\n * // Returns: \"abc123def456\"\n * ```\n */\nexport function generateId(): string {\n  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);\n}\n\n/**\n * Safe JSON parse with fallback\n *\n * @param json - JSON string to parse\n * @param fallback - Fallback value if parsing fails\n * @returns Parsed object or fallback\n *\n * @example\n * ```typescript\n * const data = safeJsonParse('{\"key\": \"value\"}', {});\n * const invalid = safeJsonParse('invalid json', { default: true });\n * ```\n */\nexport function safeJsonParse<T>(json: string, fallback: T): T {\n  try {\n    return JSON.parse(json);\n  } catch {\n    return fallback;\n  }\n}\n\n/**\n * Safe JSON stringify\n *\n * @param obj - Object to stringify\n * @param fallback - Fallback string if stringify fails\n * @returns JSON string or fallback\n *\n * @example\n * ```typescript\n * const json = safeJsonStringify({ key: 'value' }, '{}');\n * ```\n */\nexport function safeJsonStringify(obj: any, fallback = '{}'): string {\n  try {\n    return JSON.stringify(obj);\n  } catch {\n    return fallback;\n  }\n}\n\n/**\n * Check if value is empty (null, undefined, empty string, empty array, empty object)\n *\n * @param value - Value to check\n * @returns True if value is empty\n *\n * @example\n * ```typescript\n * isEmpty(null); // true\n * isEmpty(''); // true\n * isEmpty([]); // true\n * isEmpty({}); // true\n * isEmpty('hello'); // false\n * ```\n */\nexport function isEmpty(value: any): boolean {\n  if (value === null || value === undefined) return true;\n  if (typeof value === 'string') return value.trim().length === 0;\n  if (Array.isArray(value)) return value.length === 0;\n  if (typeof value === 'object') return Object.keys(value).length === 0;\n  return false;\n}\n\n/**\n * Omit properties from object\n *\n * @param obj - Source object\n * @param keys - Keys to omit\n * @returns New object without specified keys\n *\n * @example\n * ```typescript\n * const obj = { a: 1, b: 2, c: 3 };\n * const result = omit(obj, ['b', 'c']);\n * // Returns: { a: 1 }\n * ```\n */\nexport function omit<T extends Record<string, any>, K extends keyof T>(\n  obj: T,\n  keys: K[]\n): Omit<T, K> {\n  const result = { ...obj };\n  for (const key of keys) {\n    delete result[key];\n  }\n  return result;\n}\n\n/**\n * Pick properties from object\n *\n * @param obj - Source object\n * @param keys - Keys to pick\n * @returns New object with only specified keys\n *\n * @example\n * ```typescript\n * const obj = { a: 1, b: 2, c: 3 };\n * const result = pick(obj, ['a', 'c']);\n * // Returns: { a: 1, c: 3 }\n * ```\n */\nexport function pick<T extends Record<string, any>, K extends keyof T>(\n  obj: T,\n  keys: K[]\n): Pick<T, K> {\n  const result = {} as Pick<T, K>;\n  for (const key of keys) {\n    if (key in obj) {\n      result[key] = obj[key];\n    }\n  }\n  return result;\n}\n",
+    "sha256": "7825fe6c0f6b62233f19cd57f8b69aaa05d77935ba6792d87d08b0d0e81f7f64"
+  },
+  "limits": "Node24 transforms actual TS utility module with identical erased-import normalization. Real tsc/Jest checks separate. No deployed gRPC integration or Rust proof, missing commands fail closed. Neutral unmeasured cost; noopRate=failed-case fraction. Shared dependency trees only after lock bytes compared."
+}

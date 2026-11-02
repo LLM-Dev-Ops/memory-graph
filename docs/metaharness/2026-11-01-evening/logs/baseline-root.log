@@ -1,0 +1,53 @@
+
+> memory-graph-agents@1.0.0 test
+> npm run test:execution && npm run test:http
+
+
+> memory-graph-agents@1.0.0 test:execution
+> vitest run src/execution/tests/
+
+
+ RUN  v4.1.12 /tmp/memory-eve-baseline
+
+
+ Test Files  4 passed (4)
+      Tests  70 passed (70)
+   Start at  22:14:52
+   Duration  336ms (transform 282ms, setup 0ms, import 442ms, tests 81ms, environment 1ms)
+
+
+> memory-graph-agents@1.0.0 test:http
+> node --test tests/http-boundary.test.mjs tests/framework-smoke.test.mjs
+
+✔ Real Functions Framework preserves health and enforces pre-parsed body quota (284.356566ms)
+▶ Live HTTP integrity and compatibility contract
+  ✔ Server identity and timestamp cannot be overwritten (1.119169ms)
+  ✔ Batch transport receipt cannot be overwritten (0.130472ms)
+  ✔ Oversized batches reject atomically (0.088881ms)
+  ✔ Malformed JSON has bounded JSON protocol error (0.098655ms)
+  ✔ 64 KiB request cap returns JSON 413 (0.102822ms)
+  ✔ Unsupported media type returns 415 (0.092626ms)
+  ✔ Agent payload must be an object (0.087138ms)
+  ✔ Untrusted preflight is denied (0.107569ms)
+  ✔ Configured CORS is exact and varies by origin (0.157362ms)
+  ✔ Event payload size counts UTF-8 bytes (0.145154ms)
+  ✔ Events require an object envelope (0.134659ms)
+  ✔ Malformed pagination is rejected (0.137763ms)
+  ✔ Health remains healthy (0.059278ms)
+  ✔ Trusted preflight remains available (0.060159ms)
+  ✔ Capture and filtered query still round-trip (0.055442ms)
+  ✔ Mixed batch item receipts are preserved (0.054ms)
+  ✔ Unavailable agent does not report execution success (0.057715ms)
+  ✔ Unknown route remains JSON 404 (0.099878ms)
+✔ Live HTTP integrity and compatibility contract (169.641626ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 413.248898
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.

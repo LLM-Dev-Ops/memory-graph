@@ -1,0 +1,3 @@
+{"holdout":[{"name":"JSON __proto__ stays inert data","passed":true},{"name":"constructor.prototype stays inert data","passed":true},{"name":"inherited nested destination is not mutated","passed":true},{"name":"nested poison key does not escape its destination","passed":true}],"anchors":[{"name":"ordinary nested merge retains identity and values","passed":true},{"name":"scalar array and null semantics retained","passed":true},{"name":"multiple sources merge in order","passed":true}]}
+(node:275) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)

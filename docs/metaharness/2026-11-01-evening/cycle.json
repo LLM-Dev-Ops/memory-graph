@@ -1,0 +1,207 @@
+{
+  "date": "2026-11-01",
+  "status": "BLOCKED",
+  "repo": "LLM-Dev-Ops/memory-graph",
+  "pr": 3,
+  "baseline": "7aa7f5173c23e2de9f6ab25508feebb73845a68f",
+  "candidate": "b640b966b0a07af5d0dc5ffe8e77823743ec9a4b",
+  "main": "d9b9dc5eb7ac313eedc2831dce6af46641bfaaa7",
+  "merged": false,
+  "changes": [
+    "deepMerge only recurses into own object destinations; creates own data properties instead of invoking __proto__ setters",
+    "Four standard Jest security regressions; frozen standalone native TS utility probe",
+    "Pinned Linux Node24 SDK probe/build/test CI required by existing aggregate; no gates weakened"
+  ],
+  "metrics": {
+    "holdout": "0/4→4/4",
+    "anchors": "3/3 both",
+    "repeatedTrials": "3per revision same fractions",
+    "sdkBuild": "tsc5.9.3 exit0 both",
+    "sdkUtils": "55/55 both",
+    "securityJest": "4/4candidate",
+    "rootTests": "exit0both",
+    "fullSDKEarlierAttempt": "124passed38failed16skipped; validatorTS2339 suite failure; not final-head whole-suite approval",
+    "finalBoundedSDKUnit": "45s timeouts both, not passing",
+    "rootAudit": "3findings (1moderate2high) both",
+    "sdkAudit": "20s timeouts; no count claimed",
+    "Rust": "Primary cargo absent exit127; hosted final-head test/build/types pass, fmt/Clippy fail, audit incomplete",
+    "Ruflo": "Primary command absent exit127; remote executeUNAVAILABLE, guide/start/status timed out; no orchestration or offline learning claimed",
+    "MetaHarness": "0.4.2 static fit72, not compile proof",
+    "Darwin": "0.10.3 real-sandbox onegeneration/child/concurrency1/seed2026110120/risk0; flat0.985; NO_IMPROVEMENT",
+    "Flywheel": "0.1.12 LIVE actual checks, promotions0,safetyregressedtrue, replay8/8pass, gen0lineage, exact utils.ts inverse bytes and hashes"
+  },
+  "commands": {
+    "probe": "node scripts/probe-sdk-merge.mjs ROOT",
+    "sdkBuild": "npm run build (clients/typescript)",
+    "sdkUtils": "node node_modules/jest/bin/jest.js --runInBand --runTestsByPath tests/unit/utils.test.ts --json --outputFile=OUTPUT",
+    "sdkSecurity": "node node_modules/jest/bin/jest.js --runInBand --runTestsByPath tests/unit/utils-security.test.ts",
+    "meta": "/tmp/memory-eve-tools/node_modules/.bin/metaharness score /tmp/memory-eve-repo --json",
+    "darwin": "timeout --kill-after=5 60 /tmp/memory-eve-tools/node_modules/.bin/metaharness-darwin evolve . --generations 1 --children 1 --concurrency 1 --seed 2026110120 --risk-budget 0 --sandbox real --mutator deterministic",
+    "flywheel": "node scripts/evaluate-sdk-merge.mjs /tmp/memory-eve-baseline /tmp/memory-eve-repo /tmp/memory-eve-tools /tmp/memory-eve-evaluation.json"
+  },
+  "versions": {
+    "Node": "24.22.1",
+    "TypeScript": "5.9.3",
+    "MetaHarness": "0.4.2",
+    "Darwin": "0.10.3",
+    "Flywheel": "0.1.12",
+    "currentDocsRevision": "2f415bf47a7beb36f6a43c24e85a509acedf9ebb"
+  },
+  "coverage": {
+    "repositories": 58,
+    "openPRsBeforeCycle": 154,
+    "repoPagination": "58+0",
+    "PRPagination": "per-repository100/page until exhausted",
+    "detailed": [
+      "memory-graph",
+      "incident-manager screened"
+    ],
+    "deferred": [
+      "observatory",
+      "test-bench",
+      "latency-lens",
+      "sentinel",
+      "auto-optimizer",
+      "incident-manager",
+      "forge",
+      "edge-agent",
+      "shield",
+      "policy-engine",
+      "analytics-hub",
+      "governance-dashboard",
+      "cost-ops",
+      "schema-registry",
+      "connector-hub",
+      "marketplace",
+      "registry",
+      "orchestrator",
+      "config-manager",
+      "integrations",
+      "research-lab",
+      "copilot-agent",
+      "infra",
+      "ruvector-service",
+      "data-vault",
+      "simulator",
+      "intelligence-core",
+      "inference-gateway",
+      "benchmark-exchange",
+      "research-core",
+      "security-core",
+      "governance-core",
+      "agentics-platform",
+      "ecosystem-core",
+      "interface-core",
+      "data-core",
+      "agentics-deployment-intent",
+      "automation-core",
+      "agentics-diligence-artifacts",
+      "agentics-simulation-planner",
+      "agentics-simulation-runner",
+      "agentics-contracts",
+      "agentics-org-manifests",
+      "agentics-orchestration-engine",
+      "agentics-deployment-exporters",
+      "agentics-results-index",
+      "enterprise-roi-engine",
+      "erp-surface",
+      "agentics-cli",
+      "agentics-usage-ledger",
+      "agentics-execution-engine",
+      "RuVector",
+      "agentics-enforcement",
+      "agentics-evolution",
+      "agentics-cli-test",
+      "platform-agents",
+      "agentics-dream-machine"
+    ]
+  },
+  "CI": [
+    {
+      "id": 125042624229,
+      "name": "Rust audit",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624229"
+    },
+    {
+      "id": 125042624092,
+      "name": "Rust test",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624092"
+    },
+    {
+      "id": 125042624084,
+      "name": "Rust fmt",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624084"
+    },
+    {
+      "id": 125042624071,
+      "name": "Node quality",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624071"
+    },
+    {
+      "id": 125042624062,
+      "name": "Rust types",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624062"
+    },
+    {
+      "id": 125042624053,
+      "name": "Rust build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042624053"
+    },
+    {
+      "id": 125042623906,
+      "name": "Rust clippy",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042623906"
+    },
+    {
+      "id": 125042623784,
+      "name": "SDK merge security",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/LLM-Dev-Ops/memory-graph/actions/runs/41371457162/job/125042623784"
+    }
+  ],
+  "runtimeErrors": {
+    "exec": "error sending request for url http://127.0.0.1:21120/api/v1/desktop/exec (UNAVAILABLE)",
+    "guide": "MCP request timed out",
+    "start": "MCP request timed out",
+    "status": "unverified after wake attempt; initial desktop stopped/asleep",
+    "local": "cargo:command not found; ruflo unavailable"
+  },
+  "safety": {
+    "oneWriter": true,
+    "primaryClaimReleased": true,
+    "refUpdates": "expected_sha fast-forward only",
+    "conflicts": "none; main ancestor and GitHub mergeable",
+    "desktop": "Wake/restore unverified after tool timeouts; no remote tasks confirmed and no blind stop attempted",
+    "architecture": "Rust core/TypeScript/persistence/IAM unchanged except SDK utility; no new services, DB, deployment or paid provision",
+    "memory": "task_start/risk_check unscreened:true empty guidance; outcome accepted"
+  },
+  "limits": [
+    "Node24 probe transforms actual full utility module with identical erased-import normalization for baseline/candidate; not a tsc typecheck. Real tsc and Jest checks were executed separately.",
+    "No Rust headers/dependency environment inference; bootstrap could not execute because remote transport unavailable.",
+    "No mock execution, hash embeddings or unverified offline learning fallback.",
+    "Source SDK dependencies reused only after identical package-lock byte comparisons; Rust not executed locally.",
+    "No cost or latency optimization claim; measured timings diagnostic; missing and timeout checks fail closed."
+  ],
+  "rollback": "Restore clients/typescript/src/utils.ts exact frozen parent bytes retained in Flywheel inverse. New tests/CI additive; no production deployment or migration.",
+  "remaining": [
+    "Repair full SDK tests and real integration prerequisites; retain existing skips as unvalidated",
+    "Repair root production audit and Rust fmt/Clippy/audit",
+    "Recover ruOS transport, verify bootstrap and real Ruflo execution/offline384dim model flags; verify desktop state",
+    "Revalidate exact head and latest main and required approvals before merge"
+  ]
+}

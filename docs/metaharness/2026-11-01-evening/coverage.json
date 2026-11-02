@@ -1,0 +1,2547 @@
+[
+  {
+    "name": "memory-graph",
+    "main": "d9b9dc5eb7ac313eedc2831dce6af46641bfaaa7",
+    "ci": [
+      {
+        "id": 39700795986,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "874b40aa5b27a80733d0ad48c61ec3b949fbdbe9"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "498ece87acce7becbf8c5a0c7d23fa7d290839f4"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "bc47681399692f9e5f8e6830a9b161bfd885ee64"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "a73854e17c54fc9dcd574cffaacbb17b91ca74bf"
+      },
+      {
+        "name": "README.md",
+        "sha": "2a1ec9b5403dc4869f125996007e13f938634548"
+      },
+      {
+        "name": "package.json",
+        "sha": "1230fcb2ba6e66c4780442f45fd932449a2b3f72"
+      }
+    ],
+    "prs": [
+      {
+        "number": 3,
+        "head": "7876409fab034c441f828887c49c170d53aaf26c",
+        "branch": "metaharness/memory-graph-2026-10-16",
+        "updated": "2026-10-22T00:41:03Z"
+      }
+    ]
+  },
+  {
+    "name": "observatory",
+    "main": "020f9031a2f1272d55deef0d6c715650b6647150",
+    "ci": [
+      {
+        "id": 41309386364,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "865da29b1ac5dad82ae12d806f12836cc53e200b"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "498ece87acce7becbf8c5a0c7d23fa7d290839f4"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "8a7ea6dfe3466dc84302b3da1cbd1ede64f9cd0a"
+      },
+      {
+        "name": "README.md",
+        "sha": "5e7ad08027b9ffd5b92dc18abd6466e1e7ad1406"
+      },
+      {
+        "name": "package.json",
+        "sha": "e9d91116c9d30266869b296b268ad3aa37811790"
+      }
+    ],
+    "prs": [
+      {
+        "number": 11,
+        "head": "e3215c48dd37c322e33629e9091f8f4cf9382513",
+        "branch": "metaharness/observatory-input-validation-2026-10-12",
+        "updated": "2026-11-01T13:12:05Z"
+      },
+      {
+        "number": 9,
+        "head": "dec9eca5812ba18d0dcea540d2324e360a47503e",
+        "branch": "dependabot/docker/services/analytics-api/rust-1.93-slim-bookworm",
+        "updated": "2026-01-26T03:14:32Z"
+      },
+      {
+        "number": 7,
+        "head": "d9e4c8ee9a80599dfa0328482c84993c5e1ba1ec",
+        "branch": "dependabot/github_actions/actions/checkout-6",
+        "updated": "2025-12-29T03:24:58Z"
+      },
+      {
+        "number": 5,
+        "head": "905067b61259fc8f4a8ddbb4571910ac007b887d",
+        "branch": "dependabot/github_actions/codecov/codecov-action-5",
+        "updated": "2025-12-08T03:26:43Z"
+      },
+      {
+        "number": 4,
+        "head": "5b9c5478c47a26235e6aadcf83c67ec1a513265d",
+        "branch": "dependabot/github_actions/github/codeql-action-4",
+        "updated": "2025-12-08T03:26:43Z"
+      },
+      {
+        "number": 3,
+        "head": "a297880321bf89ff3c74104dd2644dff6e2167df",
+        "branch": "dependabot/github_actions/actions/download-artifact-6",
+        "updated": "2025-12-08T03:26:43Z"
+      },
+      {
+        "number": 2,
+        "head": "5b3d59c225f12ddbf1f6e40372cb529dd986b33e",
+        "branch": "dependabot/github_actions/azure/setup-kubectl-4",
+        "updated": "2025-12-08T03:26:43Z"
+      }
+    ]
+  },
+  {
+    "name": "test-bench",
+    "main": "4d58c46426fe085d25fef3fcb35fa5e2cce83b30",
+    "ci": [
+      {
+        "id": 40977254266,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "535a4f48eef15c2959898a53c13ce20cf1700095"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "498ece87acce7becbf8c5a0c7d23fa7d290839f4"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "ecc69bb8139b9e71930f4a0eb8a184c13b4f88a7"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "1a04f0ae36fe3c56cb239152d55ba3e9bd5814c0"
+      },
+      {
+        "name": "README.md",
+        "sha": "20bfd6e4a13b7c0e03ccb9dfb4bff525cb0653d1"
+      },
+      {
+        "name": "package.json",
+        "sha": "f5797ef54278dee0721830e1ada70bd67fec1879"
+      }
+    ],
+    "prs": [
+      {
+        "number": 24,
+        "head": "ca4e93dbe8fb8f9e81ebc0c97cafc34deaf5a4cb",
+        "branch": "metaharness/test-bench-cli-discovery-2026-10-10",
+        "updated": "2026-10-30T00:17:24Z"
+      },
+      {
+        "number": 23,
+        "head": "efd7dfec6453ebd250e6abf44b84ace8841b044d",
+        "branch": "dependabot/npm_and_yarn/ajv-8.18.0",
+        "updated": "2026-02-21T04:44:05Z"
+      },
+      {
+        "number": 21,
+        "head": "d72fbc1576f414bf0be1843ee9c700ef6ddb032f",
+        "branch": "dependabot/npm_and_yarn/yaml-2.8.2",
+        "updated": "2026-01-19T01:19:26Z"
+      },
+      {
+        "number": 19,
+        "head": "e1a92c290245fdece1ee405ce56fbd22f5f7d87f",
+        "branch": "dependabot/npm_and_yarn/linting-a1f4f38f5f",
+        "updated": "2026-02-23T09:37:42Z"
+      },
+      {
+        "number": 18,
+        "head": "1992779317b4d9e265f5d91aae18cf6c1cb32705",
+        "branch": "dependabot/github_actions/actions/checkout-6",
+        "updated": "2025-12-29T09:31:21Z"
+      },
+      {
+        "number": 17,
+        "head": "3696dcbe88b2228c1db4603b0dab704bd7669449",
+        "branch": "dependabot/npm_and_yarn/glob-10.5.0",
+        "updated": "2025-12-29T09:31:21Z"
+      },
+      {
+        "number": 16,
+        "head": "9394e959b5b7f5e3ecfe2bef18d297e8f623d0ab",
+        "branch": "dependabot/npm_and_yarn/build-962cbc3817",
+        "updated": "2026-02-23T09:37:34Z"
+      },
+      {
+        "number": 15,
+        "head": "1afdd2b742ec394455d3607e0cb621fa7789461b",
+        "branch": "dependabot/npm_and_yarn/typescript-2700eca835",
+        "updated": "2026-02-23T09:37:52Z"
+      },
+      {
+        "number": 13,
+        "head": "69363f6ee0c637ae3a8b8aaff5b0e29abdeb46f4",
+        "branch": "dependabot/npm_and_yarn/typescript-eslint/eslint-plugin-tw-6.21.0",
+        "updated": "2025-11-04T17:57:34Z"
+      },
+      {
+        "number": 12,
+        "head": "3dff73d169cc8067e3614e20a6ce0906ff8abfbd",
+        "branch": "dependabot/npm_and_yarn/lint-staged-tw-15.5.2",
+        "updated": "2025-11-04T17:57:34Z"
+      },
+      {
+        "number": 11,
+        "head": "770fdc7e2cc1f4d3bf65581b3364ad234b7881e3",
+        "branch": "dependabot/npm_and_yarn/typescript-eslint/parser-tw-6.21.0",
+        "updated": "2025-11-04T17:57:31Z"
+      },
+      {
+        "number": 10,
+        "head": "7655134401fab456cd126984662839146ffd790f",
+        "branch": "dependabot/npm_and_yarn/openai-tw-4.104.0",
+        "updated": "2025-11-04T17:57:32Z"
+      },
+      {
+        "number": 5,
+        "head": "d0d3b52cb0252d9c1a42098d6835762497a50999",
+        "branch": "dependabot/github_actions/actions/setup-node-6",
+        "updated": "2025-12-08T10:36:59Z"
+      },
+      {
+        "number": 4,
+        "head": "f199ef6e2f191219fabee51d9eecedfd55fce8a2",
+        "branch": "dependabot/github_actions/docker/build-push-action-6",
+        "updated": "2025-12-08T10:36:59Z"
+      },
+      {
+        "number": 3,
+        "head": "b52b962ee01ef954d6135615e0806e2445498e5c",
+        "branch": "dependabot/github_actions/actions/upload-artifact-5",
+        "updated": "2025-12-08T10:36:59Z"
+      },
+      {
+        "number": 2,
+        "head": "48e32848e3f97e9d82abafa38cd76e5e02a38737",
+        "branch": "dependabot/github_actions/github/codeql-action-4",
+        "updated": "2025-12-08T10:36:59Z"
+      }
+    ]
+  },
+  {
+    "name": "latency-lens",
+    "main": "8370e90fa788959a0b80e3f9c4140422f3eccd69",
+    "ci": [
+      {
+        "id": 41229025110,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "740cc342dc8dfa2b67fc2ade2464a5f81907bcbd"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "9ecabfb15d12e57d4afde3a61b2edf9dea5b6a08"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "ebf225a633fbd2cdaf9ad5989e55d1ec60aae084"
+      },
+      {
+        "name": "README.md",
+        "sha": "13405348b689ed1686707da26db766b2de85b4cf"
+      },
+      {
+        "name": "package.json",
+        "sha": "8bfa146265c055ebf43e3824d624a329ceb5408e"
+      }
+    ],
+    "prs": [
+      {
+        "number": 26,
+        "head": "b6f9afcf239a97855a995b65caca4a8f3b73bf39",
+        "branch": "metaharness/latency-order-20261031",
+        "updated": "2026-10-31T18:23:06Z"
+      },
+      {
+        "number": 25,
+        "head": "5886c58a866c120c84a1c29f0433b2b76600ed13",
+        "branch": "dependabot/docker/rust-1.93-slim-bookworm",
+        "updated": "2026-01-26T09:53:49Z"
+      },
+      {
+        "number": 24,
+        "head": "c2d181e36cc7dc02cc99766dce4bf5b817cce7cf",
+        "branch": "dependabot/cargo/clap_complete-4.5.62",
+        "updated": "2026-01-25T05:19:16Z"
+      },
+      {
+        "number": 23,
+        "head": "04c13e2f19f6fe5179cadeae690d5d88a24c11bb",
+        "branch": "dependabot/cargo/http-694c32ea1c",
+        "updated": "2026-02-23T09:37:29Z"
+      },
+      {
+        "number": 21,
+        "head": "ea8a15eb987f18e59f8d448f0bf48c2ef0891e7e",
+        "branch": "dependabot/cargo/observability-7aa51c3566",
+        "updated": "2026-02-23T09:38:10Z"
+      },
+      {
+        "number": 18,
+        "head": "7e5f9115672c444371ec0d0815a5018accac71a7",
+        "branch": "dependabot/cargo/bytes-1.11.0",
+        "updated": "2025-12-29T09:32:11Z"
+      },
+      {
+        "number": 17,
+        "head": "40c5e1d3942d1eb43ca61e7c75ac5b2a2273be36",
+        "branch": "dependabot/cargo/governor-0.10.2",
+        "updated": "2025-12-29T09:32:10Z"
+      },
+      {
+        "number": 16,
+        "head": "c8b6a431a5f340505a2093083abf4e02887c7297",
+        "branch": "dependabot/cargo/indicatif-0.18.3",
+        "updated": "2025-12-29T09:32:11Z"
+      },
+      {
+        "number": 15,
+        "head": "cdf5fba1ad608b4b0d5e333d27e20303b0c7153e",
+        "branch": "dependabot/cargo/config-0.15.19",
+        "updated": "2025-12-29T09:32:10Z"
+      },
+      {
+        "number": 14,
+        "head": "e17d6b4787a7b2c8302fae6b37cd540bbeaf2578",
+        "branch": "dependabot/cargo/criterion-0.7.0",
+        "updated": "2025-12-08T10:32:39Z"
+      },
+      {
+        "number": 13,
+        "head": "9324102432e64666ac038d6557ab5891231d73ab",
+        "branch": "dependabot/cargo/console-0.16.1",
+        "updated": "2025-12-08T10:32:39Z"
+      },
+      {
+        "number": 12,
+        "head": "d14516a0b09b59e0cf4a02cc66c007cdc722384a",
+        "branch": "dependabot/cargo/tabled-0.20.0",
+        "updated": "2025-12-08T10:32:39Z"
+      },
+      {
+        "number": 6,
+        "head": "4c163d0ccde808400eda16d85744675f5006dc54",
+        "branch": "dependabot/github_actions/docker/build-push-action-6",
+        "updated": "2025-12-08T10:32:42Z"
+      },
+      {
+        "number": 5,
+        "head": "6ceb56bb4b516227f9c7b7b584ae946021e4ea2a",
+        "branch": "dependabot/github_actions/github/codeql-action-4",
+        "updated": "2025-12-08T10:32:42Z"
+      },
+      {
+        "number": 4,
+        "head": "a672a0ef75c92594fd608b4dc70d9c69b5d663ec",
+        "branch": "dependabot/github_actions/slackapi/slack-github-action-2.1.1",
+        "updated": "2025-12-08T10:32:42Z"
+      },
+      {
+        "number": 3,
+        "head": "bc7952b948d9ba9580368c73b2d8c9e70cd2b780",
+        "branch": "dependabot/github_actions/actions/download-artifact-6",
+        "updated": "2025-12-08T10:32:42Z"
+      },
+      {
+        "number": 2,
+        "head": "c0c1d747c19b5ceecc240460111edcc3246c797a",
+        "branch": "dependabot/github_actions/slsa-framework/slsa-github-generator/dot-github/workflows/generator_generic_slsa3.yml-2.1.0",
+        "updated": "2025-12-08T10:32:42Z"
+      }
+    ]
+  },
+  {
+    "name": "sentinel",
+    "main": "504b0ea466620ffacfd7ea19993d5a62b71babdd",
+    "ci": [
+      {
+        "id": 41200027017,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "4ea893d5901d339d2968f17022e8edb61d25cd93"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "06954d5ad7214af5d7f77f648b70e04c6a10e961"
+      },
+      {
+        "name": "README.md",
+        "sha": "2fd8c16d4d9033a00dd74369fc0b6de8de7900e7"
+      },
+      {
+        "name": "package.json",
+        "sha": "6e8bffc3488518d9f8844afa36fed61ecd49c99e"
+      }
+    ],
+    "prs": [
+      {
+        "number": 22,
+        "head": "510a128bc9792d420776a60d435ca151dc54f534",
+        "branch": "metaharness/sentinel-http-boundary-2026-10-13",
+        "updated": "2026-10-31T12:15:54Z"
+      },
+      {
+        "number": 21,
+        "head": "af6ca0c2161a411073b97bfe209244c4d54ce079",
+        "branch": "dependabot/docker/rust-1.93-slim-bookworm",
+        "updated": "2026-01-26T09:53:24Z"
+      },
+      {
+        "number": 19,
+        "head": "dd899114e8997204405a9ff3ebee26d414ec6eeb",
+        "branch": "dependabot/cargo/metrics-exporter-prometheus-0.18",
+        "updated": "2025-12-29T09:31:44Z"
+      },
+      {
+        "number": 18,
+        "head": "e41c82a66b7a11862456e0c549297c20cb3ceaaa",
+        "branch": "dependabot/github_actions/actions/checkout-6",
+        "updated": "2025-12-29T09:31:44Z"
+      },
+      {
+        "number": 17,
+        "head": "f1b6cb02f271e1cb9f26528880daaf292b4977c5",
+        "branch": "dependabot/cargo/nalgebra-0.34",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 16,
+        "head": "e99586ff18bb9e7bff1d7052b1c391d89be17ab8",
+        "branch": "dependabot/cargo/validator-0.20",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 15,
+        "head": "1d7bd08c53ef756d46aa490e619aa2cae953fcd7",
+        "branch": "dependabot/cargo/prost-0.14",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 14,
+        "head": "85ddbca75155dcc2227f4bb31e71085c864933ff",
+        "branch": "dependabot/cargo/ndarray-0.17",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 13,
+        "head": "33ed88554c01477f20e43db4d085272c9234eb9b",
+        "branch": "dependabot/cargo/statrs-0.18",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 12,
+        "head": "6747c44ca199f8dda2e4c40b97ca10642a6f8a81",
+        "branch": "dependabot/cargo/rdkafka-0.38",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 11,
+        "head": "0a71af3da501b701b38fa1bea74c151060d5aefe",
+        "branch": "dependabot/cargo/axum-0.8",
+        "updated": "2025-12-06T20:57:09Z"
+      },
+      {
+        "number": 9,
+        "head": "d09db45a4607bcbd66d398e3a45e2bf72a4fd274",
+        "branch": "dependabot/cargo/lapin-3.7",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 8,
+        "head": "0a6f4e48b07a17a0d53cf30117eeb2b7463fba68",
+        "branch": "dependabot/cargo/tonic-build-0.14",
+        "updated": "2025-12-15T09:45:18Z"
+      },
+      {
+        "number": 7,
+        "head": "4bf59c572d5a178f9b8d6abaf5785d419d615f13",
+        "branch": "dependabot/github_actions/github/codeql-action-4",
+        "updated": "2025-12-08T10:31:48Z"
+      },
+      {
+        "number": 6,
+        "head": "3999aea57ad7367f4ca8e066cbd87c514ca74742",
+        "branch": "dependabot/github_actions/actions/upload-artifact-5",
+        "updated": "2025-12-08T10:31:48Z"
+      },
+      {
+        "number": 5,
+        "head": "3dfc8733ab0ee6fcca1a6fef7d08a93b17a353fd",
+        "branch": "dependabot/github_actions/codecov/codecov-action-5",
+        "updated": "2025-12-08T10:31:48Z"
+      },
+      {
+        "number": 4,
+        "head": "43f808c0adc6ecf8e2e6f7d0a983a289675016b2",
+        "branch": "dependabot/github_actions/EmbarkStudios/cargo-deny-action-2",
+        "updated": "2025-12-08T10:31:48Z"
+      },
+      {
+        "number": 2,
+        "head": "20dede1e52a61a5d41a0d48f0089a85e75ed3172",
+        "branch": "dependabot/github_actions/azure/setup-kubectl-4",
+        "updated": "2025-12-08T10:31:48Z"
+      }
+    ]
+  },
+  {
+    "name": "auto-optimizer",
+    "main": "114865b4c3beb78b9fbeacbfc19ef93ab4501f97",
+    "ci": [
+      {
+        "id": 41104457046,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "24aacb8d63a3131cc5a0ec9dc22af64c9e18f0c8"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "7e10afc48dd2b7fe9af64b95d2d29a8c478ec835"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "4cc8559dcccbfeb62397e4698856a01d19c22f89"
+      },
+      {
+        "name": "README.md",
+        "sha": "14b3983bed5a3c90103d79a898e24333d0867f83"
+      },
+      {
+        "name": "package.json",
+        "sha": "35a0c22264fe8142b9b46b34d0a14f7545a48ae6"
+      }
+    ],
+    "prs": [
+      {
+        "number": 3,
+        "head": "09c1e49539760a526510a7986e8929f6d0253782",
+        "branch": "metaharness/auto-optimizer-webhook-security-20261014",
+        "updated": "2026-10-30T18:26:22Z"
+      }
+    ]
+  },
+  {
+    "name": "incident-manager",
+    "main": "bcb8c8d027997c3363a9fd0ebd0ddc9c086227c6",
+    "ci": [
+      {
+        "id": 39251827387,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "8ddbfce6da05d60b11832220dc635075ff58180d"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "b2a221d2830e8b80c924c0ff67fb2c0df84de383"
+      },
+      {
+        "name": "README.md",
+        "sha": "b7497ec15903167d5d8095b11dae8a93ed819c94"
+      },
+      {
+        "name": "package.json",
+        "sha": "604cc641bcb99d198021d13ce4b443b1707b1dac"
+      }
+    ],
+    "prs": [
+      {
+        "number": 2,
+        "head": "f11f9c7396b6ce9ad37c9e76c6597ac4444fe2d6",
+        "branch": "metaharness/incident-manager-2026-10-10",
+        "updated": "2026-10-19T12:24:32Z"
+      }
+    ]
+  },
+  {
+    "name": "forge",
+    "main": "4b5e43618b8fd1b8f63bddd24ff524510d9514bc",
+    "ci": [
+      {
+        "id": 41267847571,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "610a8f48c2240f2d034d47a96b865d25bffe1944"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "498ece87acce7becbf8c5a0c7d23fa7d290839f4"
+      },
+      {
+        "name": "README.md",
+        "sha": "d06972d7b892ac0ba7e6da8cb5c0003af2e3a146"
+      },
+      {
+        "name": "package.json",
+        "sha": "e10b8e5dea4e53fe841b95d7221a614cd662e306"
+      }
+    ],
+    "prs": [
+      {
+        "number": 105,
+        "head": "d210aaf8d2c0cd716ad3878ce7566dbc4a207f3c",
+        "branch": "dependabot/npm_and_yarn/production-dependencies-21c80c92da",
+        "updated": "2026-10-26T09:24:19Z"
+      },
+      {
+        "number": 104,
+        "head": "246bce5b2d731498faf3487939a0eb4a79b64495",
+        "branch": "dependabot/npm_and_yarn/development-dependencies-c437ce97a2",
+        "updated": "2026-10-26T09:19:51Z"
+      },
+      {
+        "number": 103,
+        "head": "a829cd744c1db002d78848bbd1067bb8e54ce258",
+        "branch": "metaharness/forge-security-recovery-20261013",
+        "updated": "2026-10-30T18:55:29Z"
+      }
+    ]
+  },
+  {
+    "name": "edge-agent",
+    "main": "483c8a353855d8d54a1b1dee181f12376b5f592a",
+    "ci": [
+      {
+        "id": 39420882577,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "86147268e22a5aca0bfb9a24e76baecd5abf0eda"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "e69eb7e1d691a4241823bb3ee665aae19d62783a"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "60a5e43ebc1399e99835e90d704db5d77c8b322c"
+      },
+      {
+        "name": "README.md",
+        "sha": "4fb337cce01792ddac7146926682fdfe6e6079d6"
+      },
+      {
+        "name": "package.json",
+        "sha": "19f55612c47872ef32642b2c27b04a313508ec40"
+      }
+    ],
+    "prs": [
+      {
+        "number": 1,
+        "head": "c07db02705cea0460454481603953cc036f5fea3",
+        "branch": "metaharness/edge-agent-cors-security-20261014",
+        "updated": "2026-10-20T12:27:09Z"
+      }
+    ]
+  },
+  {
+    "name": "shield",
+    "main": "1c46282495b94bb1fcae2d9e63cf34f495226699",
+    "ci": [
+      {
+        "id": 40929886361,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "f6db93cb4475219f44066e3cc07d1ae5f3ecee37"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "e90967774fe55c2308c5573a15d5ba97618c8534"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "ff1433e14cb85606f00124baeda64646804ac61a"
+      },
+      {
+        "name": "README.md",
+        "sha": "2c1ddc8e1d80a0f5d4809f71a7366983642758f8"
+      },
+      {
+        "name": "package.json",
+        "sha": "fd7b063e3bdd9e8e95f7dacfe8534659245c486b"
+      }
+    ],
+    "prs": [
+      {
+        "number": 3,
+        "head": "f0c74aec78b0df4e4760562dfcfb12c8abc4368a",
+        "branch": "metaharness/shield-security-hardening-2026-10-12",
+        "updated": "2026-10-29T18:24:38Z"
+      }
+    ]
+  },
+  {
+    "name": "policy-engine",
+    "main": "c44b699eadc6b8dbbd26fa35d7cf82d61275979b",
+    "ci": [],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "76cc533c1b3f8793bf376b043d080fcf763f2692"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "3c4bd0987024d70be2958278da6bfbc99ee28e62"
+      },
+      {
+        "name": "README.md",
+        "sha": "feb46e6809b7cf1ee469edf98ee2333bf1156a1a"
+      },
+      {
+        "name": "package.json",
+        "sha": "758e356920ada0d076dfb4ea8df02c1dfc523949"
+      }
+    ],
+    "prs": [
+      {
+        "number": 1,
+        "head": "343deaf5a4ac031b5b8e5cf4a6c964ec2dd62e77",
+        "branch": "metaharness/policy-engine-jwt-20261021",
+        "updated": "2026-10-21T18:41:54Z"
+      }
+    ]
+  },
+  {
+    "name": "analytics-hub",
+    "main": "88f4ffa94afd4a14ec94c9b4b3dc723badc7fac1",
+    "ci": [
+      {
+        "id": 39299741002,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "1084cf58ceb79789fd9ab5a01a3b2e78c18e2688"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "354f36e29b5b07dcd2a7f383d7754b48af0256e6"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "e2d0f8ce62e934210b43132bbd9a9621197508a4"
+      },
+      {
+        "name": "README.md",
+        "sha": "68d5609278d58ae45224dc296fc6f8efc0ff0dac"
+      },
+      {
+        "name": "package.json",
+        "sha": "004c721bbf44ea58b644588e2bf9ce2927b2be34"
+      }
+    ],
+    "prs": [
+      {
+        "number": 2,
+        "head": "4b4e48f056ef7f886573063e56f57e8b3db7d166",
+        "branch": "metaharness/analytics-auth-hardening-2026-10-11",
+        "updated": "2026-10-19T18:09:27Z"
+      }
+    ]
+  },
+  {
+    "name": "governance-dashboard",
+    "main": "53047917da900f397a5045cfc7ddf5e32e735872",
+    "ci": [
+      {
+        "id": 40872801077,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "2dcbf2ed60a9b0d26edd61c924b402175f31d9e7"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "57b0224faf1d7883ca3cb016653bd895061893ff"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "f2f42e2358ad5bdcb2ddc4fe3d0830c84df6cbda"
+      },
+      {
+        "name": "README.md",
+        "sha": "07192e6869e3b502f2c889611fa84f7ca13b820d"
+      },
+      {
+        "name": "package.json",
+        "sha": "9e0659084c93a39237e76c07894157c2bf8f72d2"
+      }
+    ],
+    "prs": [
+      {
+        "number": 9,
+        "head": "477bc172c94d7852a4fb4d5f0a5cf1d7f0085a4a",
+        "branch": "metaharness/governance-dashboard-20261026",
+        "updated": "2026-10-29T18:21:02Z"
+      }
+    ]
+  },
+  {
+    "name": "cost-ops",
+    "main": "aef76ae9c264b888abc60aace3dd6948f2422906",
+    "ci": [
+      {
+        "id": 41365487053,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "22726994050dc152a73fa30a7194ebc3a99111e0"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "07bd0221a27abca308ef65f644b715fc38e728e8"
+      },
+      {
+        "name": "README.md",
+        "sha": "e67aff9735c0f60e159ee7defcba12ddcab91e6a"
+      },
+      {
+        "name": "package.json",
+        "sha": "7f01a7a4b96bfc83ff6f52341069b5d7ddcc6cf9"
+      }
+    ],
+    "prs": [
+      {
+        "number": 111,
+        "head": "3871153deff5da3ed6ad27c9052df383223c14e3",
+        "branch": "metaharness/cost-package-compat-20261020",
+        "updated": "2026-10-21T01:18:52Z"
+      },
+      {
+        "number": 110,
+        "head": "5ab8326781cd913e7effc1162416f2ae2f12fff5",
+        "branch": "dependabot/cargo/brotli-9.0",
+        "updated": "2026-10-19T13:08:25Z"
+      },
+      {
+        "number": 109,
+        "head": "f9a81266322869307968551de0c222ca352b2ef4",
+        "branch": "dependabot/cargo/redis-1.7",
+        "updated": "2026-10-19T13:08:10Z"
+      },
+      {
+        "number": 108,
+        "head": "60c6d78646271a19a3a15f92ef51822e1dcd80e7",
+        "branch": "dependabot/cargo/cron-0.17",
+        "updated": "2026-10-19T13:08:02Z"
+      },
+      {
+        "number": 107,
+        "head": "ed0582f3a036d51079865e2c00470445b5a190ab",
+        "branch": "dependabot/cargo/jsonwebtoken-11.1",
+        "updated": "2026-10-19T13:07:48Z"
+      },
+      {
+        "number": 106,
+        "head": "8a02872f99ba2d328e2ac9c086085ca810b3833f",
+        "branch": "dependabot/cargo/toml-1.1",
+        "updated": "2026-10-19T13:07:42Z"
+      },
+      {
+        "number": 105,
+        "head": "ca60d8a31fa9e44d1968f9acdc602d4bf0f6ce5e",
+        "branch": "dependabot/cargo/sha2-0.11",
+        "updated": "2026-10-19T13:07:32Z"
+      },
+      {
+        "number": 104,
+        "head": "9d4e07e55ed8da1beab351abfed155d3c25931f2",
+        "branch": "dependabot/cargo/thiserror-2.0",
+        "updated": "2026-10-19T13:07:21Z"
+      },
+      {
+        "number": 103,
+        "head": "9f976bf8acd204180bdbe03d5f4b2edeef6de0aa",
+        "branch": "dependabot/cargo/config-0.15",
+        "updated": "2026-10-19T13:06:26Z"
+      },
+      {
+        "number": 102,
+        "head": "775180f8bcb6a9c0480b901cb825c26e3721c8a9",
+        "branch": "dependabot/cargo/constant_time_eq-0.6",
+        "updated": "2026-10-19T13:06:13Z"
+      },
+      {
+        "number": 101,
+        "head": "15d02877b51840b590bb3229b91198d67dc22695",
+        "branch": "dependabot/cargo/rust_xlsxwriter-0.99",
+        "updated": "2026-10-19T13:06:06Z"
+      },
+      {
+        "number": 100,
+        "head": "f7efaa6b44938c33f87452fcdc448e15c393e210",
+        "branch": "dependabot/github_actions/madrapps/jacoco-report-1.8",
+        "updated": "2026-10-05T16:27:28Z"
+      },
+      {
+        "number": 99,
+        "head": "94c3f32f17e060b0cf8923653951f1b22541422f",
+        "branch": "dependabot/github_actions/nwtgck/actions-netlify-4.0",
+        "updated": "2026-10-05T16:25:41Z"
+      },
+      {
+        "number": 98,
+        "head": "e477fd221bfaf28f44d44e2d640575e92c0dd8e1",
+        "branch": "dependabot/github_actions/actions/labeler-7",
+        "updated": "2026-10-05T16:25:19Z"
+      },
+      {
+        "number": 97,
+        "head": "1dca8dd1354342ffbf9629debdd13bbb2bfcbc6e",
+        "branch": "dependabot/github_actions/peter-evans/create-pull-request-8",
+        "updated": "2026-10-05T16:25:04Z"
+      }
+    ]
+  },
+  {
+    "name": "schema-registry",
+    "main": "d0d89f267c32a2d31b622ad112836435c2534f39",
+    "ci": [
+      {
+        "id": 40791599725,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "203e0d32be761745aa39e9f6048b5666175ae14c"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "977303b4ed60147788e8b51c58ae516720fa47be"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "3316f791e6e9cb43df1a4b54485e8957b744c5df"
+      },
+      {
+        "name": "README.md",
+        "sha": "529ab7bf8efe701c7924d4a1ac13b5ef05144f1e"
+      },
+      {
+        "name": "package.json",
+        "sha": "d8541f705dad71be13a3e617057cf92c62b1bf4f"
+      }
+    ],
+    "prs": [
+      {
+        "number": 3,
+        "head": "711a2ffaa68f5fb7375712a30571374ad5554dfc",
+        "branch": "metaharness/request-boundary-2026-10-22",
+        "updated": "2026-10-29T00:09:26Z"
+      }
+    ]
+  },
+  {
+    "name": "connector-hub",
+    "main": "b25fcb3bd9a06ae9e7d73c7acd677607123d081d",
+    "ci": [
+      {
+        "id": 39474930381,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "ce1124a784abd8bd3f5870adefb9414f17dabb31"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "5d4b662ab52479ea0d388ddffadbaa45ba033069"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "0634e7da35f83160a2884d88d3f773e035473d24"
+      },
+      {
+        "name": "README.md",
+        "sha": "3bd32e3ffb93104bda2997509396f2d04a47d0a2"
+      },
+      {
+        "name": "package.json",
+        "sha": "921e297bece1fca026ca4312332c5cd2b2a76b10"
+      }
+    ],
+    "prs": [
+      {
+        "number": 2,
+        "head": "7ac8863570764c4ebb15611e13b8a04fabc5b27d",
+        "branch": "metaharness/connector-oauth-20261020",
+        "updated": "2026-10-20T18:34:06Z"
+      }
+    ]
+  },
+  {
+    "name": "marketplace",
+    "main": "70071f0eda8e8bf76574488f74779ed7f1229b47",
+    "ci": [
+      {
+        "id": 30302618197,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "dd5a9e9f1aea13cb8108bed3337cfc52394bad04"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "2477e5232b6ea2112dba71b7c4ffd64c678d6125"
+      },
+      {
+        "name": "README.md",
+        "sha": "c76208c3774c95e1248184996083e16fe59a1e0e"
+      },
+      {
+        "name": "package.json",
+        "sha": "84d131054a237b566c6a4c361d8e11d4fc3df73e"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "registry",
+    "main": "ddede4cd93b0da9f003b2d90f91e33066877cae4",
+    "ci": [
+      {
+        "id": 40742658904,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "a5cd94193af1fe6869c0dc3eca0fd4ae12558819"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "a3e5b5fd1c107ed8daa14383a494633fd56f236b"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "e9379a55800bf09cee7712d985f8938abc4af27b"
+      },
+      {
+        "name": "README.md",
+        "sha": "59170865788143f01310bb143842801a475687e0"
+      },
+      {
+        "name": "package.json",
+        "sha": "3575ceb4def3824a6a54351706f34fd567439aea"
+      }
+    ],
+    "prs": [
+      {
+        "number": 2,
+        "head": "b0e7b2cab83c55b050a73982ed87020b69531239",
+        "branch": "metaharness/registry-determinism-20261028",
+        "updated": "2026-10-28T18:15:27Z"
+      }
+    ]
+  },
+  {
+    "name": "orchestrator",
+    "main": "24b373c41cbac1d946fda31b7c86a5ff26037375",
+    "ci": [
+      {
+        "id": 41255710542,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "aed1c94c615548d07a6ae35fb1878b10779d1ff6"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "7c23829cb64f4d0383afa30273a95777515b73c3"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "f0ab5d7993129b8bdb7b55bcc62d6cdce459f8e2"
+      },
+      {
+        "name": "README.md",
+        "sha": "06a0f86adc43fa3f36ce22feb62c99e5cc66d1ad"
+      },
+      {
+        "name": "package.json",
+        "sha": "6ef357b4fe534ddd04d9230f79f928b3b5b04012"
+      }
+    ],
+    "prs": [
+      {
+        "number": 4,
+        "head": "1383a7fd8cdd7a987c78143984011785fc246063",
+        "branch": "metaharness/proxy-response-20261031",
+        "updated": "2026-11-01T00:25:34Z"
+      }
+    ]
+  },
+  {
+    "name": "config-manager",
+    "main": "85667ace35b905fdd4acf79f2db06c64e4738969",
+    "ci": [
+      {
+        "id": 41340813485,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "0dafc1ad144187b6611bde31c563eaea525f134c"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "ff54caa3bad8ffc4535ab984aa0da0d78383a62b"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "480de0d469cb4d1d7935e6d4f0f82ee1a9c248f7"
+      },
+      {
+        "name": "README.md",
+        "sha": "e2f905d192287b64d858b765189b50a3ab36142c"
+      },
+      {
+        "name": "package.json",
+        "sha": "c20ec90fd4f96b139d56846e9c435ccd0d383e03"
+      }
+    ],
+    "prs": [
+      {
+        "number": 4,
+        "head": "0753f8d7f4b69c6611c30f55af35ffff8be1e887",
+        "branch": "metaharness/config-depth-20261101",
+        "updated": "2026-11-01T19:23:17Z"
+      }
+    ]
+  },
+  {
+    "name": "integrations",
+    "main": "42bbcbaa9c7401dbaa1bb18fa8956c5ba837b8e2",
+    "ci": [
+      {
+        "id": 40192958928,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "b872b03e3ea6ac86df396b7987f2bfc83f0342fe"
+      },
+      {
+        "name": "README.md",
+        "sha": "869d56afd71f5609fdb437e3f1ffa81bd6fd2727"
+      },
+      {
+        "name": "package.json",
+        "sha": "97bbefba91b7682d7a586bd45e48f31f215e5f21"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "research-lab",
+    "main": "83c4850c04d6243c1f700ec4a6a0e406a7d7198a",
+    "ci": [
+      {
+        "id": 38920009861,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "1d55a7d13a4c3b5af20e0d09124c44982dfe2d01"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "3374dc17879143b21d91c4c13f2f353a1a108d91"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "96cafa2b9e880831dac38909fb653547f0fbeb2c"
+      },
+      {
+        "name": "README.md",
+        "sha": "99b8c89140a8c01b4f9002829d88891fbadb9bc0"
+      },
+      {
+        "name": "package.json",
+        "sha": "91f24aa97284d442eb2058bb9926652183e8c15e"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "copilot-agent",
+    "main": "756402a87e39419efa90a2accfe34b46083af945",
+    "ci": [
+      {
+        "id": 40146472545,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "18699fbeeb2b3a3d3e7885e9f7287fcbd9584db5"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "049ef1517ce1c3aa610b3310013a88bdaf7446e8"
+      },
+      {
+        "name": "README.md",
+        "sha": "d4a9a89c6b5e7a68ebca99520c949d64d1a086ca"
+      },
+      {
+        "name": "package.json",
+        "sha": "8bfa146265c055ebf43e3824d624a329ceb5408e"
+      }
+    ],
+    "prs": [
+      {
+        "number": 4,
+        "head": "89060ed6324433628b9a9c90c1e93b9dabca5847",
+        "branch": "metaharness/copilot-agent-boundary-2026-10-25",
+        "updated": "2026-10-25T00:24:11Z"
+      }
+    ]
+  },
+  {
+    "name": "infra",
+    "main": "a8bc89c190f63b139812f30a54e21a25b8f70e81",
+    "ci": [],
+    "root": [
+      {
+        "name": "Cargo.lock",
+        "sha": "cfb2a6666fdcd60cbde18c1367c610c76a975a4b"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "fdd34bc53d5a09e027fc7993af62469e99d04f78"
+      },
+      {
+        "name": "README.md",
+        "sha": "a7f289da929598c892cebb60b02e2b3a1b9e1e43"
+      },
+      {
+        "name": "package.json",
+        "sha": "b84679abdc3ae33c0139db0b710d7c4bb77fdba4"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "ruvector-service",
+    "main": "e3a56d6c4c42f61fec8afb9da01939578e39ffa4",
+    "ci": [
+      {
+        "id": 39834456701,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "e07fea77560dc27235c846100220b3b2f0fee65b"
+      },
+      {
+        "name": "README.md",
+        "sha": "f166f8c76b11a2e0f7541fb247cc4b458d99f1b9"
+      },
+      {
+        "name": "package.json",
+        "sha": "f5839bd22fb4e6dd6953d7a0139ec7ba62dac570"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "data-vault",
+    "main": "01c0240871f03f0cbc0f497bff47360940bcb637",
+    "ci": [
+      {
+        "id": 40120910116,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "87d1950b03572cb10ac94a06251571448fb7b9d5"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "498ece87acce7becbf8c5a0c7d23fa7d290839f4"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "106bb187689917cf64380674ab6d8d65dc71284f"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "014c9c1793959f84f201ed56e10d465b86f76d5e"
+      },
+      {
+        "name": "README.md",
+        "sha": "77761c51cb93786873d9422d5c700fb754f768d3"
+      },
+      {
+        "name": "package.json",
+        "sha": "911d90579b247dafab4c3afa76e84ae08d6e5fcc"
+      }
+    ],
+    "prs": [
+      {
+        "number": 2,
+        "head": "e3f668e433d823297110a933ee1a2fa1e7bce00c",
+        "branch": "metaharness/data-vault-error-boundary-2026-10-24",
+        "updated": "2026-10-24T18:29:06Z"
+      }
+    ]
+  },
+  {
+    "name": "simulator",
+    "main": "96091398ad2cb1189774d2581fb26c2bebe1abd9",
+    "ci": [
+      {
+        "id": 41053458717,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "6d064efde5c7547b602cc016ddcae3c2ce936431"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "d26145f9a1d5559bb702c49f93c298130499420f"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "9cc6d2e3d5d535b72ab4b5e90d2eae1d73c7aff3"
+      },
+      {
+        "name": "README.md",
+        "sha": "4af6bcf801db6f82c32ba03a85f64bd4e5dfff9a"
+      },
+      {
+        "name": "package.json",
+        "sha": "6e156d345a0b8697a6bd0f82cd54c943bb27d69d"
+      }
+    ],
+    "prs": [
+      {
+        "number": 1,
+        "head": "d445f436adbe3d30c4c5afee4ddf0f341f962521",
+        "branch": "metaharness/cors-supply-chain-2026-10-09",
+        "updated": "2026-10-30T12:21:32Z"
+      }
+    ]
+  },
+  {
+    "name": "intelligence-core",
+    "main": "2da20a031c6d02cc99bd3dc86da450791f0f37e7",
+    "ci": [
+      {
+        "id": 40043422062,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "52923784fea18dc33f83d9364f55b087ab36ea15"
+      },
+      {
+        "name": "README.md",
+        "sha": "82913cf85dac97ff5784721c46ea2e4cfe6cc314"
+      },
+      {
+        "name": "package.json",
+        "sha": "36d8081f78134d75b4d1539d6d1804106ec64423"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "inference-gateway",
+    "main": "a07a604dc14a3eeb2b9a07e85e9c41212156de9a",
+    "ci": [
+      {
+        "id": 41148111280,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": "Cargo.lock",
+        "sha": "f74ae42ad0106a80526e7e342477c0d81ce34c70"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "1e7130031cac51fd1de51a45088ee4607f834528"
+      },
+      {
+        "name": "README.md",
+        "sha": "3c6242225c212520bd72a976f804f268a3b37325"
+      },
+      {
+        "name": "package.json",
+        "sha": "99f3e11d2944208f1893b41cba788c5822ffea9b"
+      }
+    ],
+    "prs": [
+      {
+        "number": 1,
+        "head": "f38eb7ac12477dbb3ccbcda18fefe8ae87de93f7",
+        "branch": "metaharness/inference-gateway-2026-10-10",
+        "updated": "2026-10-31T00:19:14Z"
+      }
+    ]
+  },
+  {
+    "name": "benchmark-exchange",
+    "main": "09236748843306e9cc5f33cd91b0c9182c7b18e1",
+    "ci": [
+      {
+        "id": 40001910662,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "edc90a617ac98a89ca3e3ea51ddc46aef3258f7f"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "37cbf10f8d2c31cb87618ca78f0298d8c51508aa"
+      },
+      {
+        "name": "README.md",
+        "sha": "6d72d1da56681fd1c4be042dd28aa923f2300b56"
+      },
+      {
+        "name": "package.json",
+        "sha": "4f7ed9dcde7b4afd1310751c1673c582e1976880"
+      }
+    ],
+    "prs": [
+      {
+        "number": 3,
+        "head": "3fe6e55248a66bf7200da417936a22e0e8604f95",
+        "branch": "metaharness/benchmark-exchange-boundary-2026-10-23",
+        "updated": "2026-10-23T18:16:08Z"
+      }
+    ]
+  },
+  {
+    "name": "research-core",
+    "main": "9853244c59179d7a8e5742814d226b2f979c3bde",
+    "ci": [
+      {
+        "id": 39961105735,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "5800a61309415ad62bb7e62a226ee99993ce8eaa"
+      },
+      {
+        "name": "README.md",
+        "sha": "3e2bdafe69f548fb399b3e1af9c61204c90f81a3"
+      },
+      {
+        "name": "package.json",
+        "sha": "32dcdaea551ea034aa2e858e6e0c754e242daff7"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "security-core",
+    "main": "6b07fd1e61363ba981986927355bc8c2e2810e6b",
+    "ci": [
+      {
+        "id": 40093103835,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "021caf29c3bf418fdc49e8859133e6e61632ec86"
+      },
+      {
+        "name": "README.md",
+        "sha": "3ccf72d03f4020615a9cd8125f4824984381f032"
+      },
+      {
+        "name": "package.json",
+        "sha": "5b98274809b32e6b8036344ec39da734c4b6fc31"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "governance-core",
+    "main": "7dc3b493ccfd9568b278d9f7a2bde351769b30d3",
+    "ci": [
+      {
+        "id": 40323345327,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "2176ee40afb710a28f78759a290f489ae7328bba"
+      },
+      {
+        "name": "README.md",
+        "sha": "d9becf14471643a2d39d4b4f8631b686a9849efc"
+      },
+      {
+        "name": "package.json",
+        "sha": "a3ce47150d7e201594bed930b108fe18c6fe48bc"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-platform",
+    "main": "9b3fa8d3faeda67230e953355eee1ab87112fcaf",
+    "ci": [
+      {
+        "id": 30359780578,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "5a532df2fca83dfa8c67a8f008b59b16d096c63b"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "cd07d15b812a2cb77b20782f9cf0dc7849ab4757"
+      },
+      {
+        "name": "package.json",
+        "sha": "edd200ccb4021207663a2475e156c18536f7fb98"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "ecosystem-core",
+    "main": "2066fb4be1cc72031e19c71040e017310ab4dbae",
+    "ci": [
+      {
+        "id": 40376240205,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "c1efdfd359b85f819495105608016942a4581a9e"
+      },
+      {
+        "name": "README.md",
+        "sha": "c069616b871d8cc15f2e2d8b75199e645ac29298"
+      },
+      {
+        "name": "package.json",
+        "sha": "3318f25bec99b196f21f6aa3903b2a332b341892"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "interface-core",
+    "main": "ccdaa69b8b8e1adede067848841a26df024a4e44",
+    "ci": [
+      {
+        "id": 40248800026,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "9f2d515a269288a61cb0288a212d00401d9d6781"
+      },
+      {
+        "name": "README.md",
+        "sha": "a8b2614edc2ffc51f7116d007304cc89d6795f98"
+      },
+      {
+        "name": "package.json",
+        "sha": "a3cb48a8426ef89f0184e55700461b02f5f5e1c2"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "data-core",
+    "main": "d8a4d82b3918f2cf8aaf5fe003b5c351f184a9a9",
+    "ci": [
+      {
+        "id": 38734205492,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "6874c54b658b9b59f2a0993f4956a58827122a93"
+      },
+      {
+        "name": "README.md",
+        "sha": "cb8c85770124798fc5a274a53b73c6d6d7ff60ed"
+      },
+      {
+        "name": "package.json",
+        "sha": "f12aaf81c69ad33f7a2d05d931c7b10bc99cb51f"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-deployment-intent",
+    "main": "95111d9f55c7aba9c392b2eab08540b3a67e1d51",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "fac19ae42bd9a7fb46d9c13248d0568ad43c109f"
+      },
+      {
+        "name": "package.json",
+        "sha": "c176d0b16791b73ea33b6cb7be1b312b98b79914"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "automation-core",
+    "main": "3f1b6f7dc755756305527e3672fd91c95acfb8b0",
+    "ci": [
+      {
+        "id": 40220720108,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "8d3648f059c13ee5f743e6e8f5e87b8f61481f14"
+      },
+      {
+        "name": "README.md",
+        "sha": "7ad99028c057ebfab5d5048536a6cf26f814cca0"
+      },
+      {
+        "name": "package.json",
+        "sha": "e11b342b0ff705d8712707cb17dff5369e34e5a4"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-diligence-artifacts",
+    "main": "131b0aaa8d316655d7d860bc9ffa38fea4767447",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "9b5243291496c883eac257612765ebfc459a1847"
+      },
+      {
+        "name": "README.md",
+        "sha": "d0c5b7944be671ffc3fa14515dfa092c45e44bbd"
+      },
+      {
+        "name": "package.json",
+        "sha": "cc6766a467635b12b73e51443211078d1f66a053"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-simulation-planner",
+    "main": "144a6c41b8532cfc0ae8bffe7e2f1676cb5068fe",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "4146ec0097774e2017bce97f4cad0388a009ab24"
+      },
+      {
+        "name": "package.json",
+        "sha": "d48b23e726c3c8257d7b44c4dba1f221bd9070a4"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-simulation-runner",
+    "main": "ead6a0f0b2f0af389c1cae6dc7b001ecfe7a90f8",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "aa03f1f63d64ccbe746d15f65e30220707bbcc11"
+      },
+      {
+        "name": "package.json",
+        "sha": "3c4c2770e2e86696b672482d306f1d39794ce6bf"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-contracts",
+    "main": "716a33348721f78a7a14bd98e6717e3b40470730",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "104c24eecfc2b83dcf21c44922c2c57f818b3169"
+      },
+      {
+        "name": "package.json",
+        "sha": "ac77c588a0c8c0351d9a0e4f3854f0947b9a6df8"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-org-manifests",
+    "main": "a52b61eea0e6b60883e436c982abc55bb9030edd",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "f6954400a75cf35abffce7364a2329c3614e3ec9"
+      },
+      {
+        "name": "package.json",
+        "sha": "1cb9a91d682a619e205b37a82630a447e47d0d66"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-orchestration-engine",
+    "main": "a365c1a6f954041aefef67678fc3fe1b0b4eba7d",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "114680f38c303712bd4113eed2c10d974e374fbc"
+      },
+      {
+        "name": "package.json",
+        "sha": "0840c78ebd4c8ec12130851d115a59e01f637195"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-deployment-exporters",
+    "main": "ea60a265f6fb9a89e0b2012ed7d0441cb6637168",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "0bced0e00e8abc6db5d71f6c3ba0a211717db120"
+      },
+      {
+        "name": "package.json",
+        "sha": "e0e1a207d1a65c0ea2f3fb667f65eb2d5ad725fa"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-results-index",
+    "main": "876cd8cf38eb9e5687c92b73e8d3b8ac7e34e57c",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "e13a73de1f33496d02b79785fb3b0e03c97bd57b"
+      },
+      {
+        "name": "package.json",
+        "sha": "378f5583b371a1909be30846bfc7f5cf2aa2418b"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "enterprise-roi-engine",
+    "main": "1f4d33cc057740f9f96e75e6c11b0dfd44cd35e7",
+    "ci": [
+      {
+        "id": 40558898975,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "b0aa49163e0ab30a813a5c909a81a64b6bca7b3d"
+      },
+      {
+        "name": "package.json",
+        "sha": "d1eaf10197cf6923ef8e250636b7affa2a16d6e2"
+      }
+    ],
+    "prs": [
+      {
+        "number": 1,
+        "head": "16f585c28c48fc42004ae2a05ba44fe01649de09",
+        "branch": "metaharness/roi-boundary-20261027",
+        "updated": "2026-10-27T18:21:34Z"
+      }
+    ]
+  },
+  {
+    "name": "erp-surface",
+    "main": "188099d51ff1f1d4af944401d5fef18666317643",
+    "ci": [
+      {
+        "id": 22001663894,
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "0ea2532e438713a5d4ae89cd467b3ea3c43b4106"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "523aeebef5ba7ca94c8f5de8b0f34a9d5f5d8119"
+      },
+      {
+        "name": "README.md",
+        "sha": "74f089a3bdee3b809513f20148cc16245a3580fd"
+      },
+      {
+        "name": "package.json",
+        "sha": "dcf1e178c555835d7cf47063c3652ef6d2f6ebbb"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-cli",
+    "main": "a6fa67a40fe3d08d51ff2c66d0f96e43a89ff9a6",
+    "ci": [
+      {
+        "id": 28767269473,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "7ba777be6887bc4cb0f66a3afe624bdd2265a757"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "f823f66d8b639c414aa7a170f988718c92d6fa21"
+      },
+      {
+        "name": "README.md",
+        "sha": "05a9028ffede5f96a067b2ea86557f2995ad0225"
+      },
+      {
+        "name": "package.json",
+        "sha": "23a2787213ac85552c348250e39ea26065e2d91a"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-usage-ledger",
+    "main": "dbd63a6ae35a45f889170fc2ca3e611907506c45",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "ba51603203d1b35a815982b6ebeb07df78a442f9"
+      },
+      {
+        "name": "README.md",
+        "sha": "d1beaf774d0ebb57ea4286b9c1f549778562924e"
+      },
+      {
+        "name": "package.json",
+        "sha": "5e76a3cc9e2f0ad4e86491b2522f485585b85dd5"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-execution-engine",
+    "main": "accaf090c78cb0dfe439c771b2ecba868cdfbeac",
+    "ci": [],
+    "root": [
+      {
+        "name": "CLAUDE.md",
+        "sha": "27c6e8f7141d7f56ad9ea40a6f8a9780bda61549"
+      },
+      {
+        "name": "README.md",
+        "sha": "2d19cf471dbdd7bd4314be5da863ba8f4f244e46"
+      },
+      {
+        "name": "package.json",
+        "sha": "75a4fa0b809d8418a6f25f86f18a34276dbb0251"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "RuVector",
+    "main": "9e12078ae2af74d0613ae604266cf22fb1113b10",
+    "ci": [],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "8c3106fadc9c3a501d953620e80afd3456709c29"
+      },
+      {
+        "name": "CLAUDE.md",
+        "sha": "0785a567c24755b624beeb33767f351f67c8f25d"
+      },
+      {
+        "name": "Cargo.lock",
+        "sha": "721693aed7e2bbaf72b7979bd0c67a5777f558d0"
+      },
+      {
+        "name": "Cargo.toml",
+        "sha": "52e7ea8c0ef208c29225f265ded74d76941e5a18"
+      },
+      {
+        "name": "README.md",
+        "sha": "3591b17a554daf730734993416636da57dcb426a"
+      },
+      {
+        "name": "package.json",
+        "sha": "657720d1af7178e004fdcbdf570ec3eaaa8c94e2"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-enforcement",
+    "main": "45277702166465be82fe2fa255aaa0dec0893994",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "fde0c1c8728c274579cfb52e3b5ab4bff01abfa2"
+      },
+      {
+        "name": "package.json",
+        "sha": "0e3feebf39da21f657a96d134460d83ab817d72d"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-evolution",
+    "main": "855c0b2e9a53ade5ab2f06d4185b7c3c8fff0369",
+    "ci": [
+      {
+        "id": 31585157853,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "204b2b958e97dd0595502cd740499461f58537c9"
+      },
+      {
+        "name": "AGENTS.md",
+        "sha": "75347e9a650afaf95429c808473feb4529b4d157"
+      },
+      {
+        "name": "README.md",
+        "sha": "5a3b42722b0684c01f6318f7f832e5ca70a32120"
+      },
+      {
+        "name": "package.json",
+        "sha": "4c4e096e25a9043e9c3f3b4775bd53df417f659a"
+      }
+    ],
+    "prs": [
+      {
+        "number": 27,
+        "head": "e1d5f3236b4c938e1febb9cdd8ab0c2d4b1655d0",
+        "branch": "prompt/06-private-ruvector-brain",
+        "updated": "2026-08-12T09:56:03Z"
+      }
+    ]
+  },
+  {
+    "name": "agentics-cli-test",
+    "main": "fb73fe95db97bd35cfe378291004f09f2929675d",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "58fb969e72d167ecf11d4cdd889ec026fad8c187"
+      },
+      {
+        "name": "package.json",
+        "sha": "99a67f6068678f23b662baa2e14f3126b93e68e3"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "platform-agents",
+    "main": "94fbbc82db9cc10f66093df428560ef01aa2b322",
+    "ci": [],
+    "root": [
+      {
+        "name": "README.md",
+        "sha": "337f786dbc9856ba97f24399dd49181dd360a74e"
+      },
+      {
+        "name": "package.json",
+        "sha": "7c78ee56549cb496db8de7e99cb91bd654db7e17"
+      }
+    ],
+    "prs": []
+  },
+  {
+    "name": "agentics-dream-machine",
+    "main": "2fba2550182d81b36423447221823e98e227482a",
+    "ci": [
+      {
+        "id": 41292633976,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "root": [
+      {
+        "name": ".github",
+        "sha": "2addeccedd7311f0222eb8dbca96723025f8878f"
+      },
+      {
+        "name": "README.md",
+        "sha": "db0a6f0064eda5b85719198609c37cf4bb7292c2"
+      },
+      {
+        "name": "package.json",
+        "sha": "eb48c81d080d161bdb61b8fd99f35ae785eaa7c0"
+      }
+    ],
+    "prs": [
+      {
+        "number": 111,
+        "head": "8ff887d3dcbc9ba7740412c24ca69f48c364f358",
+        "branch": "dream/2026-11-01-evaluation-adapters",
+        "updated": "2026-11-01T09:19:58Z"
+      },
+      {
+        "number": 109,
+        "head": "5548eb0225c86424bae027dde32a3507e899b27b",
+        "branch": "dream/2026-10-31-ledger-signals",
+        "updated": "2026-10-31T09:18:51Z"
+      },
+      {
+        "number": 107,
+        "head": "8de03c06452d7f70c011c745b69bc3a3ad83c55c",
+        "branch": "dream/2026-10-30-compiler-parity",
+        "updated": "2026-10-30T09:14:19Z"
+      },
+      {
+        "number": 105,
+        "head": "d6e2f884ba4395c452c6728f910b8087f3f2f33d",
+        "branch": "dream/2026-10-29-developer-experience",
+        "updated": "2026-10-29T09:19:06Z"
+      },
+      {
+        "number": 103,
+        "head": "8c4feb2060d2765f9c5b91111f857fc4141d841f",
+        "branch": "dream/2026-10-28-security-adversarial",
+        "updated": "2026-10-28T09:19:46Z"
+      },
+      {
+        "number": 101,
+        "head": "5ba55823a2d2327eadc8d05fe8ef9a1dc4ec2218",
+        "branch": "dream/2026-10-27-evaluation-adapters",
+        "updated": "2026-10-27T09:19:58Z"
+      },
+      {
+        "number": 99,
+        "head": "0c4de8e921156f9f382102156680e86fd09d27ea",
+        "branch": "dream/2026-10-26-ledger-signals",
+        "updated": "2026-10-26T09:21:13Z"
+      },
+      {
+        "number": 97,
+        "head": "89bdc067013287b1c65b32ad4706c12ea9b94636",
+        "branch": "dream/2026-10-25-compiler-parity",
+        "updated": "2026-10-25T09:21:29Z"
+      },
+      {
+        "number": 95,
+        "head": "593b408f3dea15959a02a1cb5b9d7d9628ec2d27",
+        "branch": "dream/2026-10-24-developer-experience",
+        "updated": "2026-10-24T09:17:18Z"
+      },
+      {
+        "number": 93,
+        "head": "e7efbe2d3b9a7c54cc4a6e7bb57471a92aa4111e",
+        "branch": "dream/2026-10-23-security-adversarial",
+        "updated": "2026-10-23T09:16:37Z"
+      },
+      {
+        "number": 91,
+        "head": "ceff2a35195a1264eba7a4131da506fc485928c6",
+        "branch": "dream/2026-10-22-security-adversarial",
+        "updated": "2026-10-22T09:19:00Z"
+      },
+      {
+        "number": 89,
+        "head": "2304450a606a95a83fc0dbcf2fab829bdc054b60",
+        "branch": "dream/2026-10-21-ledger-signals",
+        "updated": "2026-10-21T09:23:45Z"
+      },
+      {
+        "number": 87,
+        "head": "57aedefedf2e7de3877a8a2e7d01df2f4f7afa3e",
+        "branch": "dream/2026-10-20-compiler-parity",
+        "updated": "2026-10-20T09:18:53Z"
+      },
+      {
+        "number": 85,
+        "head": "9cd4a7ee2c83dc37b33950ce94dd3df8d654371c",
+        "branch": "dream/2026-10-19-developer-experience",
+        "updated": "2026-10-19T09:14:56Z"
+      },
+      {
+        "number": 83,
+        "head": "8e116361aeb3079bb9c55d6d4d6855a5c5891bad",
+        "branch": "dream/2026-10-18-security-adversarial",
+        "updated": "2026-10-18T09:18:05Z"
+      },
+      {
+        "number": 81,
+        "head": "26c1bbdb3f8792a04acdb8c310a1d36eb0635621",
+        "branch": "dream/2026-10-17-evaluation-adapters",
+        "updated": "2026-10-17T09:27:55Z"
+      },
+      {
+        "number": 79,
+        "head": "c39085ea3210c857cf0c8256754e7399067c0e53",
+        "branch": "dream/2026-10-16-ledger-signals",
+        "updated": "2026-10-16T09:28:36Z"
+      },
+      {
+        "number": 76,
+        "head": "53d4b7ea7597decb27d3254f12e56724ba2b5ae3",
+        "branch": "dream/2026-10-15-compiler-parity",
+        "updated": "2026-10-15T10:18:25Z"
+      },
+      {
+        "number": 75,
+        "head": "84fd71ebc4c8deffd260a0e5e81dfbd2e2a3a95b",
+        "branch": "dream/2026-10-14-developer-experience",
+        "updated": "2026-10-14T09:25:01Z"
+      },
+      {
+        "number": 73,
+        "head": "fcb8129a84b382402d06a1907cbe6ec39295b645",
+        "branch": "dream/2026-10-13-security-adversarial",
+        "updated": "2026-10-13T09:21:28Z"
+      },
+      {
+        "number": 71,
+        "head": "f5208532e05962ce6dbed9b413997276fbca13a3",
+        "branch": "dream/2026-10-12-evaluation-adapters",
+        "updated": "2026-10-12T09:24:13Z"
+      },
+      {
+        "number": 69,
+        "head": "6e7467a74a71886dc740e3ef6ba2ba1f1ea093b4",
+        "branch": "dream/2026-10-11-ledger-signals",
+        "updated": "2026-10-11T09:25:53Z"
+      },
+      {
+        "number": 67,
+        "head": "29fb4c570d1399f919e163d616d4e64f584124b3",
+        "branch": "dream/2026-10-10-compiler-parity",
+        "updated": "2026-10-10T18:21:02Z"
+      },
+      {
+        "number": 65,
+        "head": "792412a91861cb070a6821b33b4208a15a79c02d",
+        "branch": "dream/2026-10-09-developer-experience",
+        "updated": "2026-10-09T09:22:11Z"
+      },
+      {
+        "number": 63,
+        "head": "67a9aedd482d9c36deccd74a9c6b9c876d7b9357",
+        "branch": "dream/2026-10-08-security-adversarial",
+        "updated": "2026-10-08T09:22:19Z"
+      },
+      {
+        "number": 61,
+        "head": "a9071c45113b9ad72d9c046aedb64d26f1b95689",
+        "branch": "dream/2026-10-07-evaluation-adapters",
+        "updated": "2026-10-07T09:24:20Z"
+      },
+      {
+        "number": 58,
+        "head": "dbd897d744c57a251032f3a46c94efef23865de1",
+        "branch": "dream/2026-10-06-ledger-signals",
+        "updated": "2026-10-06T09:27:47Z"
+      },
+      {
+        "number": 57,
+        "head": "d008846b708f3a26a904ee8a11148a5c4b49a2eb",
+        "branch": "dream/2026-10-05-compiler-parity",
+        "updated": "2026-10-05T09:23:35Z"
+      },
+      {
+        "number": 55,
+        "head": "33cb36382e5b23c9be4d471abd6817d4e8270deb",
+        "branch": "dream/2026-10-04-developer-experience",
+        "updated": "2026-10-04T09:21:39Z"
+      },
+      {
+        "number": 53,
+        "head": "c7cf2e70d920b4a6b4b5b24efb0c26c58ccdba61",
+        "branch": "dream/2026-10-01-evaluation-adapters",
+        "updated": "2026-10-01T09:17:57Z"
+      },
+      {
+        "number": 51,
+        "head": "3f7163c36e2ca56f2eba7c073cefcf513f9f0a79",
+        "branch": "dream/2026-09-30-compiler-parity",
+        "updated": "2026-09-30T09:25:28Z"
+      },
+      {
+        "number": 49,
+        "head": "fdd865fdc828fec3104f750caff26542d5790106",
+        "branch": "dream/2026-09-29-developer-experience",
+        "updated": "2026-09-29T09:16:33Z"
+      },
+      {
+        "number": 47,
+        "head": "23b6e883b5d5412e472aa2b7baafff2493b07fac",
+        "branch": "dream/2026-09-28-security-adversarial",
+        "updated": "2026-09-28T09:15:13Z"
+      },
+      {
+        "number": 45,
+        "head": "6d99e21b50905b27d1fb4ef0cf78287decf70396",
+        "branch": "dream/2026-09-27-evaluation-adapters",
+        "updated": "2026-09-27T09:21:01Z"
+      },
+      {
+        "number": 43,
+        "head": "2e5a0ec95cd5e14c5a8f580516be5f86b63fd4b2",
+        "branch": "dream/2026-09-26-ledger-signals-audit",
+        "updated": "2026-09-26T09:35:45Z"
+      },
+      {
+        "number": 41,
+        "head": "27bcc0f041b43041564609c27e3811bd6c7c9277",
+        "branch": "dream/2026-09-25-compiler-parity",
+        "updated": "2026-09-25T09:20:15Z"
+      },
+      {
+        "number": 39,
+        "head": "ad835db2f3a164f45cdcba5ace9b45698acf8018",
+        "branch": "dream/2026-09-24-developer-experience",
+        "updated": "2026-09-24T09:18:16Z"
+      },
+      {
+        "number": 37,
+        "head": "7207c0e9d8a15c654fc694076f10641ac3a82d92",
+        "branch": "dream/2026-09-23-developer-experience",
+        "updated": "2026-09-23T09:19:45Z"
+      },
+      {
+        "number": 35,
+        "head": "f6a143d804ce25d6016f505cddb77f4281c1a805",
+        "branch": "dream/2026-09-22-evaluation-adapters",
+        "updated": "2026-09-22T09:22:25Z"
+      },
+      {
+        "number": 33,
+        "head": "6f706e5adb2514c03cb5026ea87b8fecd9a1784e",
+        "branch": "dream/2026-09-21-ledger-signals",
+        "updated": "2026-09-21T09:26:38Z"
+      },
+      {
+        "number": 31,
+        "head": "eda473dd25615de0ee3488334b13c287df8bd33a",
+        "branch": "dream/2026-09-20-compiler-parity",
+        "updated": "2026-09-20T09:19:15Z"
+      },
+      {
+        "number": 30,
+        "head": "06761bdba9b4746f643fa7be55eb2178a03a8761",
+        "branch": "dream/2026-09-19-developer-experience",
+        "updated": "2026-09-19T09:29:15Z"
+      },
+      {
+        "number": 28,
+        "head": "40692acc12c068a7e7b48cc10d41eb7963d08c1b",
+        "branch": "dream/2026-09-18-security-adversarial",
+        "updated": "2026-09-18T09:21:49Z"
+      },
+      {
+        "number": 26,
+        "head": "655c24f0d46d7edab4fa2b7688202a26463cf458",
+        "branch": "dream/2026-09-17-evaluation-adapters",
+        "updated": "2026-09-17T09:18:33Z"
+      },
+      {
+        "number": 24,
+        "head": "8915bdba6a5d63f3cf82f68b93aae26509ed8ca7",
+        "branch": "dream/2026-09-16-ledger-signals",
+        "updated": "2026-09-16T09:17:25Z"
+      },
+      {
+        "number": 23,
+        "head": "0953415c3d13079570a59b214c75c85d22e5278e",
+        "branch": "dream/2026-09-15-compiler-parity",
+        "updated": "2026-09-19T12:51:29Z"
+      },
+      {
+        "number": 22,
+        "head": "bc4dd3158c66011e720c62a716293b76372f4978",
+        "branch": "dream/2026-09-14-developer-experience",
+        "updated": "2026-09-14T09:18:48Z"
+      },
+      {
+        "number": 20,
+        "head": "ecdf8759ae12f797c6f3f17bcfaf87b46ccee63e",
+        "branch": "dream/2026-09-13-security-adversarial",
+        "updated": "2026-09-13T09:25:54Z"
+      },
+      {
+        "number": 18,
+        "head": "b827b70ad6f049ef629508a946b5b4425af8f394",
+        "branch": "dream/2026-09-12-evaluation-adapters",
+        "updated": "2026-10-15T09:20:43Z"
+      },
+      {
+        "number": 16,
+        "head": "55a0893c1aabd8461f6c0b5e4734ad4a3feebb83",
+        "branch": "dream/2026-09-11-ledger-signals",
+        "updated": "2026-09-11T09:27:18Z"
+      },
+      {
+        "number": 14,
+        "head": "3c322eeaaffaa2aba3cb65a7ed6f7eb330678d18",
+        "branch": "dream/2026-09-10-compiler-parity",
+        "updated": "2026-09-10T09:18:30Z"
+      },
+      {
+        "number": 12,
+        "head": "dc7f8804861df66ef22e85581b8279b66c67d4fc",
+        "branch": "dream/2026-09-09-developer-experience",
+        "updated": "2026-09-09T09:23:41Z"
+      },
+      {
+        "number": 6,
+        "head": "b1021c7097df63f24bc6157ba9f6b096aa5c2420",
+        "branch": "dependabot/github_actions/actions/checkout-7",
+        "updated": "2026-09-03T20:38:18Z"
+      },
+      {
+        "number": 5,
+        "head": "3f3b36dd5d7c65ac795f085613b1f4463fb3f0c8",
+        "branch": "dependabot/github_actions/actions/setup-node-7",
+        "updated": "2026-09-03T20:38:14Z"
+      },
+      {
+        "number": 4,
+        "head": "ed94cd5b362954ff2bc6ed9aed19fca1c6927833",
+        "branch": "dependabot/github_actions/actions/configure-pages-6",
+        "updated": "2026-09-03T20:38:07Z"
+      },
+      {
+        "number": 3,
+        "head": "fb9f37683f1e06b6ac13c3e9a77f211bc18c73d9",
+        "branch": "dependabot/github_actions/actions/upload-pages-artifact-5",
+        "updated": "2026-09-03T20:38:04Z"
+      },
+      {
+        "number": 2,
+        "head": "e520845badf8a5a9df2d7ed6d1b4ceb18f2265f2",
+        "branch": "dependabot/github_actions/github/codeql-action-4",
+        "updated": "2026-09-03T20:38:00Z"
+      },
+      {
+        "number": 1,
+        "head": "070c8403bc4ac466b388f8bed03d14e2720c63eb",
+        "branch": "dependabot/npm_and_yarn/dev-dependencies-bd256a1f29",
+        "updated": "2026-10-29T18:15:38Z"
+      }
+    ]
+  }
+]

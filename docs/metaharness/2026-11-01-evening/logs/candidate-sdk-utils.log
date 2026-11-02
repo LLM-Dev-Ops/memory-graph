@@ -1,0 +1,97 @@
+PASS tests/unit/utils.test.ts
+  sleep
+    ✓ should wait for specified time (9 ms)
+  debounce
+    ✓ should debounce function calls (4 ms)
+    ✓ should reset timer on new calls (2 ms)
+  throttle
+    ✓ should throttle function calls (1 ms)
+  Time utilities
+    formatTimestamp
+      ✓ should format date to ISO string (3 ms)
+    parseTimestamp
+      ✓ should parse ISO string to Date (1 ms)
+    timeDiff
+      ✓ should calculate time difference
+      ✓ should use current time if end not provided (1 ms)
+    formatDuration
+      ✓ should format milliseconds
+      ✓ should format seconds (1 ms)
+      ✓ should format minutes
+      ✓ should format hours (1 ms)
+  calculateTokenUsage
+    ✓ should aggregate token usage
+    ✓ should handle empty array (1 ms)
+  Type guards
+    isPromptNode
+      ✓ should return true for prompt nodes
+      ✓ should return false for non-prompt nodes
+    isResponseNode
+      ✓ should return true for response nodes
+      ✓ should return false for non-response nodes
+    isToolInvocationNode
+      ✓ should return true for tool invocation nodes (1 ms)
+      ✓ should return false for non-tool nodes
+  Filter functions
+    filterNodesByType
+      ✓ should filter nodes by type (1 ms)
+    filterEdgesByType
+      ✓ should filter edges by type
+  groupNodesBySession
+    ✓ should group nodes by session ID
+    ✓ should skip non-prompt nodes (1 ms)
+  Sort functions
+    sortNodesByTime
+      ✓ should sort nodes ascending by default (2 ms)
+      ✓ should sort nodes descending when specified (1 ms)
+    sortEdgesByTime
+      ✓ should sort edges by time
+  chunk
+    ✓ should chunk array into smaller arrays (1 ms)
+    ✓ should handle array smaller than chunk size
+    ✓ should handle empty array
+  batchProcess
+    ✓ should process items in batches (1 ms)
+    ✓ should delay between batches (2 ms)
+  retryWithBackoff
+    ✓ should succeed on first attempt
+    ✓ should retry on failure (1 ms)
+  withTimeout
+    ✓ should resolve if promise completes in time
+    ✓ should reject on timeout (27 ms)
+  deepClone
+    ✓ should deep clone object (1 ms)
+  deepMerge
+    ✓ should merge objects deeply (1 ms)
+    ✓ should handle multiple sources (1 ms)
+    ✓ should overwrite arrays
+  toQueryString
+    ✓ should convert object to query string
+    ✓ should skip undefined and null values
+    ✓ should encode special characters (3 ms)
+  generateId
+    ✓ should generate unique IDs
+    ✓ should generate string IDs (1 ms)
+  JSON utilities
+    safeJsonParse
+      ✓ should parse valid JSON
+      ✓ should return fallback on invalid JSON
+    safeJsonStringify
+      ✓ should stringify valid objects
+      ✓ should return fallback on circular references
+  isEmpty
+    ✓ should return true for empty values (1 ms)
+    ✓ should return false for non-empty values (1 ms)
+  omit
+    ✓ should omit specified keys (1 ms)
+    ✓ should not modify original object
+  pick
+    ✓ should pick specified keys
+    ✓ should handle missing keys (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       55 passed, 55 total
+Snapshots:   0 total
+Time:        1.899 s
+Ran all test suites within paths "tests/unit/utils.test.ts".
+Test results written to: ../../../memory-eve-evaluation.json.candidate-utils.json

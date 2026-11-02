@@ -1,0 +1,113 @@
+FAIL tests/unit/validators.test.ts
+  ● Test suite failed to run
+
+    [96mtests/unit/validators.test.ts[0m:[93m498[0m:[93m44[0m - [91merror[0m[90m TS2339: [0mProperty 'USES_TOOL' does not exist on type 'typeof EdgeType'.
+
+    [7m498[0m     expect(() => validateEdgeType(EdgeType.USES_TOOL)).not.toThrow();
+    [7m   [0m [91m                                           ~~~~~~~~~[0m
+
+FAIL tests/unit/errors.test.ts
+  MemoryGraphError
+    ✓ should create error with all properties (3 ms)
+    ✓ should capture stack trace (11 ms)
+    ✓ should convert to JSON (2 ms)
+  Error Classes
+    ConnectionError
+      ✓ should create with correct properties
+    TimeoutError
+      ✓ should create with correct properties
+    ValidationError
+      ✓ should create with field name (1 ms)
+    AuthenticationError
+      ✓ should create with correct properties
+    AuthorizationError
+      ✓ should create with correct properties (1 ms)
+    NotFoundError
+      ✓ should create with resource type and ID
+    AlreadyExistsError
+      ✓ should create with correct properties (1 ms)
+    RateLimitError
+      ✓ should create with retry information
+    InternalServerError
+      ✓ should create with correct properties (1 ms)
+    ServiceUnavailableError
+      ✓ should create with correct properties
+    MaxRetriesExceededError
+      ✓ should create with attempt count (9 ms)
+    CancelledError
+      ✓ should create with correct properties (1 ms)
+    PreconditionFailedError
+      ✓ should create with correct properties
+    AbortedError
+      ✓ should create with correct properties (1 ms)
+    NotImplementedError
+      ✓ should create with correct properties
+  mapGrpcError
+    ✓ should map CANCELLED status
+    ✓ should map UNKNOWN status
+    ✓ should map INVALID_ARGUMENT status
+    ✓ should map DEADLINE_EXCEEDED status
+    ✓ should map NOT_FOUND status
+    ✓ should map ALREADY_EXISTS status
+    ✓ should map PERMISSION_DENIED status
+    ✓ should map RESOURCE_EXHAUSTED status
+    ✓ should map FAILED_PRECONDITION status
+    ✓ should map ABORTED status
+    ✓ should map UNIMPLEMENTED status
+    ✓ should map INTERNAL status
+    ✓ should map UNAVAILABLE status
+    ✓ should map UNAUTHENTICATED status
+    ✓ should handle metadata (1 ms)
+    ✕ should handle connection refused errors
+    ✕ should handle timeout errors
+    ✓ should handle unknown errors
+  Type Guards
+    isMemoryGraphError
+      ✓ should return true for MemoryGraphError instances
+      ✓ should return true for subclass instances (1 ms)
+      ✓ should return false for non-MemoryGraphError instances
+      ✓ should return false for non-error values
+    isRetryableError
+      ✓ should return true for ConnectionError
+      ✓ should return true for TimeoutError
+      ✓ should return true for ServiceUnavailableError
+      ✓ should return true for InternalServerError
+      ✓ should return true for RateLimitError (1 ms)
+      ✓ should return false for ValidationError
+      ✓ should return false for NotFoundError
+      ✓ should return false for non-MemoryGraphError
+
+  ● mapGrpcError › should handle connection refused errors
+
+    expect(received).toBeInstanceOf(expected)
+
+    Expected constructor: ConnectionError
+    Received constructor: MemoryGraphError
+
+      298 |     error.code = 'ECONNREFUSED';
+      299 |     const mappedError = mapGrpcError(error);
+    > 300 |     expect(mappedError).toBeInstanceOf(ConnectionError);
+          |                         ^
+      301 |     expect(mappedError.details?.errorCode).toBe('ECONNREFUSED');
+      302 |   });
+      303 |
+
+      at Object.<anonymous> (tests/unit/errors.test.ts:300:25)
+
+  ● mapGrpcError › should handle timeout errors
+
+    expect(received).toBeInstanceOf(expected)
+
+    Expected constructor: TimeoutError
+    Received constructor: MemoryGraphError
+
+      306 |     error.code = 'ETIMEDOUT';
+      307 |     const mappedError = mapGrpcError(error);
+    > 308 |     expect(mappedError).toBeInstanceOf(TimeoutError);
+          |                         ^
+      309 |     expect(mappedError.details?.errorCode).toBe('ETIMEDOUT');
+      310 |   });
+      311 |
+
+      at Object.<anonymous> (tests/unit/errors.test.ts:308:25)
+
