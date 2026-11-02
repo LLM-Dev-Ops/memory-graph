@@ -247,19 +247,19 @@ impl LineageBuilder {
         } else if operation.contains("response") || operation.contains("llm.completion") {
             NodeType::Response
         } else if operation.contains("tool") || operation.contains("function") {
-            NodeType::Tool
+            NodeType::ToolInvocation
         } else {
-            NodeType::Context
+            NodeType::Session
         }
     }
 
     /// Convert a lineage edge type to a memory graph edge type
     pub fn map_edge_type(lineage_type: LineageEdgeType) -> EdgeType {
         match lineage_type {
-            LineageEdgeType::ParentChild => EdgeType::ParentChild,
+            LineageEdgeType::ParentChild => EdgeType::PartOf,
             LineageEdgeType::Follows => EdgeType::Follows,
             LineageEdgeType::CausedBy => EdgeType::References,
-            LineageEdgeType::DataFlow => EdgeType::Contains,
+            LineageEdgeType::DataFlow => EdgeType::References,
         }
     }
 }
@@ -445,11 +445,11 @@ mod tests {
         );
         assert_eq!(
             LineageBuilder::infer_node_type("tool.execute"),
-            NodeType::Tool
+            NodeType::ToolInvocation
         );
         assert_eq!(
             LineageBuilder::infer_node_type("other.operation"),
-            NodeType::Context
+            NodeType::Session
         );
     }
 
@@ -457,7 +457,7 @@ mod tests {
     fn test_map_edge_type() {
         assert_eq!(
             LineageBuilder::map_edge_type(LineageEdgeType::ParentChild),
-            EdgeType::ParentChild
+            EdgeType::PartOf
         );
         assert_eq!(
             LineageBuilder::map_edge_type(LineageEdgeType::Follows),
@@ -469,7 +469,7 @@ mod tests {
         );
         assert_eq!(
             LineageBuilder::map_edge_type(LineageEdgeType::DataFlow),
-            EdgeType::Contains
+            EdgeType::References
         );
     }
 

@@ -61,7 +61,9 @@ impl std::str::FromStr for PatternType {
         match s.to_lowercase().as_str() {
             "conversation_flow" | "conversation-flow" | "flow" => Ok(PatternType::ConversationFlow),
             "topic_recurrence" | "topic-recurrence" | "topic" => Ok(PatternType::TopicRecurrence),
-            "response_pattern" | "response-pattern" | "response" => Ok(PatternType::ResponsePattern),
+            "response_pattern" | "response-pattern" | "response" => {
+                Ok(PatternType::ResponsePattern)
+            }
             "tool_usage" | "tool-usage" | "tool" => Ok(PatternType::ToolUsage),
             "error_pattern" | "error-pattern" | "error" => Ok(PatternType::ErrorPattern),
             "session_behavior" | "session-behavior" | "session" => Ok(PatternType::SessionBehavior),
@@ -159,7 +161,7 @@ pub struct PatternAnalysisInput {
 }
 
 /// Pattern occurrence
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PatternOccurrence {
     pub occurrence_id: String,
     pub session_id: String,
@@ -171,7 +173,7 @@ pub struct PatternOccurrence {
 }
 
 /// Temporal distribution
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemporalDistribution {
     #[serde(default)]
     pub hourly_distribution: Option<Vec<u32>>,
@@ -183,7 +185,7 @@ pub struct TemporalDistribution {
 }
 
 /// Detected pattern
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectedPattern {
     pub pattern_id: String,
     pub pattern_type: String,
@@ -204,7 +206,7 @@ pub struct DetectedPattern {
 }
 
 /// Analysis statistics
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisStatistics {
     pub sessions_analyzed: u32,
     pub nodes_scanned: u32,
@@ -218,7 +220,7 @@ pub struct AnalysisStatistics {
 }
 
 /// Output structure from the Long-Term Pattern Agent
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PatternAnalysisOutput {
     pub analysis_id: String,
     pub patterns: Vec<DetectedPattern>,
@@ -228,7 +230,7 @@ pub struct PatternAnalysisOutput {
 }
 
 /// Agent error structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AgentError {
     pub error_code: String,
     pub message: String,
@@ -392,9 +394,7 @@ pub async fn handle_inspect(ctx: &CommandContext<'_>, execution_ref: String) -> 
         OutputFormat::Table | OutputFormat::Text => {
             println!(
                 "{}",
-                format!("Pattern Analysis: {}", execution_ref)
-                    .bold()
-                    .cyan()
+                format!("Pattern Analysis: {}", execution_ref).bold().cyan()
             );
             println!("{}", "=".repeat(60).cyan());
 
@@ -421,12 +421,7 @@ pub async fn handle_inspect(ctx: &CommandContext<'_>, execution_ref: String) -> 
                             pattern.get("pattern_type"),
                             pattern.get("confidence").and_then(|c| c.as_f64()),
                         ) {
-                            println!(
-                                "  {}. {} (confidence: {:.2})",
-                                i + 1,
-                                ptype,
-                                confidence
-                            );
+                            println!("  {}. {} (confidence: {:.2})", i + 1, ptype, confidence);
                         }
                     }
                 }
@@ -484,10 +479,7 @@ pub async fn handle_retrieve(
         std::process::exit(1);
     }
 
-    let result: serde_json::Value = response
-        .json()
-        .await
-        .context("Failed to parse response")?;
+    let result: serde_json::Value = response.json().await.context("Failed to parse response")?;
 
     match ctx.format {
         OutputFormat::Json => {
@@ -500,7 +492,9 @@ pub async fn handle_retrieve(
             if let Some(events) = result.get("events").and_then(|e| e.as_array()) {
                 println!(
                     "{}",
-                    format!("Pattern Analyses ({})", events.len()).bold().green()
+                    format!("Pattern Analyses ({})", events.len())
+                        .bold()
+                        .green()
                 );
                 println!("{}", "=".repeat(60).green());
 
@@ -573,12 +567,12 @@ pub async fn handle_replay(ctx: &CommandContext<'_>, execution_ref: String) -> R
             println!("{}", serde_json::to_string_pretty(&result)?);
         }
         _ => {
+            println!("{}", format!("Replay: {}", execution_ref).bold().cyan());
+            println!("{}", "=".repeat(60).cyan());
             println!(
                 "{}",
-                format!("Replay: {}", execution_ref).bold().cyan()
+                "Note: Full replay requires original input in metadata".yellow()
             );
-            println!("{}", "=".repeat(60).cyan());
-            println!("{}", "Note: Full replay requires original input in metadata".yellow());
 
             if let Some(outputs) = event.get("outputs") {
                 println!("\n{}", "Original Results:".bold());
@@ -630,16 +624,12 @@ fn display_output(format: &OutputFormat, output: &PatternAnalysisOutput) -> Resu
             println!("{}", serde_yaml::to_string(output)?);
         }
         OutputFormat::Table | OutputFormat::Text => {
-            println!(
-                "{}",
-                "Long-Term Pattern Analysis".bold().green()
-            );
+            println!("{}", "Long-Term Pattern Analysis".bold().green());
             println!("{}", "=".repeat(60).green());
             println!("Analysis ID: {}", output.analysis_id);
             println!(
                 "Time Range: {} to {}",
-                output.time_range_analyzed.from_timestamp,
-                output.time_range_analyzed.to_timestamp
+                output.time_range_analyzed.from_timestamp, output.time_range_analyzed.to_timestamp
             );
             println!("Timestamp: {}", output.analysis_timestamp);
 
@@ -667,7 +657,10 @@ fn display_output(format: &OutputFormat, output: &PatternAnalysisOutput) -> Resu
             }
 
             if !output.patterns.is_empty() {
-                println!("\n{}", format!("Detected Patterns ({}):", output.patterns.len()).bold());
+                println!(
+                    "\n{}",
+                    format!("Detected Patterns ({}):", output.patterns.len()).bold()
+                );
                 println!("{}", "-".repeat(60));
 
                 for (i, pattern) in output.patterns.iter().enumerate() {
@@ -692,9 +685,7 @@ fn display_output(format: &OutputFormat, output: &PatternAnalysisOutput) -> Resu
 
                     println!(
                         "   Occurrences: {}  Confidence: {}  Relevance: {:.3}",
-                        pattern.occurrence_count,
-                        confidence_color,
-                        pattern.relevance_score
+                        pattern.occurrence_count, confidence_color, pattern.relevance_score
                     );
                     println!(
                         "   First Seen: {}  Last Seen: {}",

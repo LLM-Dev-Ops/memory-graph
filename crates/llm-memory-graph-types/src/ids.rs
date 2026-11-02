@@ -75,6 +75,19 @@ impl SessionId {
         Self(uuid)
     }
 
+    /// Create a stable session ID from an external string identifier.
+    ///
+    /// UUID strings retain their original value. Other identifiers are mapped
+    /// deterministically into the UUID OID namespace so repeated telemetry for
+    /// the same trace remains in the same session.
+    #[must_use]
+    pub fn from_string(value: &str) -> Self {
+        Uuid::parse_str(value).map_or_else(
+            |_| Self(Uuid::new_v5(&Uuid::NAMESPACE_OID, value.as_bytes())),
+            Self,
+        )
+    }
+
     /// Get the underlying UUID
     #[must_use]
     pub const fn as_uuid(&self) -> &Uuid {
@@ -268,7 +281,22 @@ mod tests {
     fn test_session_id_display() {
         let id = SessionId::new();
         let display = format!("{id}");
-        assert!(!display.is_empty());
+        assert_ne!(display, "");
+    }
+
+    #[test]
+    fn session_id_from_string_is_deterministic() {
+        let first = SessionId::from_string("trace-not-a-uuid");
+        let second = SessionId::from_string("trace-not-a-uuid");
+        assert_eq!(first, second);
+        assert_ne!(first, SessionId::from_string("different-trace"));
+    }
+
+    #[test]
+    fn session_id_from_string_preserves_uuid() {
+        let original = SessionId::new();
+        let restored = SessionId::from_string(&original.to_string());
+        assert_eq!(original, restored);
     }
 
     #[test]
@@ -290,6 +318,6 @@ mod tests {
     fn test_agent_id_display() {
         let id = AgentId::new();
         let display = format!("{id}");
-        assert!(!display.is_empty());
+        assert_ne!(display, "");
     }
 }

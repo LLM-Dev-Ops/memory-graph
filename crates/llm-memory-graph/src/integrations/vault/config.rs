@@ -218,7 +218,7 @@ impl Default for AnonymizationConfig {
 }
 
 /// Types of personally identifiable information
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PiiType {
     /// Email addresses

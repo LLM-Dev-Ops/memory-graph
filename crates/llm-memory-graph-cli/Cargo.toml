@@ -45,6 +45,7 @@ chrono = { workspace = true }
 
 # UUID parsing
 uuid = { workspace = true }
+reqwest = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

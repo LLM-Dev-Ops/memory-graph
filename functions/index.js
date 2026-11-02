@@ -16,24 +16,64 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 
 const app = express();
+const ALLOWED_ORIGINS = new Set((process.env.ALLOWED_ORIGINS ?? '*').split(',').map((value) => value.trim()).filter(Boolean));
+const MAX_BATCH_ITEMS = 1000;
+
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function reject(res, status, code, message) {
+  return res.status(status).json({
+    success: false,
+    error: { error_code: code, message },
+    execution_metadata: makeExecutionMetadata(),
+    layers_executed: ['request:validate-input'],
+  });
+}
 
 // ---------------------------------------------------------------------------
 // CORS - allow required headers
 // ---------------------------------------------------------------------------
 app.use((req, res, next) => {
-  res.set('Access-Control-Allow-Origin', '*');
+  const origin = req.get('Origin');
+  const wildcard = ALLOWED_ORIGINS.has('*');
+  const trusted = !origin || wildcard || ALLOWED_ORIGINS.has(origin);
+  if (wildcard) res.set('Access-Control-Allow-Origin', '*');
+  else {
+    res.vary('Origin');
+    if (origin && trusted) res.set('Access-Control-Allow-Origin', origin);
+  }
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.set(
     'Access-Control-Allow-Headers',
     'X-Correlation-ID, X-API-Version, X-Agent-ID, X-Agent-Version, Content-Type, Authorization',
   );
   if (req.method === 'OPTIONS') {
+    if (!trusted) return reject(res, 403, 'ORIGIN_NOT_ALLOWED', 'Origin is not allowed');
     return res.status(204).send('');
   }
   next();
 });
 
-app.use(express.json());
+app.use(['/v1/memory-graph', '/api/v1/decisions', '/events'], (req, res, next) => {
+  if (req.method === 'POST' && !req.is(['application/json', 'application/*+json'])) {
+    return reject(res, 415, 'UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be JSON');
+  }
+  next();
+});
+app.use(express.json({ limit: '64kb', type: ['application/json', 'application/*+json'] }));
+// Functions Framework may have parsed the body before invoking this Express app.
+// Enforce the same cap against its raw bytes instead of relying on a second parser.
+app.use((req, res, next) => {
+  if (req.method === 'POST') {
+    const bytes = Buffer.isBuffer(req.rawBody)
+      ? req.rawBody.length
+      : Buffer.byteLength(JSON.stringify(req.body ?? null), 'utf8');
+    if (bytes > 64 * 1024) return reject(res, 413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 64 KiB');
+  }
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // execution_metadata helper
@@ -163,6 +203,9 @@ function makeAgentHandler(config) {
     try {
       const { payload } = req.body || {};
       const agentInput = payload ?? req.body;
+      if (!isObject(req.body) || !isObject(agentInput)) {
+        return reject(res, 400, 'INVALID_INPUT', 'Agent input must be a JSON object');
+      }
 
       const { status, body, subLayers } = await invokeAgent(config.agentDir, agentInput);
       layers_executed.push(...subLayers);
@@ -178,7 +221,7 @@ function makeAgentHandler(config) {
         success: false,
         error: {
           error_code: 'INTERNAL_ERROR',
-          message: err.message || 'Unknown error',
+          message: 'The agent request failed',
         },
         execution_metadata,
         layers_executed,
@@ -191,8 +234,7 @@ function makeAgentHandler(config) {
 // Decision store (ephemeral, per-instance, bounded FIFO).
 //
 // The canonical Rust decision-memory crate has no JS build output, so the
-// router cannot invoke it in-process. Until a Firestore-backed durable store
-// lands, this Map keeps decisions reachable from the instance that wrote
+// router cannot invoke it in-process. This legacy Map keeps decisions reachable from the instance that wrote
 // them — which is enough for the upstream POST callers that don't read back.
 // Cross-instance GET is not guaranteed.
 // ---------------------------------------------------------------------------
@@ -202,7 +244,7 @@ const decisionStore = new Map();
 function persistDecision(payload) {
   const id = randomUUID();
   const created_at = new Date().toISOString();
-  const record = { id, created_at, ...payload };
+  const record = { ...payload, id, created_at };
   decisionStore.set(id, record);
   if (decisionStore.size > DECISION_STORE_CAP) {
     const oldest = decisionStore.keys().next().value;
@@ -282,6 +324,10 @@ function decisionBatchHandler(req, res) {
     });
   }
 
+  if (items.length > MAX_BATCH_ITEMS) {
+    return reject(res, 413, 'BATCH_TOO_LARGE', `Batch exceeds ${MAX_BATCH_ITEMS} decisions`);
+  }
+
   const results = items.map((item) => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       return {
@@ -290,7 +336,7 @@ function decisionBatchHandler(req, res) {
       };
     }
     const record = persistDecision(item);
-    return { success: true, ...record };
+    return { ...record, success: true };
   });
 
   return res.status(200).json({
@@ -304,6 +350,12 @@ function decisionBatchHandler(req, res) {
 function decisionQueryHandler(req, res) {
   const execution_metadata = makeExecutionMetadata();
   const layers_executed = ['decision-memory:validate-input-query', 'decision-memory:query'];
+  for (const name of ['limit', 'offset']) {
+    const value = req.query[name];
+    if (value !== undefined && (typeof value !== 'string' || !/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)))) {
+      return reject(res, 400, 'INVALID_QUERY', `${name} must be a nonnegative integer`);
+    }
+  }
 
   const { items, total } = queryDecisions(req.query || {});
   return res.status(200).json({
@@ -339,8 +391,9 @@ app.get('/api/v1/decisions', decisionQueryHandler);
 app.post('/events', (req, res) => {
   const execution_metadata = makeExecutionMetadata();
   const body = req.body || {};
+  if (!isObject(req.body)) return reject(res, 400, 'INVALID_INPUT', 'Event body must be a JSON object');
   const payloadBytes = (() => {
-    try { return JSON.stringify(body).length; } catch { return -1; }
+    try { return Buffer.byteLength(JSON.stringify(body), 'utf8'); } catch { return -1; }
   })();
 
   return res.status(202).json({
@@ -353,6 +406,17 @@ app.post('/events', (req, res) => {
     execution_metadata,
     layers_executed: ['events:accept'],
   });
+});
+
+// Normalize parser errors without reflecting request content or stack traces.
+app.use((err, _req, res, _next) => {
+  if (err.type === 'entity.too.large') {
+    return reject(res, 413, 'PAYLOAD_TOO_LARGE', 'Request body exceeds 64 KiB');
+  }
+  if (err.status >= 400 && err.status < 500) {
+    return reject(res, err.status, 'INVALID_REQUEST', 'Request body is not valid JSON');
+  }
+  return reject(res, 500, 'INTERNAL_ERROR', 'The request failed');
 });
 
 // ---------------------------------------------------------------------------

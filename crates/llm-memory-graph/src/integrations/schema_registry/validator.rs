@@ -228,7 +228,7 @@ impl SchemaValidator for GracefulValidator {
     }
 
     fn is_enabled(&self) -> bool {
-        self.inner.is_enabled()
+        true
     }
 
     fn name(&self) -> &str {
@@ -304,6 +304,7 @@ impl CachingValidator {
     /// Clear the cache
     pub async fn clear_cache(&self) {
         self.cache.invalidate_all();
+        self.cache.run_pending_tasks().await;
     }
 
     /// Get a reference to the inner validator
@@ -338,6 +339,7 @@ impl SchemaValidator for CachingValidator {
         // Only cache successful validations or deterministic errors
         // Don't cache transient errors (service unavailable, etc.)
         self.cache.insert(cache_key, result.clone()).await;
+        self.cache.run_pending_tasks().await;
 
         Ok(result)
     }
@@ -362,7 +364,10 @@ mod tests {
         assert_eq!(validator.name(), "NoOpValidator");
 
         let data = serde_json::json!({"test": "data"});
-        let result = validator.validate("test-schema", None, &data).await.unwrap();
+        let result = validator
+            .validate("test-schema", None, &data)
+            .await
+            .unwrap();
         assert!(result.is_valid());
     }
 
@@ -387,29 +392,34 @@ mod tests {
         assert_eq!(validator.name(), "GracefulValidator");
 
         let data = serde_json::json!({"test": "data"});
-        let result = validator.validate("test-schema", None, &data).await.unwrap();
+        let result = validator
+            .validate("test-schema", None, &data)
+            .await
+            .unwrap();
         assert!(result.is_valid());
     }
 
     #[tokio::test]
     async fn test_caching_validator() {
         let inner = Arc::new(NoOpValidator::new()) as Arc<dyn SchemaValidator>;
-        let validator = CachingValidator::new(
-            inner,
-            std::time::Duration::from_secs(60),
-            100,
-        );
+        let validator = CachingValidator::new(inner, std::time::Duration::from_secs(60), 100);
 
         assert_eq!(validator.name(), "CachingValidator");
 
         let data = serde_json::json!({"test": "data"});
 
         // First validation - not cached
-        let result1 = validator.validate("test-schema", None, &data).await.unwrap();
+        let result1 = validator
+            .validate("test-schema", None, &data)
+            .await
+            .unwrap();
         assert!(result1.is_valid());
 
         // Second validation - should be cached
-        let result2 = validator.validate("test-schema", None, &data).await.unwrap();
+        let result2 = validator
+            .validate("test-schema", None, &data)
+            .await
+            .unwrap();
         assert!(result2.is_valid());
 
         // Check cache stats
@@ -440,16 +450,15 @@ mod tests {
     #[tokio::test]
     async fn test_caching_validator_clear() {
         let inner = Arc::new(NoOpValidator::new()) as Arc<dyn SchemaValidator>;
-        let validator = CachingValidator::new(
-            inner,
-            std::time::Duration::from_secs(60),
-            100,
-        );
+        let validator = CachingValidator::new(inner, std::time::Duration::from_secs(60), 100);
 
         let data = serde_json::json!({"test": "data"});
 
         // Populate cache
-        validator.validate("test-schema", None, &data).await.unwrap();
+        validator
+            .validate("test-schema", None, &data)
+            .await
+            .unwrap();
         let (entry_count, _) = validator.cache_stats();
         assert_eq!(entry_count, 1);
 

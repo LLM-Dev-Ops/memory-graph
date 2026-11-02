@@ -1,0 +1,334 @@
+{
+  "rollback": {
+    "path": "functions/index.js",
+    "hash": "39059db5886fb21b6fc522c509f51cf26dff431ee695f2b4596440ed642cbc01",
+    "bytesVerified": true
+  },
+  "package": "@metaharness/flywheel@0.1.12",
+  "evaluator": {
+    "holdout": "memory-graph-decision-integrity-v1",
+    "anchor": "memory-graph-existing-behavior-v1",
+    "model": "none",
+    "deterministic": true
+  },
+  "pinnedGateFingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+  "liftCurve": [
+    {
+      "generation": 0,
+      "primary": 0,
+      "delta": 0,
+      "anchor": 1
+    },
+    {
+      "generation": 1,
+      "primary": 1,
+      "delta": 1,
+      "anchor": 1
+    }
+  ],
+  "generationsRun": 1,
+  "milestoneReached": false,
+  "finalPolicy": {
+    "implementation": "candidate"
+  },
+  "replayVerdict": {
+    "pass": true,
+    "checks": {
+      "receipts": true,
+      "reachesRoot": true,
+      "contiguousParents": true,
+      "allPromoted": true,
+      "gateUnchanged": true,
+      "gateReExecutes": true,
+      "allCommitsReceipts": true,
+      "sealedFieldsAuthentic": true
+    },
+    "failures": [],
+    "chainSummary": "gen1(implementation) → gen0(root)"
+  },
+  "replayBundle": {
+    "data_source": "LIVE",
+    "root_id": "root",
+    "chain": [
+      {
+        "id": "root__implementation_gen1",
+        "generation": 1,
+        "parents": [
+          "root"
+        ],
+        "mutation": {
+          "target": "implementation",
+          "summary": "Protect decision identity and bound real HTTP behavior",
+          "inverse": {
+            "path": "functions/index.js",
+            "parentBytes": "/**\n * Cloud Function entry point for memory-graph-agents\n *\n * Deployable via:\n *   gcloud functions deploy memory-graph-agents \\\n *     --runtime nodejs20 --trigger-http --allow-unauthenticated \\\n *     --region us-central1 --project agentics-dev \\\n *     --entry-point api --memory 512MB --timeout 60s\n *\n * Exposes 6 agent routes under /v1/memory-graph/ plus a /health endpoint.\n * Every response includes execution_metadata and layers_executed per the\n * upstream CLI contract validator requirements.\n */\n\nimport express from 'express';\nimport { randomUUID } from 'node:crypto';\n\nconst app = express();\n\n// ---------------------------------------------------------------------------\n// CORS - allow required headers\n// ---------------------------------------------------------------------------\napp.use((req, res, next) => {\n  res.set('Access-Control-Allow-Origin', '*');\n  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');\n  res.set(\n    'Access-Control-Allow-Headers',\n    'X-Correlation-ID, X-API-Version, X-Agent-ID, X-Agent-Version, Content-Type, Authorization',\n  );\n  if (req.method === 'OPTIONS') {\n    return res.status(204).send('');\n  }\n  next();\n});\n\napp.use(express.json());\n\n// ---------------------------------------------------------------------------\n// execution_metadata helper\n// ---------------------------------------------------------------------------\nfunction makeExecutionMetadata() {\n  return {\n    trace_id: randomUUID(),\n    timestamp: new Date().toISOString(),\n    service: 'memory-graph-agents',\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Agent module cache (lazy-loaded)\n// ---------------------------------------------------------------------------\nconst agentModules = {};\n\n/**\n * Route name  -> agent directory name mapping.\n * Route:  POST /v1/memory-graph/<routeKey>\n * Agent dir:  agents/<agentDir>/dist/index.js\n */\nconst AGENT_MAP = {\n  conversation:      { agentDir: 'conversation-memory',      label: 'Conversation Memory' },\n  lineage:           { agentDir: 'prompt-lineage',           label: 'Prompt Lineage' },\n  decisions:         { agentDir: 'decision-memory',          label: 'Decision Memory' },\n  'knowledge-graph': { agentDir: 'knowledge-graph-builder',  label: 'Knowledge Graph Builder' },\n  retrieval:         { agentDir: 'memory-retrieval',         label: 'Memory Retrieval' },\n  patterns:          { agentDir: 'long-term-pattern',        label: 'Long-Term Pattern' },\n};\n\n/**\n * Try to load a TS agent module from agents/<dir>/dist/index.js.\n * Returns the module or null if not found.\n */\nasync function loadAgentModule(agentDir) {\n  if (agentModules[agentDir]) return agentModules[agentDir];\n\n  const paths = [\n    `../agents/${agentDir}/dist/index.js`,\n    `../agents/${agentDir}/src/index.js`,\n  ];\n\n  for (const p of paths) {\n    try {\n      const mod = await import(p);\n      agentModules[agentDir] = mod;\n      return mod;\n    } catch {\n      // try next path\n    }\n  }\n  return null;\n}\n\n// ---------------------------------------------------------------------------\n// Health handler (shared by /health and /api/v1/health)\n// ---------------------------------------------------------------------------\nfunction healthHandler(_req, res) {\n  res.json({\n    healthy: true,\n    service: 'memory-graph-agents',\n    agents: 6,\n  });\n}\n\napp.get('/health', healthHandler);\napp.get('/api/v1/health', healthHandler);\n\n// ---------------------------------------------------------------------------\n// Invoke an agent module with the given input. Returns a normalized\n// { status, body, subLayers } tuple so request handlers can compose.\n// ---------------------------------------------------------------------------\nasync function invokeAgent(agentDir, agentInput) {\n  const subLayers = [`${agentDir}:load-agent`];\n  const agentModule = await loadAgentModule(agentDir);\n\n  if (agentModule && typeof agentModule.executeAsUnit === 'function') {\n    subLayers.push(`${agentDir}:execute`);\n    const result = await agentModule.executeAsUnit(agentInput);\n    subLayers.push(`${agentDir}:format-output`);\n    return { status: 200, body: result, subLayers };\n  }\n\n  if (agentModule && typeof agentModule.handler === 'function') {\n    subLayers.push(`${agentDir}:execute-handler`);\n    const handlerResult = await agentModule.handler({\n      method: 'POST',\n      body: agentInput,\n      headers: {},\n    });\n    subLayers.push(`${agentDir}:format-output`);\n\n    let body = handlerResult.body;\n    if (typeof body === 'string') {\n      try { body = JSON.parse(body); } catch { /* keep as-is */ }\n    }\n    return {\n      status: handlerResult.statusCode || 200,\n      body: (typeof body === 'object' && body !== null) ? body : { data: body },\n      subLayers,\n    };\n  }\n\n  subLayers.push(`${agentDir}:no-handler`);\n  return {\n    status: 501,\n    body: {\n      success: false,\n      error: {\n        error_code: 'AGENT_NOT_AVAILABLE',\n        message: `Agent ${agentDir} is loaded but has no executeAsUnit or handler export`,\n      },\n    },\n    subLayers,\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Agent route handler factory (POST /v1/memory-graph/:agent)\n// ---------------------------------------------------------------------------\nfunction makeAgentHandler(config) {\n  return async (req, res) => {\n    const execution_metadata = makeExecutionMetadata();\n    const layers_executed = [`${config.agentDir}:validate-input`];\n\n    try {\n      const { payload } = req.body || {};\n      const agentInput = payload ?? req.body;\n\n      const { status, body, subLayers } = await invokeAgent(config.agentDir, agentInput);\n      layers_executed.push(...subLayers);\n\n      return res.status(status).json({\n        ...body,\n        execution_metadata,\n        layers_executed,\n      });\n    } catch (err) {\n      layers_executed.push(`${config.agentDir}:error`);\n      return res.status(500).json({\n        success: false,\n        error: {\n          error_code: 'INTERNAL_ERROR',\n          message: err.message || 'Unknown error',\n        },\n        execution_metadata,\n        layers_executed,\n      });\n    }\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Decision store (ephemeral, per-instance, bounded FIFO).\n//\n// The canonical Rust decision-memory crate has no JS build output, so the\n// router cannot invoke it in-process. Until a Firestore-backed durable store\n// lands, this Map keeps decisions reachable from the instance that wrote\n// them — which is enough for the upstream POST callers that don't read back.\n// Cross-instance GET is not guaranteed.\n// ---------------------------------------------------------------------------\nconst DECISION_STORE_CAP = 10000;\nconst decisionStore = new Map();\n\nfunction persistDecision(payload) {\n  const id = randomUUID();\n  const created_at = new Date().toISOString();\n  const record = { id, created_at, ...payload };\n  decisionStore.set(id, record);\n  if (decisionStore.size > DECISION_STORE_CAP) {\n    const oldest = decisionStore.keys().next().value;\n    decisionStore.delete(oldest);\n  }\n  return record;\n}\n\nfunction queryDecisions(query = {}) {\n  const { agent_id, decision_type, execution_ref, start_time, end_time } = query;\n  let items = Array.from(decisionStore.values());\n\n  if (agent_id)      items = items.filter((r) => r.agent_id === agent_id);\n  if (decision_type) items = items.filter((r) => r.decision_type === decision_type);\n  if (execution_ref) items = items.filter((r) => r.execution_ref === execution_ref);\n  if (start_time) {\n    const ts = Date.parse(start_time);\n    if (!Number.isNaN(ts)) items = items.filter((r) => Date.parse(r.created_at) >= ts);\n  }\n  if (end_time) {\n    const ts = Date.parse(end_time);\n    if (!Number.isNaN(ts)) items = items.filter((r) => Date.parse(r.created_at) <= ts);\n  }\n\n  const total = items.length;\n  const offset = Math.max(0, parseInt(query.offset, 10) || 0);\n  const limit = Math.max(1, Math.min(1000, parseInt(query.limit, 10) || 100));\n  items = items.slice(offset, offset + limit);\n  return { items, total };\n}\n\n// ---------------------------------------------------------------------------\n// Decision handlers — shared by /v1/memory-graph/decisions and the\n// /api/v1/decisions alias family. Pure in-memory, no agent module invoked.\n// ---------------------------------------------------------------------------\nfunction decisionCaptureHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input', 'decision-memory:persist'];\n\n  const body = req.body;\n  if (!body || typeof body !== 'object' || Array.isArray(body)) {\n    return res.status(400).json({\n      success: false,\n      error: {\n        error_code: 'INVALID_INPUT',\n        message: 'Body must be a DecisionEvent object',\n      },\n      execution_metadata,\n      layers_executed,\n    });\n  }\n\n  const record = persistDecision(body);\n  return res.status(200).json({\n    ...record,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\nfunction decisionBatchHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input-batch', 'decision-memory:persist-batch'];\n\n  const body = req.body || {};\n  const items = Array.isArray(body) ? body : (body.decisions ?? body.items ?? []);\n\n  if (!Array.isArray(items) || items.length === 0) {\n    return res.status(400).json({\n      success: false,\n      error: {\n        error_code: 'INVALID_INPUT',\n        message: 'Batch requires an array body, or { decisions: [...] } / { items: [...] } with ≥1 entry',\n      },\n      execution_metadata,\n      layers_executed,\n    });\n  }\n\n  const results = items.map((item) => {\n    if (!item || typeof item !== 'object' || Array.isArray(item)) {\n      return {\n        success: false,\n        error: { error_code: 'INVALID_INPUT', message: 'Each batch item must be a DecisionEvent object' },\n      };\n    }\n    const record = persistDecision(item);\n    return { success: true, ...record };\n  });\n\n  return res.status(200).json({\n    count: results.length,\n    items: results,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\nfunction decisionQueryHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input-query', 'decision-memory:query'];\n\n  const { items, total } = queryDecisions(req.query || {});\n  return res.status(200).json({\n    items,\n    total,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\n// ---------------------------------------------------------------------------\n// Agent routes: POST /v1/memory-graph/:agent\n// decisions is intercepted so the in-memory handler runs in place of the\n// (non-existent) JS agent module.\n// ---------------------------------------------------------------------------\nfor (const [routeKey, config] of Object.entries(AGENT_MAP)) {\n  if (routeKey === 'decisions') {\n    app.post(`/v1/memory-graph/${routeKey}`, decisionCaptureHandler);\n    continue;\n  }\n  app.post(`/v1/memory-graph/${routeKey}`, makeAgentHandler(config));\n}\n\n// ---------------------------------------------------------------------------\n// /api/v1 alias surface — unblocks upstream callers (auto-optimizer-agents,\n// costops-agents) hitting RUVECTOR_SERVICE_URL with the /api/v1 shape.\n// ---------------------------------------------------------------------------\napp.post('/api/v1/decisions', decisionCaptureHandler);\napp.post('/api/v1/decisions/batch', decisionBatchHandler);\napp.get('/api/v1/decisions', decisionQueryHandler);\n\n// Telemetry sink used by costops-agents. Fire-and-forget: accept, ack, return.\napp.post('/events', (req, res) => {\n  const execution_metadata = makeExecutionMetadata();\n  const body = req.body || {};\n  const payloadBytes = (() => {\n    try { return JSON.stringify(body).length; } catch { return -1; }\n  })();\n\n  return res.status(202).json({\n    success: true,\n    event_id: randomUUID(),\n    received: {\n      type: body.type || body.event_type || null,\n      payload_size_bytes: payloadBytes,\n    },\n    execution_metadata,\n    layers_executed: ['events:accept'],\n  });\n});\n\n// ---------------------------------------------------------------------------\n// Fallback 404\n// ---------------------------------------------------------------------------\napp.use((_req, res) => {\n  res.status(404).json({\n    error: 'Not found',\n    service: 'memory-graph-agents',\n    available_routes: [\n      'GET  /health',\n      'GET  /api/v1/health',\n      ...Object.keys(AGENT_MAP).map((k) => `POST /v1/memory-graph/${k}`),\n      'POST /api/v1/decisions',\n      'POST /api/v1/decisions/batch',\n      'GET  /api/v1/decisions',\n      'POST /events',\n    ],\n    execution_metadata: makeExecutionMetadata(),\n    layers_executed: ['router:not-found'],\n  });\n});\n\n// ---------------------------------------------------------------------------\n// Export for Cloud Functions (--entry-point api)\n// ---------------------------------------------------------------------------\nexport const api = app;\n",
+            "hash": "39059db5886fb21b6fc522c509f51cf26dff431ee695f2b4596440ed642cbc01"
+          }
+        },
+        "primaryDelta": 1,
+        "anchorScore": 1,
+        "verdict": "PROMOTED",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__implementation_gen1",
+            "target": "implementation",
+            "verdict": "PROMOTED",
+            "primaryDelta": 1,
+            "baselineScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 999,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ]
+            },
+            "candidateScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 1,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            "anchorScore": 1,
+            "failureReasons": [],
+            "parents": [
+              "root"
+            ],
+            "generation": 1
+          },
+          "signature": "xVDwQcqPTpgVn1HCK9ISRRDtMxp/7LewHJFCl17+b2Svs2xX3bo0jDl5mJT1FGXCzUNu7ToiDhUCu8xvt8ptAQ==",
+          "publicKey": "MCowBQYDK2VwAyEAY2TbzErwsVJ0AA58mFr2ybuAogpqC8WZC25o9EZLxfc=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-16T18:08:53.345Z",
+        "baselineScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 999,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "candidateScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 1,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      },
+      {
+        "id": "root",
+        "generation": 0,
+        "parents": [],
+        "mutation": null,
+        "primaryDelta": 0,
+        "anchorScore": 1,
+        "verdict": "ROOT",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "root",
+            "root": "root"
+          },
+          "signature": "Tg/GkzUGW2drl4+eCMDeZvPmD7koJwD4QFrYWcbLObUJXrj8sGtdlSkDnx9UKhYJA+ynBtPx0sbhEFNbVZsMDA==",
+          "publicKey": "MCowBQYDK2VwAyEAY2TbzErwsVJ0AA58mFr2ybuAogpqC8WZC25o9EZLxfc=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-16T18:08:53.131Z"
+      }
+    ],
+    "all_commits": [
+      {
+        "id": "root__implementation_gen1",
+        "generation": 1,
+        "parents": [
+          "root"
+        ],
+        "mutation": {
+          "target": "implementation",
+          "summary": "Protect decision identity and bound real HTTP behavior",
+          "inverse": {
+            "path": "functions/index.js",
+            "parentBytes": "/**\n * Cloud Function entry point for memory-graph-agents\n *\n * Deployable via:\n *   gcloud functions deploy memory-graph-agents \\\n *     --runtime nodejs20 --trigger-http --allow-unauthenticated \\\n *     --region us-central1 --project agentics-dev \\\n *     --entry-point api --memory 512MB --timeout 60s\n *\n * Exposes 6 agent routes under /v1/memory-graph/ plus a /health endpoint.\n * Every response includes execution_metadata and layers_executed per the\n * upstream CLI contract validator requirements.\n */\n\nimport express from 'express';\nimport { randomUUID } from 'node:crypto';\n\nconst app = express();\n\n// ---------------------------------------------------------------------------\n// CORS - allow required headers\n// ---------------------------------------------------------------------------\napp.use((req, res, next) => {\n  res.set('Access-Control-Allow-Origin', '*');\n  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');\n  res.set(\n    'Access-Control-Allow-Headers',\n    'X-Correlation-ID, X-API-Version, X-Agent-ID, X-Agent-Version, Content-Type, Authorization',\n  );\n  if (req.method === 'OPTIONS') {\n    return res.status(204).send('');\n  }\n  next();\n});\n\napp.use(express.json());\n\n// ---------------------------------------------------------------------------\n// execution_metadata helper\n// ---------------------------------------------------------------------------\nfunction makeExecutionMetadata() {\n  return {\n    trace_id: randomUUID(),\n    timestamp: new Date().toISOString(),\n    service: 'memory-graph-agents',\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Agent module cache (lazy-loaded)\n// ---------------------------------------------------------------------------\nconst agentModules = {};\n\n/**\n * Route name  -> agent directory name mapping.\n * Route:  POST /v1/memory-graph/<routeKey>\n * Agent dir:  agents/<agentDir>/dist/index.js\n */\nconst AGENT_MAP = {\n  conversation:      { agentDir: 'conversation-memory',      label: 'Conversation Memory' },\n  lineage:           { agentDir: 'prompt-lineage',           label: 'Prompt Lineage' },\n  decisions:         { agentDir: 'decision-memory',          label: 'Decision Memory' },\n  'knowledge-graph': { agentDir: 'knowledge-graph-builder',  label: 'Knowledge Graph Builder' },\n  retrieval:         { agentDir: 'memory-retrieval',         label: 'Memory Retrieval' },\n  patterns:          { agentDir: 'long-term-pattern',        label: 'Long-Term Pattern' },\n};\n\n/**\n * Try to load a TS agent module from agents/<dir>/dist/index.js.\n * Returns the module or null if not found.\n */\nasync function loadAgentModule(agentDir) {\n  if (agentModules[agentDir]) return agentModules[agentDir];\n\n  const paths = [\n    `../agents/${agentDir}/dist/index.js`,\n    `../agents/${agentDir}/src/index.js`,\n  ];\n\n  for (const p of paths) {\n    try {\n      const mod = await import(p);\n      agentModules[agentDir] = mod;\n      return mod;\n    } catch {\n      // try next path\n    }\n  }\n  return null;\n}\n\n// ---------------------------------------------------------------------------\n// Health handler (shared by /health and /api/v1/health)\n// ---------------------------------------------------------------------------\nfunction healthHandler(_req, res) {\n  res.json({\n    healthy: true,\n    service: 'memory-graph-agents',\n    agents: 6,\n  });\n}\n\napp.get('/health', healthHandler);\napp.get('/api/v1/health', healthHandler);\n\n// ---------------------------------------------------------------------------\n// Invoke an agent module with the given input. Returns a normalized\n// { status, body, subLayers } tuple so request handlers can compose.\n// ---------------------------------------------------------------------------\nasync function invokeAgent(agentDir, agentInput) {\n  const subLayers = [`${agentDir}:load-agent`];\n  const agentModule = await loadAgentModule(agentDir);\n\n  if (agentModule && typeof agentModule.executeAsUnit === 'function') {\n    subLayers.push(`${agentDir}:execute`);\n    const result = await agentModule.executeAsUnit(agentInput);\n    subLayers.push(`${agentDir}:format-output`);\n    return { status: 200, body: result, subLayers };\n  }\n\n  if (agentModule && typeof agentModule.handler === 'function') {\n    subLayers.push(`${agentDir}:execute-handler`);\n    const handlerResult = await agentModule.handler({\n      method: 'POST',\n      body: agentInput,\n      headers: {},\n    });\n    subLayers.push(`${agentDir}:format-output`);\n\n    let body = handlerResult.body;\n    if (typeof body === 'string') {\n      try { body = JSON.parse(body); } catch { /* keep as-is */ }\n    }\n    return {\n      status: handlerResult.statusCode || 200,\n      body: (typeof body === 'object' && body !== null) ? body : { data: body },\n      subLayers,\n    };\n  }\n\n  subLayers.push(`${agentDir}:no-handler`);\n  return {\n    status: 501,\n    body: {\n      success: false,\n      error: {\n        error_code: 'AGENT_NOT_AVAILABLE',\n        message: `Agent ${agentDir} is loaded but has no executeAsUnit or handler export`,\n      },\n    },\n    subLayers,\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Agent route handler factory (POST /v1/memory-graph/:agent)\n// ---------------------------------------------------------------------------\nfunction makeAgentHandler(config) {\n  return async (req, res) => {\n    const execution_metadata = makeExecutionMetadata();\n    const layers_executed = [`${config.agentDir}:validate-input`];\n\n    try {\n      const { payload } = req.body || {};\n      const agentInput = payload ?? req.body;\n\n      const { status, body, subLayers } = await invokeAgent(config.agentDir, agentInput);\n      layers_executed.push(...subLayers);\n\n      return res.status(status).json({\n        ...body,\n        execution_metadata,\n        layers_executed,\n      });\n    } catch (err) {\n      layers_executed.push(`${config.agentDir}:error`);\n      return res.status(500).json({\n        success: false,\n        error: {\n          error_code: 'INTERNAL_ERROR',\n          message: err.message || 'Unknown error',\n        },\n        execution_metadata,\n        layers_executed,\n      });\n    }\n  };\n}\n\n// ---------------------------------------------------------------------------\n// Decision store (ephemeral, per-instance, bounded FIFO).\n//\n// The canonical Rust decision-memory crate has no JS build output, so the\n// router cannot invoke it in-process. Until a Firestore-backed durable store\n// lands, this Map keeps decisions reachable from the instance that wrote\n// them — which is enough for the upstream POST callers that don't read back.\n// Cross-instance GET is not guaranteed.\n// ---------------------------------------------------------------------------\nconst DECISION_STORE_CAP = 10000;\nconst decisionStore = new Map();\n\nfunction persistDecision(payload) {\n  const id = randomUUID();\n  const created_at = new Date().toISOString();\n  const record = { id, created_at, ...payload };\n  decisionStore.set(id, record);\n  if (decisionStore.size > DECISION_STORE_CAP) {\n    const oldest = decisionStore.keys().next().value;\n    decisionStore.delete(oldest);\n  }\n  return record;\n}\n\nfunction queryDecisions(query = {}) {\n  const { agent_id, decision_type, execution_ref, start_time, end_time } = query;\n  let items = Array.from(decisionStore.values());\n\n  if (agent_id)      items = items.filter((r) => r.agent_id === agent_id);\n  if (decision_type) items = items.filter((r) => r.decision_type === decision_type);\n  if (execution_ref) items = items.filter((r) => r.execution_ref === execution_ref);\n  if (start_time) {\n    const ts = Date.parse(start_time);\n    if (!Number.isNaN(ts)) items = items.filter((r) => Date.parse(r.created_at) >= ts);\n  }\n  if (end_time) {\n    const ts = Date.parse(end_time);\n    if (!Number.isNaN(ts)) items = items.filter((r) => Date.parse(r.created_at) <= ts);\n  }\n\n  const total = items.length;\n  const offset = Math.max(0, parseInt(query.offset, 10) || 0);\n  const limit = Math.max(1, Math.min(1000, parseInt(query.limit, 10) || 100));\n  items = items.slice(offset, offset + limit);\n  return { items, total };\n}\n\n// ---------------------------------------------------------------------------\n// Decision handlers — shared by /v1/memory-graph/decisions and the\n// /api/v1/decisions alias family. Pure in-memory, no agent module invoked.\n// ---------------------------------------------------------------------------\nfunction decisionCaptureHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input', 'decision-memory:persist'];\n\n  const body = req.body;\n  if (!body || typeof body !== 'object' || Array.isArray(body)) {\n    return res.status(400).json({\n      success: false,\n      error: {\n        error_code: 'INVALID_INPUT',\n        message: 'Body must be a DecisionEvent object',\n      },\n      execution_metadata,\n      layers_executed,\n    });\n  }\n\n  const record = persistDecision(body);\n  return res.status(200).json({\n    ...record,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\nfunction decisionBatchHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input-batch', 'decision-memory:persist-batch'];\n\n  const body = req.body || {};\n  const items = Array.isArray(body) ? body : (body.decisions ?? body.items ?? []);\n\n  if (!Array.isArray(items) || items.length === 0) {\n    return res.status(400).json({\n      success: false,\n      error: {\n        error_code: 'INVALID_INPUT',\n        message: 'Batch requires an array body, or { decisions: [...] } / { items: [...] } with ≥1 entry',\n      },\n      execution_metadata,\n      layers_executed,\n    });\n  }\n\n  const results = items.map((item) => {\n    if (!item || typeof item !== 'object' || Array.isArray(item)) {\n      return {\n        success: false,\n        error: { error_code: 'INVALID_INPUT', message: 'Each batch item must be a DecisionEvent object' },\n      };\n    }\n    const record = persistDecision(item);\n    return { success: true, ...record };\n  });\n\n  return res.status(200).json({\n    count: results.length,\n    items: results,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\nfunction decisionQueryHandler(req, res) {\n  const execution_metadata = makeExecutionMetadata();\n  const layers_executed = ['decision-memory:validate-input-query', 'decision-memory:query'];\n\n  const { items, total } = queryDecisions(req.query || {});\n  return res.status(200).json({\n    items,\n    total,\n    execution_metadata,\n    layers_executed,\n  });\n}\n\n// ---------------------------------------------------------------------------\n// Agent routes: POST /v1/memory-graph/:agent\n// decisions is intercepted so the in-memory handler runs in place of the\n// (non-existent) JS agent module.\n// ---------------------------------------------------------------------------\nfor (const [routeKey, config] of Object.entries(AGENT_MAP)) {\n  if (routeKey === 'decisions') {\n    app.post(`/v1/memory-graph/${routeKey}`, decisionCaptureHandler);\n    continue;\n  }\n  app.post(`/v1/memory-graph/${routeKey}`, makeAgentHandler(config));\n}\n\n// ---------------------------------------------------------------------------\n// /api/v1 alias surface — unblocks upstream callers (auto-optimizer-agents,\n// costops-agents) hitting RUVECTOR_SERVICE_URL with the /api/v1 shape.\n// ---------------------------------------------------------------------------\napp.post('/api/v1/decisions', decisionCaptureHandler);\napp.post('/api/v1/decisions/batch', decisionBatchHandler);\napp.get('/api/v1/decisions', decisionQueryHandler);\n\n// Telemetry sink used by costops-agents. Fire-and-forget: accept, ack, return.\napp.post('/events', (req, res) => {\n  const execution_metadata = makeExecutionMetadata();\n  const body = req.body || {};\n  const payloadBytes = (() => {\n    try { return JSON.stringify(body).length; } catch { return -1; }\n  })();\n\n  return res.status(202).json({\n    success: true,\n    event_id: randomUUID(),\n    received: {\n      type: body.type || body.event_type || null,\n      payload_size_bytes: payloadBytes,\n    },\n    execution_metadata,\n    layers_executed: ['events:accept'],\n  });\n});\n\n// ---------------------------------------------------------------------------\n// Fallback 404\n// ---------------------------------------------------------------------------\napp.use((_req, res) => {\n  res.status(404).json({\n    error: 'Not found',\n    service: 'memory-graph-agents',\n    available_routes: [\n      'GET  /health',\n      'GET  /api/v1/health',\n      ...Object.keys(AGENT_MAP).map((k) => `POST /v1/memory-graph/${k}`),\n      'POST /api/v1/decisions',\n      'POST /api/v1/decisions/batch',\n      'GET  /api/v1/decisions',\n      'POST /events',\n    ],\n    execution_metadata: makeExecutionMetadata(),\n    layers_executed: ['router:not-found'],\n  });\n});\n\n// ---------------------------------------------------------------------------\n// Export for Cloud Functions (--entry-point api)\n// ---------------------------------------------------------------------------\nexport const api = app;\n",
+            "hash": "39059db5886fb21b6fc522c509f51cf26dff431ee695f2b4596440ed642cbc01"
+          }
+        },
+        "primaryDelta": 1,
+        "anchorScore": 1,
+        "verdict": "PROMOTED",
+        "failureReasons": [],
+        "receipt": {
+          "payload": {
+            "kind": "candidate",
+            "id": "root__implementation_gen1",
+            "target": "implementation",
+            "verdict": "PROMOTED",
+            "primaryDelta": 1,
+            "baselineScore": {
+              "primary": 0,
+              "noopRate": 1,
+              "costPerWin": 999,
+              "regressed": false,
+              "itemWins": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ]
+            },
+            "candidateScore": {
+              "primary": 1,
+              "noopRate": 0,
+              "costPerWin": 1,
+              "regressed": false,
+              "itemWins": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ]
+            },
+            "anchorScore": 1,
+            "failureReasons": [],
+            "parents": [
+              "root"
+            ],
+            "generation": 1
+          },
+          "signature": "xVDwQcqPTpgVn1HCK9ISRRDtMxp/7LewHJFCl17+b2Svs2xX3bo0jDl5mJT1FGXCzUNu7ToiDhUCu8xvt8ptAQ==",
+          "publicKey": "MCowBQYDK2VwAyEAY2TbzErwsVJ0AA58mFr2ybuAogpqC8WZC25o9EZLxfc=",
+          "alg": "ed25519"
+        },
+        "createdAt": "2026-10-16T18:08:53.345Z",
+        "baselineScore": {
+          "primary": 0,
+          "noopRate": 1,
+          "costPerWin": 999,
+          "regressed": false,
+          "itemWins": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "candidateScore": {
+          "primary": 1,
+          "noopRate": 0,
+          "costPerWin": 1,
+          "regressed": false,
+          "itemWins": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      }
+    ],
+    "lift_curve": [
+      {
+        "generation": 0,
+        "primary": 0,
+        "delta": 0,
+        "anchor": 1
+      },
+      {
+        "generation": 1,
+        "primary": 1,
+        "delta": 1,
+        "anchor": 1
+      }
+    ],
+    "gate_fingerprint": "c5942e7c9bf8f28fe7af47a6ec3887d11eeb3f8c8e8601cc6a7a54969ea0b981",
+    "verified_improvements": 1,
+    "anchor_surviving_improvements": 1,
+    "milestone_reached": false,
+    "created_at": "2026-10-16T18:08:53.345Z"
+  }
+}

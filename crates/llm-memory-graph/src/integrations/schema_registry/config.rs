@@ -9,6 +9,7 @@ use std::time::Duration;
 ///
 /// ```rust
 /// use llm_memory_graph::integrations::schema_registry::SchemaRegistryConfig;
+/// use std::time::Duration;
 ///
 /// // Create with default settings
 /// let config = SchemaRegistryConfig::default();
@@ -67,7 +68,7 @@ impl Default for SchemaRegistryConfig {
             retry_count: 3,
             enable_logging: true,
             validation_enabled: false, // OPT-IN by default
-            cache_ttl_secs: 300, // 5 minutes
+            cache_ttl_secs: 300,       // 5 minutes
             max_cache_size: 100,
             fail_on_validation_error: false, // Graceful degradation by default
         }
@@ -252,7 +253,9 @@ impl SchemaRegistryConfig {
         }
 
         if self.cache_ttl_secs > 0 && self.max_cache_size == 0 {
-            return Err("max_cache_size must be greater than 0 when caching is enabled".to_string());
+            return Err(
+                "max_cache_size must be greater than 0 when caching is enabled".to_string(),
+            );
         }
 
         Ok(())
@@ -316,8 +319,8 @@ mod tests {
 
         assert!(!config.is_cache_enabled());
 
-        let config = SchemaRegistryConfig::new("https://registry.example.com")
-            .with_max_cache_size(0);
+        let config =
+            SchemaRegistryConfig::new("https://registry.example.com").with_max_cache_size(0);
 
         assert!(!config.is_cache_enabled());
     }

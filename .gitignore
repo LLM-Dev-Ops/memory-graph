@@ -4,6 +4,9 @@ node_modules/
 # Claude Flow internal
 .claude-flow/
 .claude/
+.swarm/
+ruvector.db*
+.metaharness/
 
 # IDE
 .vscode/

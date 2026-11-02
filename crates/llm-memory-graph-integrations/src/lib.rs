@@ -9,7 +9,7 @@
 //! ## LLM-Registry Client
 //!
 //! ```no_run
-//! use llm_memory_graph_integrations::registry::{RegistryClient, RegistryConfig};
+//! use llm_memory_graph_integrations::registry::{Registry, RegistryClient, RegistryConfig};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,7 +29,7 @@
 //! ## Data-Vault Client
 //!
 //! ```no_run
-//! use llm_memory_graph_integrations::vault::{VaultClient, VaultConfig};
+//! use llm_memory_graph_integrations::vault::{Vault, VaultClient, VaultConfig};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {

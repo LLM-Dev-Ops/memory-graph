@@ -86,8 +86,7 @@ pub async fn handle_benchmark_run(ctx: &CommandContext<'_>) -> Result<()> {
             println!("{}", serde_yaml::to_string(&summary)?);
         }
         OutputFormat::Table => {
-            let mut table = TableBuilder::new();
-            table.header(vec![
+            let mut table = TableBuilder::new().header(vec![
                 "Benchmark",
                 "Mean (ms)",
                 "Std Dev (ms)",
@@ -95,7 +94,7 @@ pub async fn handle_benchmark_run(ctx: &CommandContext<'_>) -> Result<()> {
             ]);
 
             for result in &results {
-                table.row(vec![
+                table = table.row(vec![
                     result.target_id.clone(),
                     format_opt_ms(result.mean_ns()),
                     format_opt_ms(result.std_dev_ns()),

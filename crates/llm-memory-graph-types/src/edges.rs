@@ -19,7 +19,7 @@ pub enum EdgeType {
     HandledBy,
     /// Links a prompt to the session it belongs to (Prompt → Session)
     PartOf,
-    /// Links a response to the tools it invoked (Response → ToolInvocation)
+    /// Links a response to the tools it invoked (Response → `ToolInvocation`)
     Invokes,
     /// Links a response to the agent it handed off to (Response → Agent)
     TransfersTo,
@@ -27,7 +27,7 @@ pub enum EdgeType {
     Instantiates,
     /// Links a template to its parent template (Template → Template)
     Inherits,
-    /// Links a prompt to external context sources (Prompt → ExternalContext)
+    /// Links a prompt to external context sources (Prompt → `ExternalContext`)
     References,
 }
 
@@ -90,8 +90,7 @@ impl InstantiatesProperties {
         let instantiation_time = props
             .get("instantiation_time")
             .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-            .map(|dt| dt.with_timezone(&Utc))
-            .unwrap_or_else(Utc::now);
+            .map_or_else(Utc::now, |dt| dt.with_timezone(&Utc));
 
         Ok(Self {
             template_version,
@@ -169,7 +168,7 @@ impl InheritsProperties {
     }
 }
 
-/// Properties for INVOKES edge (Response → ToolInvocation)
+/// Properties for INVOKES edge (Response → `ToolInvocation`)
 ///
 /// Tracks tool invocations made during response generation, including
 /// execution order and success status.
@@ -263,12 +262,12 @@ impl std::str::FromStr for Priority {
             "normal" => Ok(Priority::Normal),
             "high" => Ok(Priority::High),
             "critical" => Ok(Priority::Critical),
-            _ => Err(format!("Invalid priority: {}", s)),
+            _ => Err(format!("Invalid priority: {s}")),
         }
     }
 }
 
-/// Properties for TRANSFERS_TO edge (Response → Agent)
+/// Properties for `TRANSFERS_TO` edge (Response → Agent)
 ///
 /// Tracks agent handoffs, including the reason for transfer and
 /// conversation context.
@@ -363,12 +362,12 @@ impl std::str::FromStr for ContextType {
             "database" => Ok(ContextType::Database),
             "vector_search" | "vectorsearch" => Ok(ContextType::VectorSearch),
             "memory" => Ok(ContextType::Memory),
-            _ => Err(format!("Invalid context type: {}", s)),
+            _ => Err(format!("Invalid context type: {s}")),
         }
     }
 }
 
-/// Properties for REFERENCES edge (Prompt → ExternalContext)
+/// Properties for REFERENCES edge (Prompt → `ExternalContext`)
 ///
 /// Tracks external context sources used in prompt generation, including
 /// relevance scores and specific content references.
@@ -501,7 +500,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InstantiatesProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InstantiatesProperties};
     /// use std::collections::HashMap;
     ///
     /// let prompt_id = NodeId::new();
@@ -524,7 +523,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InheritsProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InheritsProperties};
     ///
     /// let child_id = NodeId::new();
     /// let parent_id = NodeId::new();
@@ -548,7 +547,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, InvokesProperties};
+    /// use llm_memory_graph_types::{Edge, NodeId, InvokesProperties};
     ///
     /// let response_id = NodeId::new();
     /// let tool_id = NodeId::new();
@@ -561,14 +560,14 @@ impl Edge {
         Self::with_properties(from, to, EdgeType::Invokes, properties.to_properties())
     }
 
-    /// Create a TRANSFERS_TO edge with typed properties
+    /// Create a `TRANSFERS_TO` edge with typed properties
     ///
     /// Links a response to the agent it transfers control to.
     ///
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, TransfersToProperties, Priority};
+    /// use llm_memory_graph_types::{Edge, NodeId, TransfersToProperties, Priority};
     ///
     /// let response_id = NodeId::new();
     /// let agent_id = NodeId::new();
@@ -592,7 +591,7 @@ impl Edge {
     /// # Examples
     ///
     /// ```
-    /// use llm_memory_graph::types::{Edge, NodeId, ReferencesProperties, ContextType};
+    /// use llm_memory_graph_types::{Edge, NodeId, ReferencesProperties, ContextType};
     ///
     /// let prompt_id = NodeId::new();
     /// let context_id = NodeId::new();
@@ -644,9 +643,9 @@ impl Edge {
         InvokesProperties::from_properties(&self.properties).ok()
     }
 
-    /// Extract TRANSFERS_TO properties from edge
+    /// Extract `TRANSFERS_TO` properties from edge
     ///
-    /// Returns None if edge is not of type TransfersTo or properties are invalid.
+    /// Returns None if edge is not of type `TransfersTo` or properties are invalid.
     #[must_use]
     pub fn get_transfers_to_properties(&self) -> Option<TransfersToProperties> {
         if self.edge_type != EdgeType::TransfersTo {
