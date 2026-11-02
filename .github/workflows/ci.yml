@@ -60,12 +60,36 @@ jobs:
       - if: matrix.check == 'audit'
         run: cargo install cargo-audit --version 0.22.2 --locked && cargo audit
 
+  sdk:
+    name: SDK merge security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.22.1'
+      - name: Exercise actual SDK utility module
+        run: node scripts/probe-sdk-merge.mjs .
+      - name: Install SDK dependencies without lifecycle scripts
+        working-directory: clients/typescript
+        run: npm ci --ignore-scripts
+      - name: Build SDK
+        working-directory: clients/typescript
+        run: npm run build
+      - name: Test SDK
+        working-directory: clients/typescript
+        run: npm test -- --runInBand
+
+
   all-checks:
     name: All Checks Pass
     runs-on: ubuntu-24.04
-    needs: [node, rust]
+    needs: [node, rust, sdk]
     if: always()
     steps:
       - run: |
           test '${{ needs.node.result }}' = success
           test '${{ needs.rust.result }}' = success
+
+          test '${{ needs.sdk.result }}' = success
