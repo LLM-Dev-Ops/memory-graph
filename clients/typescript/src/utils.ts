@@ -509,6 +509,8 @@ export function deepClone<T>(obj: T): T {
  * @param target - Target object
  * @param sources - Source objects to merge
  * @returns Merged object
+ * @remarks Only own destination properties are merged. Source keys, including
+ * `__proto__`, are stored as own data properties rather than invoking setters.
  *
  * @example
  * ```typescript
@@ -526,12 +528,21 @@ export function deepMerge<T extends Record<string, any>>(target: T, ...sources: 
     if (Object.prototype.hasOwnProperty.call(source, key)) {
       const value = source[key];
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        if (!target[key]) {
-          target[key] = {} as any;
+        if (
+          !Object.prototype.hasOwnProperty.call(target, key) ||
+          target[key] === null ||
+          typeof target[key] !== 'object' ||
+          Array.isArray(target[key])
+        ) {
+          Object.defineProperty(target, key, {
+            value: {}, enumerable: true, configurable: true, writable: true,
+          });
         }
         deepMerge(target[key], value);
       } else {
-        target[key] = value as any;
+        Object.defineProperty(target, key, {
+          value, enumerable: true, configurable: true, writable: true,
+        });
       }
     }
   }
@@ -688,3 +699,4 @@ export function pick<T extends Record<string, any>, K extends keyof T>(
   }
   return result;
 }
+
